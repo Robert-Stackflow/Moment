@@ -1,0 +1,154 @@
+html:not(:has(#blog-main)),
+body:not(:has(#blog-main)) {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+html {
+  font-size: 4px; // * 1rem = 4px  方便unocss计算：在unocss中 1字体单位 = 0.25rem，相当于 1等份 = 1px
+}
+
+body {
+  font-size: 16px;
+}
+
+#app {
+  width: 100%;
+  height: 100%;
+}
+
+/* transition fade-slide */
+.fade-slide-leave-active,
+.fade-slide-enter-active {
+  transition: all 0.3s;
+}
+
+.fade-slide-enter-from {
+  opacity: 0;
+  transform: translateX(-30px);
+}
+
+.fade-slide-leave-to {
+  opacity: 0;
+  transform: translateX(30px);
+}
+
+/* 自定义滚动条样式 */
+.cus-scroll {
+  overflow: auto;
+  &::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+}
+.cus-scroll-x {
+  overflow-x: auto;
+  &::-webkit-scrollbar {
+    width: 0;
+    height: 8px;
+  }
+}
+.cus-scroll-y {
+  overflow-y: auto;
+  &::-webkit-scrollbar {
+    width: 8px;
+    height: 0;
+  }
+}
+.cus-scroll,
+.cus-scroll-x,
+.cus-scroll-y {
+  &::-webkit-scrollbar-thumb {
+    background-color: transparent;
+    border-radius: 4px;
+  }
+  &:hover {
+    &::-webkit-scrollbar-thumb {
+      background: #bfbfbf;
+    }
+    &::-webkit-scrollbar-thumb:hover {
+      background: var(--primary-color);
+    }
+  }
+}
+.n-image-preview {
+  border-radius: 8px;
+}
+:root {
+  --moment-theme: #0084ff;
+  --moment-theme-op: #0084ff23;
+  --moment-theme-op-deep: #0084ffdd;
+  --moment-theme-none: #0084ff00;
+  --moment-blue: #0084ff;
+  --moment-red: #ff3842;
+  --moment-pink: #ff7c7c;
+  --moment-green: #57bd6a;
+  --moment-yellow: #ffc93e;
+  --moment-yellow-op: #ffc93e30;
+  --moment-orange: #ff953e;
+  --moment-fontcolor: #f7f7fa;
+  --moment-background: #18171d;
+  --moment-reverse: #fff;
+  --moment-maskbg: rgba(0, 0, 0, 0.6);
+  --moment-maskbgdeep: rgba(0, 0, 0, 0.85);
+  --moment-hovertext: #0a84ff;
+  --moment-ahoverbg: #fff;
+  --moment-lighttext: #f2b94b;
+  --moment-secondtext: #a1a2b8;
+  --moment-scrollbar: rgba(200, 200, 223, 0.4);
+  --moment-card-btn-bg: #30343f;
+  --moment-post-blockquote-bg: #000;
+  --moment-post-tabs-bg: #121212;
+  --moment-secondbg: #30343f;
+  --moment-shadow-nav: 0 5px 20px 0px rgba(28, 28, 28, 0.4);
+  --moment-card-bg: #1d1e22;
+  --moment-card-bg-op: var(--moment-white-op);
+  --moment-card-bg-none: #1d1b2600;
+  --moment-shadow-lightblack: 0 5px 12px -5px rgba(102, 68, 68, 0);
+  --moment-shadow-light2black: 0 5px 12px -5px rgba(102, 68, 68, 0);
+  --moment-card-border: #282829;
+  --moment-shadow-border: 0 8px 16px -4px #00000050;
+  --style-border-forever: 2px solid var(--moment-lighttext);
+  --moment-white: #fff;
+  --moment-white-op: rgba(255, 255, 255, 0.2);
+  --moment-black: #000;
+  --moment-black-op: rgba(0, 0, 0, 0.3);
+  --moment-black-opdeep: rgba(0, 0, 0, 0.8);
+  --moment-none: #00000000;
+  --moment-gray: #999999;
+  --moment-gray-op: #9999992b;
+  --moment-vip: #e5a80d;
+  --moment-main: var(--moment-theme);
+  --moment-main-op: var(--moment-theme-op);
+  --moment-main-none: var(--moment-theme-none);
+  --moment-shadow-theme: 0 8px 12px -3px var(--moment-theme-op);
+  --moment-shadow-blackdeep: 0 2px 16px -3px rgba(0, 0, 0, 0.15);
+  --moment-shadow-main: 0 8px 12px -3px var(--moment-main-op);
+  --moment-shadow-blue: 0 8px 12px -3px rgba(40, 109, 234, 0.2);
+  --moment-shadow-white: 0 8px 12px -3px rgba(255, 255, 255, 0.2);
+  --moment-shadow-black: 0 0 12px 4px rgba(0, 0, 0, 0.05);
+  --moment-shadow-yellow: 0px 38px 77px -26px rgba(255, 201, 62, 0.12);
+  --moment-shadow-red: 0 8px 12px -3px #ee7d7936;
+  --moment-shadow-green: 0 8px 12px -3px #87ee7936;
+  --moment-logo-color: linear-gradient(215deg, #4584ff 0%, #cf0db9 100%);
+  --moment-snackbar-time: 5s;
+  --style-border: 1px solid var(--moment-card-border);
+  --style-border-always: 1px solid var(--moment-card-border);
+  --style-border-hover: 1px solid var(--moment-main);
+  --style-border-hover-always: 1px solid var(--moment-main);
+  --style-border-dashed: 1px dashed var(--moment-theme-op);
+}
+// body.is-preload *,
+// body.is-preload *:before,
+// body.is-preload *:after {
+//   animation: none !important;
+//   transition: none !important;
+// }
+
+// body.is-resizing *,
+// body.is-resizing *:before,
+// body.is-resizing *:after {
+//   animation: none !important;
+//   transition: none !important;
+// }
