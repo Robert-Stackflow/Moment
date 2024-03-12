@@ -5,10 +5,11 @@ export default {
   login: (data) => request.post('/admin/base/access_token', data, { noNeedToken: true }),
   getUserInfo: () => request.get('/admin/base/userinfo'),
   getUserMenu: () => request.get('/admin/base/usermenu'),
-  uploadImage: (data, headers, onUploadProgress) =>
+  uploadImage: (data, headers, onUploadProgress,timeout) =>
     request.post('/admin/base/upload', data, {
       headers: headers,
       onUploadProgress: onUploadProgress,
+      timeout: timeout * 1000,
     }),
   // profile
   updatePassword: (data = {}) => request.post('/admin/base/update_password', data),

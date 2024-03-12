@@ -79,14 +79,18 @@ async def update_user_password(req_in: UpdatePassword):
 @router.post("/upload", summary="上传图片", dependencies=[DependAuth])
 async def upload(file: UploadFile=File()):
     storage_setting = (await setting_controller.get(id=1)).storage
-    enableStorage = storage_setting['enable_storage']
+    enableStorage = storage_setting.get('enable_storage',True)
+    max_size = storage_setting.get('max_size',32)
+    if file.size > max_size * 1024 * 1024 :
+        return Fail(msg=f"图片大小：{file.size/1024/1024:.2f}MB，超过大小限制：{max_size}MB")
     if enableStorage:
-        access_key = storage_setting['access_id']
-        secret_key = storage_setting['secret_key']
-        bucket_name = storage_setting['bucket']
-        region = storage_setting['region']
-        path = storage_setting['path']
-        endpoint_url = storage_setting['endpoint']
+        access_key = storage_setting.get('access_id',None)
+        secret_key = storage_setting.get('secret_key',None)
+        bucket_name = storage_setting.get('bucket',None)
+        path = storage_setting.get('path','')
+        endpoint_url = storage_setting.get('endpoint',None)
+        if not access_key or not secret_key or not bucket_name or not endpoint_url:
+            return Fail(msg="请在存储设置中完善相关参数")
         s3 = boto3.client(
             service_name='s3',
             aws_access_key_id=access_key,
@@ -96,6 +100,6 @@ async def upload(file: UploadFile=File()):
         t = time.localtime()
         final_path="/"+path.replace("{year}",str(t.tm_year)).replace("{month}",str(t.tm_mon).zfill(2)).replace("{day}",str(t.tm_mday).zfill(2)).replace("{timestamp}",str(int(time.time()))).replace("{filename}",file.filename)
         s3.upload_fileobj(file.file, bucket_name, final_path)
-        return Success(data=storage_setting['prefix']+final_path,msg="Upload Success")
+        return Success(data=storage_setting.get('prefix','')+final_path,msg="Upload Success")
     else:
-        return Fail(msg="Storage has been disabled.")
+        return Fail(msg="已禁止上传图片")

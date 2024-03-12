@@ -144,12 +144,14 @@ export const useSettingStore = defineStore('setting', {
           this.logout()
           return
         }
-        const { endpoint, region,enable_storage, access_id, secret_key, bucket, path, prefix} =
+        const { endpoint,max_size,timeout_time, region,enable_storage, access_id, secret_key, bucket, path, prefix} =
           res.data
         this._storageSetting = {
           endpoint,
+          max_size,
           enable_storage,
           region,
+          timeout_time,
           access_id,
           secret_key,
           bucket,

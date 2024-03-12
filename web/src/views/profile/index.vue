@@ -158,7 +158,6 @@ const customRequest = ({
     infoForm.value.avatar = response.data
     onFinish();
   }).catch((error) => {
-    $message.fail(error.message);
     onError();
   });
 };

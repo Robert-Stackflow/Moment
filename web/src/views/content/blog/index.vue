@@ -27,7 +27,7 @@ const options = ref([])
 const { t } = useI18n()
 defineOptions({ name: '图片管理' })
 const settingStore = useSettingStore()
-
+var timeout_time = settingStore.storageSetting?.timeout_time ?? import.meta.env.VITE_TIMEOUT_TIME
 const $table = ref(null)
 const queryItems = ref({ order_option: "meta_time_desc" })
 const vPermission = resolveDirective('permission')
@@ -209,7 +209,7 @@ function handleGetPictureTime() {
       var time = EXIF.getTag(this, 'SubsecTime')
       $message.success(t('views.content.label_get_exif_success'))
     } else {
-      $message.fail(t('views.content.label_no_exif'))
+      $message.error(t('views.content.label_no_exif'))
     }
   })
 }
@@ -252,13 +252,12 @@ const customRequest = ({
     var percent = Math.round((progressEvent.loaded * 100) / progressEvent.total)
     onProgress({ percent: Math.ceil(percent) });
     $message.loading(t('views.content.label_uploading') + ` ${Math.ceil(percent)}%`);
-  }
+  },timeout_time
   ).then((response) => {
     $message.success(response.msg);
     modalForm.value.image = response.data
     onFinish();
   }).catch((error) => {
-    $message.fail(error.message);
     onError();
   });
 };
