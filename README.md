@@ -11,23 +11,23 @@
 
 ## 演示
 
-![web](D:\Repositories\Website\TimePlus\img\web.png)
+![web](./img/web.png)
 
-![admin-workbench](D:\Repositories\Website\TimePlus\img\admin-workbench.png)
+![admin-workbench](./img/admin-workbench.png)
 
-![admin-blogs](D:\Repositories\Website\TimePlus\img\admin-blogs.png)
+![admin-blogs](./img/admin-blogs.png)
 
-![admin-categories](D:\Repositories\Website\TimePlus\img\admin-categories.png)
+![admin-categories](./img/admin-categories.png)
 
-![admin-general-setting](D:\Repositories\Website\TimePlus\img\admin-general-setting.png)
+![admin-general-setting](./img/admin-general-setting.png)
 
-![admin-meta-setting](D:\Repositories\Website\TimePlus\img\admin-meta-setting.png)
+![admin-meta-setting](./img/admin-meta-setting.png)
 
-![admin-content-setting](D:\Repositories\Website\TimePlus\img\admin-content-setting.png)
+![admin-content-setting](./img/admin-content-setting.png)
 
-![admin-storage-setting](D:\Repositories\Website\TimePlus\img\admin-storage-setting.png)
+![admin-storage-setting](./img/admin-storage-setting.png)
 
-![admin-menu-setting](D:\Repositories\Website\TimePlus\img\admin-menu-setting.png)
+![admin-menu-setting](./img/admin-menu-setting.png)
 
 ## 部署
 
