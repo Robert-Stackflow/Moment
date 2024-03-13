@@ -74,7 +74,7 @@ function handleChange(value) {
           <NInputNumber :precision="0" :disabled="!infoForm.enable_storage"
             :placeholder="$t('views.setting.placeholder_timeout_time')" v-model:value="infoForm.timeout_time" w-500>
             <template #suffix>
-              s
+              秒
             </template>
           </NInputNumber>
         </NFormItem>

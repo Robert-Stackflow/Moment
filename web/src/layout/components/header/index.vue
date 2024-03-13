@@ -4,8 +4,9 @@
     <BreadCrumb ml-15 hidden sm:block />
   </div>
   <div ml-auto flex items-center>
-    <Github />
     <Preview />
+    <Github />
+    <Wiki />
     <!-- <Languages /> -->
     <ThemeMode />
     <UserAvatar />
@@ -19,4 +20,5 @@ import Preview from './components/Preview.vue'
 import UserAvatar from './components/UserAvatar.vue'
 import ThemeMode from './components/ThemeMode.vue'
 import Github from './components/Github.vue'
+import Wiki from './components/Wiki.vue'
 </script>

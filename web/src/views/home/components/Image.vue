@@ -5,6 +5,7 @@
                 :src="data.thumbnail" lazy>
         </a>
         <h2 class="thumb-title">{{ data.title }}</h2>
+        <p class="thumb-desc">{{ data.desc }}</p>
         <ul class="tags">
             <li class="tag-meta">
                 <router-link class="tag-location tag-thumbnail-location" v-if="thumbnail_show_location && data.location"
@@ -37,7 +38,6 @@ var thumbnail_time = ref()
 var detail_time = ref()
 const settingStore = useSettingStore()
 var thumbnail_suffix = settingStore.contentSetting?.thumbnail_suffix ?? ""
-var copyright_suffix = settingStore.contentSetting?.copyright_suffix ?? ""
 var detail_suffix = settingStore.contentSetting?.detail_suffix ?? ""
 var thumbnail_show_location = settingStore.contentSetting.thumbnail_show_location ?? true
 var detail_show_location = settingStore.contentSetting.detail_show_location ?? true
@@ -46,8 +46,8 @@ var thumbnail_time_format = settingStore.contentSetting.thumbnail_time_format &&
 var detail_show_time = settingStore.contentSetting.detail_show_time ?? true
 var detail_time_format = settingStore.contentSetting.detail_time_format && settingStore.contentSetting.detail_time_format != "" ? settingStore.contentSetting.detail_time_format : "YYYY-MM-DD HH:mm"
 watch(() => props.data, (value) => {
-    props.data.thumbnail = props.data.image + thumbnail_suffix + copyright_suffix
-    props.data.detail = props.data.image + detail_suffix + copyright_suffix
+    props.data.thumbnail = props.data.image + thumbnail_suffix
+    props.data.detail = props.data.image + detail_suffix
     var time = parseDateTime(props.data.time)
     thumbnail_time.value = formatDateTime(time, thumbnail_time_format)
     detail_time.value = formatDateTime(time, detail_time_format)
@@ -58,14 +58,19 @@ watch(() => props.data, (value) => {
 .thumb .tags .tag-detail-location {
     display: none;
 }
-
+.thumb .thumb-desc{
+    display: none;
+}
+.poptrox-overlay .caption .thumb-desc{
+    padding-top: 5px;
+    display: block;
+}
 .poptrox-overlay .tags .tag-thumbnail-time,
 .poptrox-overlay .tags .tag-thumbnail-location {
     display: none;
 }
 
 .poptrox-overlay .caption ul.tags {
-    margin-top: 1em;
     margin-bottom: 1.6em;
 }
 

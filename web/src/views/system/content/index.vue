@@ -17,7 +17,6 @@ const infoForm = ref({
   page_size: settingStore.contentSetting.page_size,
   thumbnail_suffix: settingStore.contentSetting.thumbnail_suffix,
   detail_suffix: settingStore.contentSetting.detail_suffix,
-  copyright_suffix: settingStore.contentSetting.copyright_suffix,
   order_option: settingStore.contentSetting.order_option,
   thumbnail_show_location: settingStore.contentSetting.thumbnail_show_location,
   detail_show_location: settingStore.contentSetting.detail_show_location,
@@ -70,10 +69,6 @@ api.getOrderOptionVisitor().then((res) => {
         <NFormItem :label="$t('views.setting.label_detail_suffix')" path="detail_suffix">
           <NInput v-model:value="infoForm.detail_suffix" type="text"
             :placeholder="$t('views.setting.placeholder_detail_suffix')" clearable />
-        </NFormItem>
-        <NFormItem :label="$t('views.setting.label_copyright_suffix')" path="copyright_suffix">
-          <NInput v-model:value="infoForm.copyright_suffix" type="text"
-            :placeholder="$t('views.setting.placeholder_copyright_suffix')" clearable />
         </NFormItem>
         <NFormItem :label="$t('views.setting.label_order_option')" path="order_option">
           <n-select v-model:value="infoForm.order_option" :options="options" />

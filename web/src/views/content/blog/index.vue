@@ -252,7 +252,7 @@ const customRequest = ({
     var percent = Math.round((progressEvent.loaded * 100) / progressEvent.total)
     onProgress({ percent: Math.ceil(percent) });
     $message.loading(t('views.content.label_uploading') + ` ${Math.ceil(percent)}%`);
-  },timeout_time
+  }, timeout_time
   ).then((response) => {
     $message.success(response.msg);
     modalForm.value.image = response.data
@@ -324,8 +324,8 @@ api.getOrderOptionVisitor().then((res) => {
           accept=".tif,.jpg,.jpeg,.ico,.tiff,.gif,.svg,.jfif,.webp,.png,.bmp,.jpeg,.avif" :show-file-list="false">
           <n-button>上传图片</n-button>
         </n-upload>
-        <NImage width="300" :src="modalForm.image" v-if="modalForm.image != undefined && modalForm.image != ''"
-          id="preview-image" show-toolbar-tooltip></NImage>
+        <NImage width="300" :src="modalForm.image + thumbnail_suffix"
+          v-if="modalForm.image != undefined && modalForm.image != ''" id="preview-image" show-toolbar-tooltip></NImage>
         <NFormItem label="时间" path="time">
           <NDatePicker type="datetime" v-model:formatted-value="modalForm.time" placeholder="请输入时间"
             value-format="yyyy-MM-dd HH:mm:ss" :is-date-disabled="disablePreviousDate" />
