@@ -27,7 +27,7 @@
 
 <script setup>
 import { useSettingStore } from '@/store'
-import { parseDateTime, formatDateTime } from '@/utils'
+import { parseDateTime, formatDateTime,isValueNotEmpty } from '@/utils'
 const props = defineProps({
     data: {
         type: Object,
@@ -37,13 +37,13 @@ const props = defineProps({
 var thumbnail_time = ref()
 var detail_time = ref()
 const settingStore = useSettingStore()
-var thumbnail_suffix = settingStore.contentSetting?.thumbnail_suffix ?? ""
-var detail_suffix = settingStore.contentSetting?.detail_suffix ?? ""
-var thumbnail_show_location = settingStore.contentSetting.thumbnail_show_location ?? true
-var detail_show_location = settingStore.contentSetting.detail_show_location ?? true
-var thumbnail_show_time = settingStore.contentSetting.thumbnail_show_time ?? false
+var thumbnail_suffix = isValueNotEmpty(settingStore.contentSetting?.thumbnail_suffix )?settingStore.contentSetting?.thumbnail_suffix : ""
+var detail_suffix = isValueNotEmpty(settingStore.contentSetting?.detail_suffix )?settingStore.contentSetting?.detail_suffix : ""
+var thumbnail_show_location = isValueNotEmpty(settingStore.contentSetting.thumbnail_show_location )?settingStore.contentSetting.thumbnail_show_location : true
+var detail_show_location = isValueNotEmpty(settingStore.contentSetting.detail_show_location )?settingStore.contentSetting.detail_show_location : true
+var thumbnail_show_time = isValueNotEmpty(settingStore.contentSetting.thumbnail_show_time )?settingStore.contentSetting.thumbnail_show_time : false
 var thumbnail_time_format = settingStore.contentSetting.thumbnail_time_format && settingStore.contentSetting.thumbnail_time_format != "" ? settingStore.contentSetting.thumbnail_time_format : "YYYY年M月D日"
-var detail_show_time = settingStore.contentSetting.detail_show_time ?? true
+var detail_show_time = isValueNotEmpty(settingStore.contentSetting.detail_show_time )?settingStore.contentSetting.detail_show_time : true
 var detail_time_format = settingStore.contentSetting.detail_time_format && settingStore.contentSetting.detail_time_format != "" ? settingStore.contentSetting.detail_time_format : "YYYY-MM-DD HH:mm"
 watch(() => props.data, (value) => {
     props.data.thumbnail = props.data.image + thumbnail_suffix

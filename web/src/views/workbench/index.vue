@@ -39,6 +39,7 @@
 import { useUserStore, useSettingStore } from '@/store'
 import api from '@/api'
 import { useI18n } from 'vue-i18n'
+import { isValueNotEmpty } from '@/utils'
 
 const { t } = useI18n({ useScope: 'global' })
 
@@ -71,9 +72,9 @@ async function getBlogs() {
 }
 const userStore = useUserStore()
 const settingStore = useSettingStore()
-var workbench_title = settingStore.generalSetting?.workbench_title ?? import.meta.env.VITE_WORKBENCH_TITLE
-var workbench_desc = settingStore.generalSetting?.workbench_desc ?? import.meta.env.VITE_WORKBENCH_DESC
-var thumbnail_suffix = settingStore.contentSetting?.thumbnail_suffix ?? ""
+var workbench_title = isValueNotEmpty(settingStore.generalSetting?.workbench_title )?settingStore.generalSetting?.workbench_title : import.meta.env.VITE_WORKBENCH_TITLE
+var workbench_desc = isValueNotEmpty(settingStore.generalSetting?.workbench_desc )?settingStore.generalSetting?.workbench_desc : import.meta.env.VITE_WORKBENCH_DESC
+var thumbnail_suffix = isValueNotEmpty(settingStore.contentSetting?.thumbnail_suffix )?settingStore.contentSetting?.thumbnail_suffix : ""
 workbench_title = workbench_title.replaceAll("{username}", userStore.name)
 workbench_desc = workbench_desc.replaceAll("{username}", userStore.name)
 getCount()

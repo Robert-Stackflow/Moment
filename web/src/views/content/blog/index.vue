@@ -18,7 +18,7 @@ import CrudModal from '@/components/table/CrudModal.vue'
 import CrudTable from '@/components/table/CrudTable.vue'
 import TheIcon from '@/components/icon/TheIcon.vue'
 import { useI18n } from 'vue-i18n'
-import { formatDate, renderIcon } from '@/utils'
+import { formatDate, renderIcon,isValueNotEmpty } from '@/utils'
 import { useCRUD } from '@/composables'
 import api from '@/api'
 import { useSettingStore } from '@/store'
@@ -27,7 +27,7 @@ const options = ref([])
 const { t } = useI18n()
 defineOptions({ name: '图片管理' })
 const settingStore = useSettingStore()
-var timeout_time = settingStore.storageSetting?.timeout_time ?? import.meta.env.VITE_TIMEOUT_TIME
+var timeout_time = isValueNotEmpty(settingStore.storageSetting?.timeout_time )?settingStore.storageSetting?.timeout_time : import.meta.env.VITE_TIMEOUT_TIME
 const $table = ref(null)
 const queryItems = ref({ order_option: "meta_time_desc" })
 const vPermission = resolveDirective('permission')
@@ -72,8 +72,8 @@ onMounted(async () => {
 
 const categoryOptions = ref([])
 
-var thumbnail_suffix = settingStore.contentSetting?.thumbnail_suffix ?? ""
-var detail_suffix = settingStore.contentSetting?.detail_suffix ?? ""
+var thumbnail_suffix = isValueNotEmpty(settingStore.contentSetting?.thumbnail_suffix )?settingStore.contentSetting?.thumbnail_suffix : ""
+var detail_suffix = isValueNotEmpty(settingStore.contentSetting?.detail_suffix )?settingStore.contentSetting?.detail_suffix : ""
 
 const columns = [
   { title: 'ID', key: 'id', width: 50, ellipsis: { tooltip: true } },

@@ -18,9 +18,9 @@ const listRef = ref(null)
 var page = 1
 var total = 0
 const settingStore = useSettingStore()
-const baseTitle = settingStore.metaSetting?.site_name ?? import.meta.env.VITE_TITLE
-const splitter = settingStore.metaSetting?.site_splitter ?? "|"
-const page_size = settingStore.contentSetting?.page_size ?? import.meta.env.VITE_PAGE_SIZE
+const baseTitle = isValueNotEmpty(settingStore.metaSetting?.site_name )?settingStore.metaSetting?.site_name : import.meta.env.VITE_TITLE
+const splitter = isValueNotEmpty(settingStore.metaSetting?.site_splitter )?settingStore.metaSetting?.site_splitter : import.meta.env.VITE_TITLE_SPLITTER
+const page_size = isValueNotEmpty(settingStore.contentSetting?.page_size )?settingStore.contentSetting?.page_size : import.meta.env.VITE_PAGE_SIZE
 async function getBlogs() {
     try {
         var params = { page: page, page_size: page_size }

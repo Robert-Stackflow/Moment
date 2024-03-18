@@ -1,4 +1,5 @@
 import { useSettingStore } from '@/store'
+import { isValueNotEmpty } from './common'
 export function createLink(rel, href) {
   var link = document.querySelector(`link[rel*='${rel}']`) || document.createElement('link')
   link.type = 'image/x-icon'
@@ -40,13 +41,13 @@ export function loadJs(src) {
 }
 export function updateMeta() {
   const settingStore = useSettingStore()
-  const site_icon = settingStore.metaSetting?.site_icon ?? import.meta.env.VITE_ICON
-  const site_name = settingStore.metaSetting?.site_name ?? import.meta.env.VITE_TITLE
-  const site_desc = settingStore.metaSetting?.site_desc ?? import.meta.env.VITE_DESC
-  const apple_icon = settingStore.metaSetting?.site_apple_icon ?? import.meta.env.VITE_ICON
-  const custom_css = settingStore.generalSetting?.custom_css ?? import.meta.env.CUSTOM_CSS
-  const custom_js = settingStore.generalSetting?.custom_js ?? import.meta.env.CUSTOM_JS
-  const site_keywords = settingStore.metaSetting?.site_keywords ?? import.meta.env.VITE_KEYWORDS
+  const site_icon = isValueNotEmpty(settingStore.metaSetting?.site_icon)?settingStore.metaSetting?.site_icon:import.meta.env.VITE_ICON
+  const site_name = isValueNotEmpty(settingStore.metaSetting?.site_name)?settingStore.metaSetting?.site_name:import.meta.env.VITE_TITLE
+  const site_desc = isValueNotEmpty(settingStore.metaSetting?.site_desc)?settingStore.metaSetting?.site_desc:import.meta.env.VITE_DESC
+  const apple_icon = isValueNotEmpty(settingStore.metaSetting?.site_apple_icon)?settingStore.metaSetting?.site_apple_icon:import.meta.env.VITE_ICON
+  const custom_css = isValueNotEmpty(settingStore.generalSetting?.custom_css)?settingStore.generalSetting?.custom_css:import.meta.env.CUSTOM_CSS
+  const custom_js = isValueNotEmpty(settingStore.generalSetting?.custom_js)?settingStore.generalSetting?.custom_js:import.meta.env.CUSTOM_JS
+  const site_keywords = isValueNotEmpty(settingStore.metaSetting?.site_keywords)?settingStore.metaSetting?.site_keywords:import.meta.env.VITE_KEYWORDS
   createLink('icon', site_icon)
   createLink('apple-touch-icon', apple_icon)
   createLink('apple-touch-icon-precomposed', apple_icon)

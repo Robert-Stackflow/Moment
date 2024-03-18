@@ -17,8 +17,9 @@
 
 <script setup>
 import { useAppStore,useSettingStore } from '@/store'
+import { isValueNotEmpty } from '@/utils'
 const appStore = useAppStore()
 const settingStore = useSettingStore()
-const site_name = settingStore.metaSetting?.site_name??import.meta.env.VITE_TITLE
-const site_icon = settingStore.metaSetting?.bottom_icon ?? import.meta.env.VITE_ICON
+const site_name = isValueNotEmpty(settingStore.metaSetting?.site_name)?settingStore.metaSetting?.site_name:import.meta.env.VITE_TITLE
+const site_icon = isValueNotEmpty(settingStore.metaSetting?.bottom_icon)?settingStore.metaSetting?.bottom_icon:import.meta.env.VITE_ICON
 </script>

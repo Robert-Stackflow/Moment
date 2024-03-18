@@ -37,13 +37,13 @@ import { useSettingStore } from '@/store'
 import { isValueNotEmpty, createStyle } from '@/utils'
 import TheIcon from '@/components/icon/TheIcon.vue'
 const settingStore = useSettingStore()
-const site_name = settingStore.metaSetting?.site_name ?? import.meta.env.VITE_TITLE
-const site_desc = settingStore.metaSetting?.site_desc ?? import.meta.env.VITE_DESC
-const primary_color = settingStore.metaSetting?.primary_color ?? import.meta.env.VITE_PRIMARY_COLOR
-const entries = settingStore.metaSetting?.entries ?? []
-const bottom_icon = settingStore.metaSetting?.bottom_icon ?? import.meta.env.VITE_ICON
-const bottom_desc = settingStore.metaSetting?.bottom_desc ?? import.meta.env.VITE_DESC
-const icp = settingStore.metaSetting?.icp ?? ""
+const site_name = isValueNotEmpty(settingStore.metaSetting?.site_name )?settingStore.metaSetting?.site_name : import.meta.env.VITE_TITLE
+const site_desc = isValueNotEmpty(settingStore.metaSetting?.site_desc )?settingStore.metaSetting?.site_desc : import.meta.env.VITE_DESC
+const primary_color = isValueNotEmpty(settingStore.metaSetting?.primary_color )?settingStore.metaSetting?.primary_color : import.meta.env.VITE_PRIMARY_COLOR
+const entries = isValueNotEmpty(settingStore.metaSetting?.entries )?settingStore.metaSetting?.entries : []
+const bottom_icon = isValueNotEmpty(settingStore.metaSetting?.bottom_icon )?settingStore.metaSetting?.bottom_icon : import.meta.env.VITE_ICON
+const bottom_desc = isValueNotEmpty(settingStore.metaSetting?.bottom_desc )?settingStore.metaSetting?.bottom_desc : import.meta.env.VITE_DESC
+const icp = isValueNotEmpty(settingStore.metaSetting?.icp )?settingStore.metaSetting?.icp : ""
 function togglePanel() {
     document.querySelector("#footer.panel").classList.toggle("active");
     document.querySelector("#header-about").classList.toggle("active");
