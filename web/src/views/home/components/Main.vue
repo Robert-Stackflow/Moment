@@ -89,7 +89,6 @@ async function getCategory() {
     return []
 }
 function loadMore() {
-    console.log("触底")
     if (page * page_size < total) {
         page++;
         getBlogsAndPoptrox()
