@@ -8,6 +8,7 @@ import {
   NImage,
   NInput,
   NPopconfirm,
+  NPopover,
   NSwitch,
   NTag,
   NTreeSelect,
@@ -81,17 +82,38 @@ const columns = [
   {
     title: '图片', key: 'image', width: 80, render(row) {
       return h(
-        NImage,
+        NPopover,
         {
-          width: 80,
-          height: 60,
-          class: "table-image",
-          lazy: true,
-          src: row.image + thumbnail_suffix,
-          previewSrc: row.image + detail_suffix,
-          "show-toolbar-tooltip": true,
-          style: "border-radius:8px"
+          trigger: "hover",
+          "keep-alive-on-hover": false
         },
+        {
+          default: () => h(
+            NImage,
+            {
+              width: 200,
+              class: "table-image",
+              lazy: true,
+              src: row.image + thumbnail_suffix,
+              previewSrc: row.image + detail_suffix,
+              "show-toolbar-tooltip": true,
+              style: "border-radius:8px"
+            },
+          ),
+          trigger: () => h(
+            NImage,
+            {
+              width: 80,
+              height: 60,
+              class: "table-image",
+              lazy: true,
+              src: row.image + thumbnail_suffix,
+              previewSrc: row.image + detail_suffix,
+              "show-toolbar-tooltip": true,
+              style: "border-radius:8px"
+            },
+          )
+        }
       )
     },
   },
@@ -101,7 +123,6 @@ const columns = [
     title: '分类',
     key: 'formatted_categories',
     width: 120,
-    ellipsis: { tooltip: true },
     render(row) {
       return row.formatted_categories.map(e => h(NButton, {
         type: 'info',
@@ -194,6 +215,10 @@ function appendCategories(id) {
   }
 }
 
+function resetQuery() {
+  queryItems.value.categories = []
+}
+
 async function getLocations() {
   const res = await api.getBlogLocations()
   if (res.code === 200) {
@@ -208,7 +233,7 @@ async function handleUpdateHidden(row) {
   row.is_hidden = row.is_hidden === false ? true : false
   await api.updateBlog(row)
   row.publishing = false
-  $message?.success(row.is_hidden ? '已开启' : '已关闭')
+  $message?.success(row.is_hidden ? '已隐藏' : '已公开')
 }
 
 function handleGetPictureTime() {
@@ -288,7 +313,7 @@ api.getOrderOptionVisitor().then((res) => {
 
     <!-- 表格 -->
     <CrudTable ref="$table" v-model:query-items="queryItems" :is-pagination="true" :columns="columns"
-      :get-data="api.getBlogs">
+      :get-data="api.getBlogs" @update:queryItems="resetQuery">
       <template #queryBar>
         <QueryBarItem label="标题" :label-width="40">
           <NInput v-model:value="queryItems.title" clearable type="text" placeholder="请输入图片标题"
@@ -299,8 +324,10 @@ api.getOrderOptionVisitor().then((res) => {
             @keypress.enter="$table?.handleSearch()" />
         </QueryBarItem>
         <QueryBarItem label="地点" :label-width="40">
-          <NInput v-model:value="queryItems.location" clearable type="text" placeholder="请输入图片地点"
-            @keypress.enter="$table?.handleSearch()" />
+          <n-auto-complete v-model:value="queryItems.location" :input-props="{
+            autocomplete: 'enabled'
+          }" :options="locations" placeholder="请输入图片地点" clearable @search="getLocations"
+            @keypress.enter="$table?.handleSearch()" filterable />
         </QueryBarItem>
         <QueryBarItem label="排序" :label-width="40" style="width: 264px;">
           <n-select v-model:value="queryItems.order_option" :options="options" @keypress.enter="$table?.handleSearch()"
@@ -331,34 +358,47 @@ api.getOrderOptionVisitor().then((res) => {
           message: '请输入图片地址',
           trigger: ['input', 'blur'],
         }">
-          <NInput v-model:value="modalForm.image" type="text" placeholder="请输入图片地址" clearable />
+          <div flex style="width:100%;flex-wrap: nowrap;flex-direction: row;column-gap: 10px;">
+            <n-popover trigger="hover" placement="bottom" :keep-alive-on-hover="false">
+              <template #trigger>
+                <NInput v-model:value="modalForm.image" type="text" placeholder="请输入图片地址" clearable />
+              </template>
+              <NImage width="200" :src="modalForm.image + thumbnail_suffix"
+                v-if="modalForm.image != undefined && modalForm.image != ''" style="border-radius: 8px;"
+                show-toolbar-tooltip fallback-src="/images/error.svg">
+              </NImage>
+              <template #footer>
+              </template>
+            </n-popover>
+            <n-upload style="flex:1;" :action="api.uploadApi" :custom-request="customRequest"
+              v-if="settingStore.storageSetting.enable_storage" @before-upload="beforeUploadImage"
+              accept=".tif,.jpg,.jpeg,.ico,.tiff,.gif,.svg,.jfif,.webp,.png,.bmp,.jpeg,.avif" :show-file-list="false">
+              <n-button>上传图片</n-button>
+            </n-upload>
+          </div>
         </NFormItem>
-        <n-upload :action="api.uploadApi" :custom-request="customRequest" class="upload-button"
-          v-if="settingStore.storageSetting.enable_storage" @before-upload="beforeUploadImage"
-          accept=".tif,.jpg,.jpeg,.ico,.tiff,.gif,.svg,.jfif,.webp,.png,.bmp,.jpeg,.avif" :show-file-list="false">
-          <n-button>上传图片</n-button>
-        </n-upload>
-        <NImage width="300" :src="modalForm.image + thumbnail_suffix"
-          v-if="modalForm.image != undefined && modalForm.image != ''" id="preview-image" show-toolbar-tooltip></NImage>
-        <NFormItem label="时间" path="time">
-          <NDatePicker type="datetime" v-model:formatted-value="modalForm.time" placeholder="请输入时间"
-            value-format="yyyy-MM-dd HH:mm:ss" :is-date-disabled="disablePreviousDate" />
-          <!-- <NButton type="primary" @click="handleGetPictureTime" style="margin-left: 20px;"
+        <NFormItem label="描述" path="desc">
+          <NInput v-model:value="modalForm.desc" type="textarea" placeholder="请输入描述（将会展示在图片详情页面）" />
+        </NFormItem>
+        <div flex style="width:100%;flex-wrap: nowrap;flex-direction: row;column-gap: 10px;">
+          <NFormItem label="时间" path="time" style="flex:1;">
+            <NDatePicker type="datetime" v-model:formatted-value="modalForm.time" placeholder="请输入时间"
+              value-format="yyyy-MM-dd HH:mm:ss" :is-date-disabled="disablePreviousDate" />
+            <!-- <NButton type="primary" @click="handleGetPictureTime" style="margin-left: 20px;"
             :disabled="modalForm.image == undefined || modalForm.image == ''">
             <TheIcon icon="material-symbols:auto-timer-outline" :size="18" class="mr-5" />{{
     $t('views.content.label_get_picture_time') }}
           </NButton> -->
-        </NFormItem>
-        <NFormItem label="地点" path="location">
-          <NSelect v-model:value="modalForm.location" :options="locations" placeholder="请输入地点" clearable
-            @search="getLocations" />
-        </NFormItem>
+          </NFormItem>
+          <NFormItem label="地点" path="location" style="flex:1;">
+            <n-auto-complete v-model:value="modalForm.location" :input-props="{
+              autocomplete: 'enabled'
+            }" :options="locations" placeholder="请输入地点" clearable @search="getLocations" filterable />
+          </NFormItem>
+        </div>
         <NFormItem label="分类" path="categories">
           <NTreeSelect v-model:value="modalForm.categories" multiple checkable key-field="id" label-field="name"
             :options="categoryTreeOptions" default-expand-all :disabled="blogDisabled" @click="getTreeSelect" />
-        </NFormItem>
-        <NFormItem label="描述" path="desc">
-          <NInput v-model:value="modalForm.desc" type="textarea" placeholder="请输入描述（将会展示在图片详情页面）" />
         </NFormItem>
         <NFormItem label="隐藏图片" path="is_hidden">
           <NSwitch v-model:value="modalForm.is_hidden" />
@@ -368,16 +408,7 @@ api.getOrderOptionVisitor().then((res) => {
   </CommonPage>
 </template>
 <style>
-#preview-image {
-  border-radius: 8px;
-  margin-bottom: 25px;
-}
-
-.upload-button {
-  margin-bottom: 24px;
-}
-
-.n-tag.n-tag--round {
+.n-button.n-button--info-type.n-button--medium-type.n-button--secondary {
   margin-top: 3px;
   margin-bottom: 3px;
 }
