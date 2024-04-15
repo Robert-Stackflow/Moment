@@ -14,49 +14,33 @@ router = APIRouter()
 
 order_options=[{'label': "图片时间-降序",'value': 'meta_time_desc','order':'-time'},{'label': "图片时间-升序",'value': 'meta_time_asc','order':'time'}, {'label': "图片创建时间-降序",'value': 'created_at_desc','order':'-created_at'}, {'label': "图片创建时间-升序",'value': 'created_at_asc','order':'created_at'}, {'label': "图片更新时间-降序",'value': 'updated_at_desc','order':'-updated_at'},  {'label': "图片更新时间-升序",'value': 'updated_at_asc','order':'updated_at'}]
 
-@router.get("/list", summary="查看图片列表")
+@router.post("/list", summary="查看图片列表")
 async def list_blog(
-    page: int = Query(1, description="页码"),
-    page_size: int = Query(10, description="每页数量"),
-    title: str = Query("", description="标题，用于搜索"),
-    desc: str = Query("", description="标题，用于搜索"),
-    location: str = Query("", description="地点，用于搜索"),
-    category: str = Query("",description="分类alias，用于获取某一分类的图片"),
-    order_option: str= Query("",description="排序规则")
+    query:BlogQuery
 ):
-    got_category_id=-1
-    other_category_ids=[]
-    if category:
-        got_category = await category_controller.model.filter(alias=category)
-        other_category = await category_controller.model.filter(alias__not=category)
-        if len(got_category)==0 :
-            return Fail(msg="分类不存在")
-        else:
-            got_category_id=got_category[0].id
-            other_category_ids=[category.id for category in other_category]
     q = Q()
-    if title:
-        q &= Q(title__contains=title)
-    if desc:
-        q &= Q(desc__contains=desc)
-    if location:
-        q &= Q(location__contains=location)
-    if got_category_id!=-1:
-        q &= Q(categories__not_in=other_category_ids)
+    if query.title:
+        q &= Q(title__contains=query.title)
+    if query.desc:
+        q &= Q(desc__contains=query.desc)
+    if query.location:
+        q &= Q(location__contains=query.location)
+    if len(query.categories)>0:
+        q &= Q(categories__in=query.categories)
     order=None
     for t in order_options:
-        if t['value']==order_option:
+        if t['value']==query.order_option:
             order=[t['order']]
             break
     if order:
-        total, blog_objs = await blog_controller.list(page=page, page_size=page_size, search=q,order=order)
+        total, blog_objs = await blog_controller.list(page=query.page, page_size=query.page_size, search=q,order=order)
     else:
-        total, blog_objs = await blog_controller.list(page=page, page_size=page_size, search=q)
+        total, blog_objs = await blog_controller.list(page=query.page, page_size=query.page_size, search=q)
     data = [await obj.to_dict(m2m=True) for obj in blog_objs]
     for blog in data:
         blog['formatted_categories']=blog['categories']
         blog['categories']=[item['id'] for item in blog['formatted_categories']]
-    return SuccessExtra(data=data, total=total, page=page, page_size=page_size)
+    return SuccessExtra(data=data, total=total, page=query.page, page_size=query.page_size)
 
 @router.get("/get", summary="查看图片")
 async def get_blog(

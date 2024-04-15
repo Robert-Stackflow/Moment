@@ -21,7 +21,7 @@ export default {
   updateMenu: (data = {}) => request.post('/admin/menu/update', data),
   deleteMenu: (params = {}) => request.delete('/admin/menu/delete', { params }),
   // blogs
-  getBlogs: (params = {}) => request.get('/admin/blog/list', { params }),
+  getBlogs: (data = {}) => request.post('/admin/blog/list', data ),
   getBlogAndCategoryCount: () => request.get('/admin/blog/count'),
   getBlogLocations: (params = {}) => request.get('/admin/blog/locations', { params }),
   createBlog: (data = {}) => request.post('/admin/blog/create', data),

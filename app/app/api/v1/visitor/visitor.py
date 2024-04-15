@@ -24,9 +24,6 @@ async def list_order():
 async def list_blog(
     page: int = Query(1, description="页码"),
     page_size: int = Query(10, description="每页数量"),
-    title: str = Query("", description="标题，用于搜索"),
-    desc: str = Query("", description="标题，用于搜索"),
-    location: str = Query("", description="地点，用于搜索"),
     category: str = Query("",description="分类alias，用于获取某一分类的图片")
 ):
     got_category_id=-1
@@ -40,12 +37,6 @@ async def list_blog(
             got_category_id=got_category[0].id
             other_category_ids=[category.id for category in other_category]
     q = Q()
-    if title:
-        q &= Q(title__contains=title)
-    if desc:
-        q &= Q(desc__contains=desc)
-    if location:
-        q &= Q(location__contains=location)
     if got_category_id!=-1:
         q &= Q(categories__not_in=other_category_ids)
     q &= Q(is_hidden=False)

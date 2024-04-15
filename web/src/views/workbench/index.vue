@@ -64,7 +64,7 @@ async function getCount() {
   }
 }
 async function getBlogs() {
-  const res = await api.getBlogs({ page_size:20,order_option:"created_at_desc" })
+  const res = await api.getBlogs({ page:1,page_size:20,order_option:"created_at_desc" })
   if (res.code == 200) {
     return res.data;
   }

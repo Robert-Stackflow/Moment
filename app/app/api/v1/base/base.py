@@ -80,7 +80,9 @@ async def update_user_password(req_in: UpdatePassword):
 async def upload(file: UploadFile=File()):
     storage_setting = (await setting_controller.get(id=1)).storage
     enableStorage = storage_setting.get('enable_storage',True)
+    print(storage_setting)
     max_size = storage_setting.get('max_size',32)
+    max_size = max_size if max_size else 32
     if file.size > max_size * 1024 * 1024 :
         return Fail(msg=f"图片大小：{file.size/1024/1024:.2f}MB，超过大小限制：{max_size}MB")
     if enableStorage:

@@ -2,6 +2,7 @@ from typing import List, Optional
 from datetime import datetime
 from pydantic import BaseModel, Field
 
+
 class BaseBlog(BaseModel):
     id: int
     title: str
@@ -12,6 +13,17 @@ class BaseBlog(BaseModel):
     time: Optional[datetime]
     remark: Optional[dict]
     categories: Optional[list] = []
+
+
+class BlogQuery(BaseModel):
+    page: int
+    page_size: int
+    title: Optional[str] = None
+    desc: Optional[str] = None
+    location: Optional[str] = None
+    categories: Optional[List[int]] = []
+    order_option: Optional[str] = None
+
 
 class BlogCreate(BaseModel):
     title: str = Field(example="随手拍了一张照片")
@@ -26,6 +38,7 @@ class BlogCreate(BaseModel):
     def create_dict(self):
         return self.model_dump(exclude_unset=True, exclude={"categories"})
 
+
 class BlogUpdate(BaseModel):
     id: int
     title: str = Field(example="随手拍了一张照片")
@@ -38,4 +51,4 @@ class BlogUpdate(BaseModel):
     categories: Optional[List[int]] = []
 
     def update_dict(self):
-        return self.model_dump(exclude_unset=True, exclude={"categories","id"})
+        return self.model_dump(exclude_unset=True, exclude={"categories", "id"})

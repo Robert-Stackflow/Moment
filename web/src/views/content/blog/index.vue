@@ -18,7 +18,7 @@ import CrudModal from '@/components/table/CrudModal.vue'
 import CrudTable from '@/components/table/CrudTable.vue'
 import TheIcon from '@/components/icon/TheIcon.vue'
 import { useI18n } from 'vue-i18n'
-import { formatDate, renderIcon,isValueNotEmpty } from '@/utils'
+import { formatDate, renderIcon, isValueNotEmpty } from '@/utils'
 import { useCRUD } from '@/composables'
 import api from '@/api'
 import { useSettingStore } from '@/store'
@@ -27,9 +27,9 @@ const options = ref([])
 const { t } = useI18n()
 defineOptions({ name: '图片管理' })
 const settingStore = useSettingStore()
-var timeout_time = isValueNotEmpty(settingStore.storageSetting?.timeout_time )?settingStore.storageSetting?.timeout_time : import.meta.env.VITE_TIMEOUT_TIME
+var timeout_time = isValueNotEmpty(settingStore.storageSetting?.timeout_time) ? settingStore.storageSetting?.timeout_time : import.meta.env.VITE_TIMEOUT_TIME
 const $table = ref(null)
-const queryItems = ref({ order_option: "meta_time_desc" })
+const queryItems = ref({ order_option: "meta_time_desc", categories: [] })
 const vPermission = resolveDirective('permission')
 const blogDisabled = ref(false)
 var locations = ref([])
@@ -37,7 +37,7 @@ var locations = ref([])
 const initForm = {
   order: 1,
   image: "",
-  location: "",
+  location: undefined,
 }
 
 function disablePreviousDate(ts) {
@@ -70,10 +70,10 @@ onMounted(async () => {
   await getLocations()
 })
 
-const categoryOptions = ref([])
+const categoryTreeOptions = ref([])
 
-var thumbnail_suffix = isValueNotEmpty(settingStore.contentSetting?.thumbnail_suffix )?settingStore.contentSetting?.thumbnail_suffix : ""
-var detail_suffix = isValueNotEmpty(settingStore.contentSetting?.detail_suffix )?settingStore.contentSetting?.detail_suffix : ""
+var thumbnail_suffix = isValueNotEmpty(settingStore.contentSetting?.thumbnail_suffix) ? settingStore.contentSetting?.thumbnail_suffix : ""
+var detail_suffix = isValueNotEmpty(settingStore.contentSetting?.detail_suffix) ? settingStore.contentSetting?.detail_suffix : ""
 
 const columns = [
   { title: 'ID', key: 'id', width: 50, ellipsis: { tooltip: true } },
@@ -103,11 +103,13 @@ const columns = [
     width: 120,
     ellipsis: { tooltip: true },
     render(row) {
-      return row.formatted_categories.map(e => h(NTag, {
+      return row.formatted_categories.map(e => h(NButton, {
         type: 'info',
-        bordered: false,
+        strong: true,
+        secondary: true,
         round: true,
-        style: "margin-left:5px;"
+        style: "margin-left:5px;",
+        onClick: (_) => appendCategories(e.id)
       }, () => e.name))
     },
   },
@@ -185,11 +187,18 @@ function handleClickAdd() {
   handleAdd()
 }
 
+function appendCategories(id) {
+  if (!queryItems.value.categories.includes(id)) {
+    queryItems.value.categories.push(id)
+    $table.value?.handleSearch()
+  }
+}
+
 async function getLocations() {
   const res = await api.getBlogLocations()
   if (res.code === 200) {
     var sorted_locations = res.data
-    locations.value = sorted_locations.map(e => e[0])
+    locations.value = sorted_locations.map((e) => { return { 'label': e[0], 'value': e[0] } })
   }
 }
 
@@ -216,7 +225,7 @@ function handleGetPictureTime() {
 
 async function getTreeSelect() {
   const { data } = await api.getCategories()
-  categoryOptions.value = data
+  categoryTreeOptions.value = data
 }
 
 async function beforeUploadImage(data) {
@@ -295,7 +304,12 @@ api.getOrderOptionVisitor().then((res) => {
         </QueryBarItem>
         <QueryBarItem label="排序" :label-width="40" style="width: 264px;">
           <n-select v-model:value="queryItems.order_option" :options="options" @keypress.enter="$table?.handleSearch()"
-            style="width: 224px;" />
+            @update:value="$table?.handleSearch()" style="width: 224px;" />
+        </QueryBarItem>
+        <QueryBarItem label="分类" :label-width="40" style="width: 264px;">
+          <NTreeSelect v-model:value="queryItems.categories" multiple checkable key-field="id" label-field="name"
+            :options="categoryTreeOptions" default-expand-all @click="getTreeSelect"
+            @update:value="$table?.handleSearch()" style="width: 224px;" />
         </QueryBarItem>
       </template>
     </CrudTable>
@@ -306,17 +320,17 @@ api.getOrderOptionVisitor().then((res) => {
       <!-- 表单 -->
       <NForm ref="modalFormRef" label-placement="top" label-align="left" :label-width="80" :model="modalForm">
         <NFormItem label="标题" path="title" :rule="{
-    required: true,
-    message: '请输入标题',
-    trigger: ['input', 'blur'],
-  }">
+          required: true,
+          message: '请输入标题',
+          trigger: ['input', 'blur'],
+        }">
           <NInput v-model:value="modalForm.title" placeholder="请输入标题" maxlength="50" show-count clearable />
         </NFormItem>
         <NFormItem label="图片地址" path="image" :rule="{
-    required: true,
-    message: '请输入图片地址',
-    trigger: ['input', 'blur'],
-  }">
+          required: true,
+          message: '请输入图片地址',
+          trigger: ['input', 'blur'],
+        }">
           <NInput v-model:value="modalForm.image" type="text" placeholder="请输入图片地址" clearable />
         </NFormItem>
         <n-upload :action="api.uploadApi" :custom-request="customRequest" class="upload-button"
@@ -336,15 +350,15 @@ api.getOrderOptionVisitor().then((res) => {
           </NButton> -->
         </NFormItem>
         <NFormItem label="地点" path="location">
-          <n-auto-complete v-model:value="modalForm.location" :options="locations" type="text" placeholder="请输入地点"
-            show-count clearable />
+          <NSelect v-model:value="modalForm.location" :options="locations" placeholder="请输入地点" clearable
+            @search="getLocations" />
         </NFormItem>
         <NFormItem label="分类" path="categories">
           <NTreeSelect v-model:value="modalForm.categories" multiple checkable key-field="id" label-field="name"
-            :options="categoryOptions" default-expand-all :disabled="blogDisabled" />
+            :options="categoryTreeOptions" default-expand-all :disabled="blogDisabled" @click="getTreeSelect" />
         </NFormItem>
         <NFormItem label="描述" path="desc">
-          <NInput v-model:value="modalForm.desc" type="textarea" placeholder="请输入描述" />
+          <NInput v-model:value="modalForm.desc" type="textarea" placeholder="请输入描述（将会展示在图片详情页面）" />
         </NFormItem>
         <NFormItem label="隐藏图片" path="is_hidden">
           <NSwitch v-model:value="modalForm.is_hidden" />

@@ -38,9 +38,9 @@ const settingStore = useSettingStore()
 var categories = ref([])
 var fullScreenText = ref("全屏")
 var a = 0;
-const site_name = isValueNotEmpty(settingStore.metaSetting?.site_name )?settingStore.metaSetting?.site_name : import.meta.env.VITE_TITLE
-const bottom_icon = isValueNotEmpty(settingStore.metaSetting?.bottom_icon )?settingStore.metaSetting?.bottom_icon : import.meta.env.VITE_ICON
-const bottom_desc = isValueNotEmpty(settingStore.metaSetting?.bottom_desc )?settingStore.metaSetting?.bottom_desc : import.meta.env.VITE_DESC
+const site_name = isValueNotEmpty(settingStore.metaSetting?.site_name) ? settingStore.metaSetting?.site_name : import.meta.env.VITE_TITLE
+const bottom_icon = isValueNotEmpty(settingStore.metaSetting?.bottom_icon) ? settingStore.metaSetting?.bottom_icon : import.meta.env.VITE_ICON
+const bottom_desc = isValueNotEmpty(settingStore.metaSetting?.bottom_desc) ? settingStore.metaSetting?.bottom_desc : import.meta.env.VITE_DESC
 function togglePanel() {
     document.querySelector("#footer.panel").classList.toggle("active");
     document.querySelector("#header-about").classList.toggle("active");
@@ -55,9 +55,11 @@ function toggleFullScreen() {
     if (isFullScreen()) {
         document.exitFullscreen();
         $("#fullscreen").removeClass("ctrlOn");
+        fullScreenText.value = "全屏"
     } else {
         document.documentElement.requestFullscreen();
         $("#fullscreen").addClass("ctrlOn");
+        fullScreenText.value = "退出全屏"
     }
 }
 api.getCategoriesVisitor().then((response) => {
