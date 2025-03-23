@@ -16,7 +16,7 @@
   ```yaml
   services:
     moment:
-      image: ruida/moment:1.0
+      image: ruida/moment:1.3
       container_name: moment
       volumes:
         - ${PWD}/.moment/:/opt/moment/app/data

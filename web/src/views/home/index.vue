@@ -83,7 +83,6 @@ loadJs("https://code.jquery.com/jquery-1.7.2.min.js").then(
 body {
   background: #242629;
   color: #a0a0a1;
-  font-size: 15pt;
   font-weight: 300;
   letter-spacing: 0.025em;
   line-height: 1.65;
