@@ -3,23 +3,11 @@ import { request } from '@/utils'
 export default {
   uploadApi: import.meta.env.VITE_BASE_API + '/admin/base/upload',
   login: (data) => request.post('/admin/base/access_token', data, { noNeedToken: true }),
-  getUserInfo: () => request.get('/admin/base/userinfo'),
-  getUserMenu: () => request.get('/admin/base/usermenu'),
-  uploadImage: (data, headers, onUploadProgress,timeout) =>
-    request.post('/admin/base/upload', data, {
-      headers: headers,
-      onUploadProgress: onUploadProgress,
-      timeout: timeout * 1000,
-    }),
+  getUserInfo: () => request.get('/admin/base/user/info'),
   // profile
-  updatePassword: (data = {}) => request.post('/admin/base/update_password', data),
+  updatePassword: (data = {}) => request.post('/admin/base/user/update_password', data),
   // users
-  updateUser: (data = {}) => request.post('/admin/user/update', data),
-  // menus
-  getMenus: (params = {}) => request.get('/admin/menu/list', { params }),
-  createMenu: (data = {}) => request.post('/admin/menu/create', data),
-  updateMenu: (data = {}) => request.post('/admin/menu/update', data),
-  deleteMenu: (params = {}) => request.delete('/admin/menu/delete', { params }),
+  updateUser: (data = {}) => request.post('/admin/base/user/update', data),
   // blogs
   getBlogs: (data = {}) => request.post('/admin/blog/list', data ),
   getBlogAndCategoryCount: () => request.get('/admin/blog/count'),
