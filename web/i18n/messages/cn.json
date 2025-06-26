@@ -25,7 +25,8 @@
     },
     "workbench": {
       "label_workbench": "工作台",
-      "label_number_of_blogs": "图片数",
+      "label_number_of_blogs": "帖子数",
+      "label_number_of_images": "图片数",
       "label_number_of_categories": "分类数",
       "label_latest": "最近更新",
       "label_more": "更多"
@@ -52,7 +53,7 @@
       "message_password_confirmation_required": "请再次输入密码",
       "message_password_confirmation_diff": "两次密码输入不一致"
     },
-    "content":{
+    "content": {
       "label_blog_list": "图片列表",
       "label_new_blog": "新建图片",
       "label_get_picture_time": "获取图片时间",
@@ -62,7 +63,7 @@
       "label_upload_success": "上传成功",
       "label_no_exif": "图片不包含元数据",
       "label_category_list": "分类列表",
-      "label_new_root_category":"新建父分类"
+      "label_new_root_category": "新建父分类"
     },
     "setting": {
       "label_general_setting": "通用设置",
@@ -90,8 +91,8 @@
       "label_show_github": "显示GitHub图标",
       "label_github_url": "GitHub链接",
       "label_icp": "ICP备案",
-      "label_entries":"快捷入口",
-      "label_create_entries":"添加快捷入口",
+      "label_entries": "快捷入口",
+      "label_create_entries": "添加快捷入口",
       "label_primary_color": "网站主题颜色，仅用于相册页面",
       "placeholder_site_url": "请输入网站地址，用于生成外链文章",
       "placeholder_site_keywords": "请输入网站关键词",
@@ -148,7 +149,7 @@
       "placeholder_path": "自定义路径{path}",
       "placeholder_prefix": "返回的URL自定义前缀，如CDN域名",
       "label_menu_list": "菜单列表",
-      "label_new_root_menu":"新建父菜单"
+      "label_new_root_menu": "新建父菜单"
     },
     "errors": {
       "label_error": "错误页",

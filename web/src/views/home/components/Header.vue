@@ -16,7 +16,7 @@
                             <li v-for="category in categories" class="category-level-0 category-parent">
                                 <router-link :to="'/category/' + category.alias">{{ category.name }}</router-link>
                                 <ul>
-                                    <li v-for=" child in category.children"
+                                    <li v-for="child in category.children"
                                         class="category-level-1 category-child category-level-odd"><router-link
                                             :to="'/category/' + child.alias">{{ child.name }}</router-link></li>
                                 </ul>
@@ -269,5 +269,9 @@ li.category-level-0.category-parent {
     #header .description {
         display: none;
     }
+}
+
+body:has(div.lightbox) #header {
+    transform: translateY(80px);
 }
 </style>

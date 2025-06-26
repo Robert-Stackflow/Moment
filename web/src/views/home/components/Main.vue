@@ -1,28 +1,49 @@
 <template>
     <div id="blog-main" ref="listRef">
-        <Image v-for="blog in blogData" :key="blog.id" :data="blog" @click="handleClick(blog)" />
+        <Image v-for="blog in blogs" :key="blog.id" :data="blog" @click="showImage(blog)" />
         <VueFinalModal v-model="show" content-class="lightbox" :overlay-transition="'vfm-fade'"
-            :content-transition="'vfm-slide-down'">
+            :content-transition="'vfm-fade'">
             <div style="display:inline-block;height:100%;vertical-align:middle;"></div>
-            <div class="lightbox-content">
-                <div class="loader"></div>
-                <div class="pic" style="display: block; text-indent: 0px;">
-                    <img :src="currentBlog.images[0].image_url" alt=""
-                        style="vertical-align: bottom; max-width: 1150px; max-height: 890px;" />
-                </div>
-                <div class="caption" style="display: flex;">
+            <div class="lightbox-content" :style="{
+                width: currentSize.width + 'px',
+                height: currentSize.height + 'px',
+                transition: 'width 1s ease-in-out, height 1s ease-in-out',
+                overflow: 'hidden',
+                transformOrigin: 'center center',
+            }" @transitionend="onTransitionEnd">
+                <div class="loader" v-if="!imageVisible"></div>
+                <transition name="fade" mode="out-in">
+                    <div class="pic" style="display: block; text-indent: 0px;">
+                        <img :src="imageSrc" :key="imageSrc" alt="" :style="['vertical-align: bottom; max-width: 1150px; max-height: 890px;',
+                            imageVisible ? '' : 'display: none;',
+                        ]" @load="onImageLoad" class="img" />
+                    </div>
+                </transition>
+                <div class="caption" style="display: flex;" v-if="imageVisible">
                     <h2 class="thumb-title">{{ currentBlog.title }}</h2>
                     <p class="thumb-desc"></p>
-                    <ul class="tags">
-                        <li class="tag-meta"><a href="/location/河南省长垣市"
-                                class="tag-location tag-thumbnail-location">河南省长垣市</a><a href="/location/河南省长垣市"
-                                class="tag-location tag-detail-location">河南省长垣市</a><!----><a
-                                class="tag-time tag-detail-time">2024年1月30日 19时37分</a></li>
-                        <li class="tag-categories"><a href="/category/hometown" class="">乡土</a><a href="/category/life"
-                                class="">生活</a></li>
+                    <ul class="tag-meta">
+                        <router-link class="tag-location detail-tag" v-if="detail_show_location && currentBlog.location"
+                            :to="'/location/' + currentBlog.location">
+                            <i class="iconfont icon-map-pin-2-line"></i>
+                            {{ currentBlog.location }}
+                        </router-link>
+                        <a class="tag-time detail-tag" v-if="detail_show_time && currentBlog.time">{{
+                            currentBlog.detail_time }}</a>
                     </ul>
+                    <ul class="tags">
+                        <li class="tag-categories">
+                            <router-link v-for="category in currentBlog.categories" :key="category.alias"
+                                :to="'/category/' + category.alias">{{ category.name }}</router-link>
+                        </li>
+                    </ul>
+                    <div class="breadcrumb-nav" v-if="currentBlog.images.length > 1">
+                        <span v-for="(item, index) in currentBlog.images" :key="index" class="nav-dot"
+                            @mouseenter="(e) => handleSwipe(currentBlog, e)"
+                            :class="{ 'active': currentBlog.currentIndex === index }" :data-index="index"></span>
+                    </div>
                 </div>
-                <span class="closer" style="cursor: pointer; display: block;" @click="show = false"></span>
+                <span class="closer" style="cursor: pointer; display: block;" @click="close"></span>
                 <div class="nav-previous" style="display: block;" @click.stop="prev"></div>
                 <div class="nav-next" style="display: block;" @click.stop="next"></div>
             </div>
@@ -34,26 +55,96 @@
 import Image from './Image.vue'
 import { useSettingStore } from '@/store'
 import api from '@/api'
-import { isValueNotEmpty, isValueEmpty, scrollToload } from '@/utils'
+import { isValueNotEmpty, isValueEmpty, scrollToload, parseDateTime, formatDateTime } from '@/utils'
 import { useRouter } from 'vue-router'
+import { VueFinalModal } from 'vue-final-modal'
 const router = useRouter()
 var current_category = router.currentRoute.value.params.category
 var current_location = router.currentRoute.value.params.location
-var blogData = ref([])
+const blogs = ref([])
 const listRef = ref(null)
-var currentBlog = ref(null)
-var show = ref(false)
-import { VueFinalModal } from 'vue-final-modal'
+const currentBlog = ref(null)
+const currentSize = ref({ width: 400, height: 300 })
+
+const show = ref(false)
+const imageVisible = ref(false)
+const imageSrc = ref('')
+const imageTransitioning = ref(false)
+const nextImageUrl = ref('')
+
 var page = 1
 var total = 0
 const settingStore = useSettingStore()
 const baseTitle = isValueNotEmpty(settingStore.metaSetting?.site_name) ? settingStore.metaSetting?.site_name : import.meta.env.VITE_TITLE
 const splitter = isValueNotEmpty(settingStore.metaSetting?.site_splitter) ? settingStore.metaSetting?.site_splitter : import.meta.env.VITE_TITLE_SPLITTER
 const page_size = isValueNotEmpty(settingStore.contentSetting?.page_size) ? settingStore.contentSetting?.page_size : import.meta.env.VITE_PAGE_SIZE
-function handleClick(blog) {
-    console.log("demo")
+var thumbnail_suffix = isValueNotEmpty(settingStore.contentSetting?.thumbnail_suffix) ? settingStore.contentSetting?.thumbnail_suffix : ""
+var detail_suffix = isValueNotEmpty(settingStore.contentSetting?.detail_suffix) ? settingStore.contentSetting?.detail_suffix : ""
+var detail_show_location = isValueNotEmpty(settingStore.contentSetting.detail_show_location) ? settingStore.contentSetting.detail_show_location : true
+var thumbnail_time_format = settingStore.contentSetting.thumbnail_time_format && settingStore.contentSetting.thumbnail_time_format != "" ? settingStore.contentSetting.thumbnail_time_format : "YYYY年M月D日"
+var detail_show_time = isValueNotEmpty(settingStore.contentSetting.detail_show_time) ? settingStore.contentSetting.detail_show_time : true
+var detail_time_format = settingStore.contentSetting.detail_time_format && settingStore.contentSetting.detail_time_format != "" ? settingStore.contentSetting.detail_time_format : "YYYY-MM-DD HH:mm"
+
+function handleSwipe(data, event) {
+    const index = Number(event.target.dataset.index)
+    if (!isNaN(index)) {
+        data.currentIndex = index
+        data.detail = data.images[index].detail
+        showImage(data)
+    }
+}
+function close() {
+    show.value = false
+    imageVisible.value = false
+    imageTransitioning.value = false
+    currentBlog.value = null
+    currentSize.value = { width: 400, height: 300 }
+    imageSrc.value = ''
+    nextImageUrl.value = ''
+}
+function prev() {
+    const index = blogs.value.findIndex(b => b.id === currentBlog.value.id)
+    if (index > 0) {
+        showImage(blogs.value[index - 1])
+    }
+}
+function next() {
+    const index = blogs.value.findIndex(b => b.id === currentBlog.value.id)
+    if (index < blogs.value.length - 1) {
+        showImage(blogs.value[index + 1])
+    }
+}
+function showImage(blog) {
     currentBlog.value = blog
+    imageVisible.value = false
+    imageTransitioning.value = true
+
+    const img = new window.Image()
+    img.src = blog.detail
+    console.log("Loading image:", img.src)
+    img.onload = () => {
+        const maxW = window.innerWidth * 0.8
+        const maxH = window.innerHeight * 0.8
+        const ratio = Math.min(maxW / img.width, maxH / img.height, 1)
+        currentSize.value = {
+            width: img.width * ratio,
+            height: img.height * ratio,
+        }
+        nextImageUrl.value = img.src
+        console.log("Image loaded:", img.src, "Size:", currentSize.value)
+    }
+
     show.value = true
+}
+function onTransitionEnd(e) {
+    console.log("Transition ended for property:", e.propertyName);
+    if ((e.propertyName === 'width' || e.propertyName === 'height') && imageTransitioning.value) {
+        imageSrc.value = nextImageUrl.value
+        imageTransitioning.value = false
+    }
+}
+function onImageLoad() {
+    imageVisible.value = true
 }
 async function getBlogs() {
     try {
@@ -64,12 +155,31 @@ async function getBlogs() {
             params.location = current_location
         const res = await api.getBlogsVisitor(params)
         if (res.code == 200) {
-            res.data.forEach(e => blogData.value.push(e))
+            res.data.forEach(e => blogs.value.push(e))
+            formatBlogs();
             page = res.page;
             total = res.total;
         }
     } catch (e) {
         console.log(e)
+    }
+}
+function formatBlogs() {
+    for (let i = 0; i < blogs.value.length; i++) {
+        var blog = blogs.value[i]
+        blog.currentIndex = 0
+        blog.detail_image_urls = []
+        for (var index in blog.images) {
+            var image = blog.images[index]
+            image.thumbnail = image.image_url + thumbnail_suffix
+            image.detail = image.image_url + detail_suffix
+            blog.detail_image_urls.push(image.detail)
+        }
+        blog.detail = blog.images[0].detail
+        blog.thumbnail = blog.images[0].thumbnail
+        var time = parseDateTime(blog.time)
+        blog.thumbnail_time = formatDateTime(time, thumbnail_time_format)
+        blog.detail_time = formatDateTime(time, detail_time_format)
     }
 }
 async function getCategory() {
@@ -95,7 +205,7 @@ function loadMore() {
 watch(() => router.currentRoute.value, (value) => {
     current_category = value.params.category
     current_location = value.params.location
-    blogData.value = []
+    blogs.value = []
     getBlogs()
     getCategory()
     if (isValueNotEmpty(current_location)) {
@@ -106,6 +216,26 @@ scrollToload(listRef, loadMore)
 scrollToload(null, loadMore)
 </script>
 <style>
+.img {
+    max-width: 100%;
+    max-height: 100%;
+}
+
+.img {
+    object-fit: contain;
+    display: block;
+}
+
+.fade-enter-active,
+.fade-leave-active {
+    transition: opacity 0.4s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+    opacity: 0;
+}
+
 .lightbox {
     backdrop-filter: saturate(180%) blur(20px);
     background: var(--moment-maskbgdeep);
@@ -308,25 +438,6 @@ body.content-active #blog-main:after {
     color: #ffffff;
     font-size: 15px;
     margin: 4px 0;
-}
-
-.lightbox-content .loader {
-    animation: spinner 1s infinite linear !important;
-    background-image: url("/images/spinner.svg");
-    background-position: center;
-    background-repeat: no-repeat;
-    background-size: contain;
-    display: block;
-    font-size: 2em;
-    height: 2em;
-    left: 50%;
-    line-height: 2em;
-    margin: -1em 0 0 -1em;
-    opacity: 0.25;
-    position: absolute;
-    text-align: center;
-    top: 50%;
-    width: 2em;
 }
 
 .lightbox-content:hover .closer,

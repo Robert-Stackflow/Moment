@@ -10,7 +10,7 @@ export const basicRoutes = [
     isHidden: true,
     component: () => import('@/views/home/index.vue'),
     meta: {
-      requireAuth:false,
+      requireAuth: false,
     },
   },
   {
@@ -19,7 +19,7 @@ export const basicRoutes = [
     isHidden: true,
     component: () => import('@/views/home/index.vue'),
     meta: {
-      requireAuth:false,
+      requireAuth: false,
     },
   },
   {
@@ -28,7 +28,7 @@ export const basicRoutes = [
     isHidden: true,
     component: () => import('@/views/home/index.vue'),
     meta: {
-      requireAuth:false,
+      requireAuth: false,
     },
   },
   {
@@ -89,6 +89,100 @@ export const basicRoutes = [
     meta: {
       title: '登录',
     },
+  },
+  {
+    is_hidden: false,
+    keepalive: true,
+    path: '/admin/content',
+    component: Layout,
+    redirect: '/admin/content/blog',
+    name: '内容管理',
+    meta: {
+      title: '内容管理',
+      icon: 'mdi:book-open-outline',
+    },
+    children: [
+      {
+        is_hidden: false,
+        keepalive: true,
+        path: 'blog',
+        component: () => import('@/views/content/blog/index.vue'),
+        name: '图片列表',
+        meta: {
+          title: '图片列表',
+          icon: 'mdi:folder-multiple-image',
+        },
+      },
+      {
+        is_hidden: false,
+        keepalive: true,
+        path: 'category',
+        component: () => import('@/views/content/category/index.vue'),
+        name: '分类列表',
+        meta: {
+          title: '分类列表',
+          icon: 'mdi:bookmark-multiple-outline',
+        },
+      },
+    ],
+  },
+  {
+    redirect: '/admin/system/user',
+    is_hidden: false,
+    keepalive: true,
+    path: '/admin/system',
+    component: Layout,
+    name: '系统管理',
+    meta: {
+      title: '系统管理',
+      icon: 'mdi:application-cog-outline',
+    },
+    children: [
+      {
+        is_hidden: false,
+        keepalive: true,
+        path: 'general',
+        component: () => import('@/views/system/general/index.vue'),
+        name: '通用设置',
+        meta: {
+          title: '通用设置',
+          icon: 'mdi:cogs',
+        },
+      },
+      {
+        is_hidden: false,
+        keepalive: true,
+        path: 'meta',
+        component: () => import('@/views/system/meta/index.vue'),
+        name: '网站设置',
+        meta: {
+          title: '网站设置',
+          icon: 'mdi:wrench-cog-outline',
+        },
+      },
+      {
+        is_hidden: false,
+        keepalive: true,
+        path: 'content',
+        component: () => import('@/views/system/content/index.vue'),
+        name: '内容设置',
+        meta: {
+          title: '内容设置',
+          icon: 'mdi:archive-cog-outline',
+        },
+      },
+      {
+        is_hidden: false,
+        keepalive: true,
+        path: 'storage',
+        component: () => import('@/views/system/storage/index.vue'),
+        name: '存储设置',
+        meta: {
+          title: '存储设置',
+          icon: 'mdi:database-cog-outline',
+        },
+      },
+    ],
   },
 ]
 

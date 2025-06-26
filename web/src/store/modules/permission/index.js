@@ -19,7 +19,6 @@ function buildRoutes(routes = []) {
     children: e.children.map((e_child) => ({
       name: e_child.name,
       path: e_child.path, // 父路径 + 当前菜单路径
-      // ! 读取动态加载的路由模块
       component: vueModules[`/src/views${e_child.component}/index.vue`],
       isHidden: e_child.is_hidden,
       meta: {
@@ -48,9 +47,10 @@ export const usePermissionStore = defineStore('permission', {
   },
   actions: {
     async generateRoutes() {
-      const res = await api.getUserMenu() // 调用接口获取后端传来的菜单路由
-      this.accessRoutes = buildRoutes(res.data) // 处理成前端路由格式
-      return this.accessRoutes
+      // const res = await api.getUserMenu() // 调用接口获取后端传来的菜单路由
+      // this.accessRoutes = buildRoutes(res.data) // 处理成前端路由格式
+      // return this.accessRoutes
+      return []
     },
     resetPermission() {
       this.$reset()

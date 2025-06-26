@@ -10,10 +10,12 @@ import {
   NPopconfirm,
   NPopover,
   NSwitch,
+  NModal,
   NTag,
   NTreeSelect,
 } from 'naive-ui'
 import EXIF from 'exif-js'
+import draggable from 'vuedraggable'
 import CommonPage from '@/components/page/CommonPage.vue'
 import CrudModal from '@/components/table/CrudModal.vue'
 import CrudTable from '@/components/table/CrudTable.vue'
@@ -35,9 +37,49 @@ const vPermission = resolveDirective('permission')
 const blogDisabled = ref(false)
 var locations = ref([])
 
+//图片列表
+const showAddImageModal = ref(false)
+const hoverIndex = ref(-1)
+const editIndex = ref(null)
+
+const imageForm = ref({
+  image_url: '',
+  location: '',
+  description: ''
+})
+
+// 编辑按钮点击
+const editImage = (index) => {
+  editIndex.value = index
+  Object.assign(imageForm.value, modalForm.value.images[index])
+  showAddImageModal.value = true
+}
+
+// 删除按钮点击
+const removeImage = (index) => {
+  modalForm.value.images.splice(index, 1)
+}
+
+const onDragChange = (evt) => {
+  console.log('拖拽变化', evt)
+}
+
+// 添加或保存图片
+const handleSaveImage = () => {
+  if (!imageForm.value.url) return
+  if (editIndex.value !== null) {
+    modalForm.value.images[editIndex.value] = { ...imageForm.value }
+  } else {
+    modalForm.value.images.push({ ...imageForm.value })
+  }
+  editIndex.value = null
+  imageForm.value = { image_url: '', location: '', description: '' }
+  showAddImageModal.value = false
+}
+
 const initForm = {
   order: 1,
-  image: "",
+  images: [],
   location: undefined,
 }
 
@@ -80,7 +122,7 @@ const columns = [
   { title: 'ID', key: 'id', width: 50, ellipsis: { tooltip: true } },
   { title: '标题', key: 'title', width: 120, ellipsis: { tooltip: true } },
   {
-    title: '图片', key: 'image', width: 80, render(row) {
+    title: '图片', key: 'images', width: 80, render(row) {
       return h(
         NPopover,
         {
@@ -94,8 +136,8 @@ const columns = [
               width: 200,
               class: "table-image",
               lazy: true,
-              src: row.image + thumbnail_suffix,
-              previewSrc: row.image + detail_suffix,
+              src: row.images[0].image_url + thumbnail_suffix,
+              previewSrc: row.images[0].image_url + detail_suffix,
               "show-toolbar-tooltip": true,
               style: "border-radius:8px"
             },
@@ -107,8 +149,8 @@ const columns = [
               height: 60,
               class: "table-image",
               lazy: true,
-              src: row.image + thumbnail_suffix,
-              previewSrc: row.image + detail_suffix,
+              src: row.images[0].image_url + thumbnail_suffix,
+              previewSrc: row.images[0].image_url + detail_suffix,
               "show-toolbar-tooltip": true,
               style: "border-radius:8px"
             },
@@ -121,10 +163,10 @@ const columns = [
   { title: '时间', key: 'time', width: 100, ellipsis: { tooltip: true } },
   {
     title: '分类',
-    key: 'formatted_categories',
+    key: 'categories',
     width: 120,
     render(row) {
-      return row.formatted_categories.map(e => h(NButton, {
+      return row.categories.map(e => h(NButton, {
         type: 'info',
         strong: true,
         secondary: true,
@@ -353,12 +395,12 @@ api.getOrderOptionVisitor().then((res) => {
         }">
           <NInput v-model:value="modalForm.title" placeholder="请输入标题" maxlength="50" show-count clearable />
         </NFormItem>
-        <NFormItem label="图片地址" path="image" :rule="{
+        <NFormItem label="图片列表" path="images" :rule="{
           required: true,
-          message: '请输入图片地址',
+          message: '请输入图片列表',
           trigger: ['input', 'blur'],
         }">
-          <div flex style="width:100%;flex-wrap: nowrap;flex-direction: row;column-gap: 10px;">
+          <!-- <div flex style="width:100%;flex-wrap: nowrap;flex-direction: row;column-gap: 10px;">
             <n-popover trigger="hover" placement="bottom" :keep-alive-on-hover="false">
               <template #trigger>
                 <NInput v-model:value="modalForm.image" type="text" placeholder="请输入图片地址" clearable />
@@ -375,7 +417,56 @@ api.getOrderOptionVisitor().then((res) => {
               accept=".tif,.jpg,.jpeg,.ico,.tiff,.gif,.svg,.jfif,.webp,.png,.bmp,.jpeg,.avif" :show-file-list="false">
               <n-button>上传图片</n-button>
             </n-upload>
+          </div> -->
+          <div class="image-grid">
+            <draggable class="image-draggable" :list="modalForm.images" item-key="image_url" animation="300"
+              @change="onDragChange">
+              <template #item="{ element, index }">
+                <div class="image-card" @mouseenter="hoverIndex = index" @mouseleave="hoverIndex = -1">
+                  <n-image width="100%" height="100%" object-fit="cover" :src="element.image_url + thumbnail_suffix"
+                    fallback-src="/images/error.svg" show-toolbar-tooltip />
+                  <div v-if="hoverIndex === index" class="image-actions">
+                    <n-button size="tiny" text @click="editImage(index)">
+                      <n-icon>
+                        <EditOutlined />
+                      </n-icon>
+                    </n-button>
+                    <n-button size="tiny" text @click="removeImage(index)">
+                      <n-icon>
+                        <TrashOutline />
+                      </n-icon>
+                    </n-button>
+                  </div>
+                </div>
+              </template>
+
+            </draggable>
+            <div slot="footer" class="image-card add-card" @click="showAddImageModal = true">
+              <n-icon size="24">
+                <PlusOutlined />
+              </n-icon>
+            </div>
           </div>
+          <!-- 添加图片占位卡片 -->
+
+
+          <!-- 弹出框：新增或编辑图片 -->
+          <NModal v-model:show="showAddImageModal" title="添加图片" preset="dialog">
+            <n-form :model="imageForm" label-width="60px">
+              <n-form-item label="URL">
+                <n-input v-model:value="imageForm.image_url" placeholder="请输入图片地址" />
+              </n-form-item>
+              <n-form-item label="地点">
+                <n-input v-model:value="imageForm.location" placeholder="可选" />
+              </n-form-item>
+              <n-form-item label="描述">
+                <n-input v-model:value="imageForm.description" placeholder="可选" />
+              </n-form-item>
+            </n-form>
+            <template #action>
+              <n-button @click="handleSaveImage">保存</n-button>
+            </template>
+          </NModal>
         </NFormItem>
         <NFormItem label="描述" path="desc">
           <NInput v-model:value="modalForm.desc" type="textarea" placeholder="请输入描述（将会展示在图片详情页面）" />
@@ -415,5 +506,48 @@ api.getOrderOptionVisitor().then((res) => {
 
 .table-image img {
   object-fit: cover !important;
+}
+
+.image-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 10px;
+}
+
+.image-draggable {
+  display: contents;
+  /* 让 draggable 元素不破坏 grid 布局 */
+}
+
+.image-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.image-card {
+  width: 120px;
+  height: 120px;
+  border-radius: 8px;
+  overflow: hidden;
+  position: relative;
+  background-color: #f8f8f8;
+}
+
+.image-card .image-actions {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  display: flex;
+  gap: 4px;
+}
+
+.add-card {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border: 2px dashed #ccc;
+  cursor: pointer;
+  color: #999;
 }
 </style>

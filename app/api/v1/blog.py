@@ -69,8 +69,12 @@ async def get_blog(
 @blog_router.get("/count", summary="图片和分类数")
 async def get_count():
     blog_count = len(await blog_controller.model.all())
+    blogs = await blog_controller.model.all().prefetch_related("images")
+    image_count = sum(len(blog.images) for blog in blogs)
     category_count = len(await category_controller.model.all())
-    return Success(data={"blog": blog_count, "category": category_count})
+    return Success(
+        data={"blog": blog_count, "image": image_count, "category": category_count}
+    )
 
 
 @blog_router.get("/locations", summary="查看地点列表")
