@@ -6,28 +6,36 @@
         </a>
         <h2 class="thumb-title">{{ data.title }}</h2>
         <p class="thumb-desc">{{ data.desc }}</p>
+        <ul class="tag-meta">
+            <router-link class="tag-location detail-tag" v-if="detail_show_location && data.location"
+                :to="'/location/' + data.location">
+                <i class="iconfont icon-map-pin-2-line"></i>
+                {{ data.location }}
+            </router-link>
+            <a class="tag-time detail-tag" v-if="detail_show_time && data.time">{{ detail_time }}</a>
+        </ul>
         <ul class="tags">
-            <li class="tag-meta">
-                <router-link class="tag-location tag-thumbnail-location" v-if="thumbnail_show_location && data.location"
-                    :to="'/location/' + data.location">{{
-            data.location }}</router-link>
-                <router-link class="tag-location tag-detail-location" v-if="detail_show_location && data.location"
-                    :to="'/location/' + data.location">{{ data.location }}</router-link>
-                <a class="tag-time tag-thumbnail-time" v-if="thumbnail_show_time && data.time">{{ thumbnail_time
-                    }}</a>
-                <a class="tag-time tag-detail-time" v-if="detail_show_time && data.time">{{ detail_time }}</a>
-            </li>
             <li class="tag-categories">
-                <router-link v-for="category in data.formatted_categories" :key="category.alias"
+                <router-link class="tag-location thumbnail-tag" v-if="thumbnail_show_location && data.location"
+                    :to="'/location/' + data.location">{{
+                        data.location }}</router-link>
+                <a class="tag-time thumbnail-tag" v-if="thumbnail_show_time && data.time">{{ thumbnail_time
+                }}</a>
+                <router-link v-for="category in data.categories" :key="category.alias"
                     :to="'/category/' + category.alias">{{ category.name }}</router-link>
             </li>
         </ul>
+        <div class="breadcrumb-nav" v-if="data.images.length > 1">
+            <span v-for="(item, index) in data.images" :key="index" class="nav-dot"
+                @mouseenter="(e) => handleSwipe(data, e)" :class="{ 'active': data.currentIndex === index }"
+                :data-index="index"></span>
+        </div>
     </article>
 </template>
 
 <script setup>
 import { useSettingStore } from '@/store'
-import { parseDateTime, formatDateTime,isValueNotEmpty } from '@/utils'
+import { parseDateTime, formatDateTime, isValueNotEmpty } from '@/utils'
 const props = defineProps({
     data: {
         type: Object,
@@ -37,41 +45,65 @@ const props = defineProps({
 var thumbnail_time = ref()
 var detail_time = ref()
 const settingStore = useSettingStore()
-var thumbnail_suffix = isValueNotEmpty(settingStore.contentSetting?.thumbnail_suffix )?settingStore.contentSetting?.thumbnail_suffix : ""
-var detail_suffix = isValueNotEmpty(settingStore.contentSetting?.detail_suffix )?settingStore.contentSetting?.detail_suffix : ""
-var thumbnail_show_location = isValueNotEmpty(settingStore.contentSetting.thumbnail_show_location )?settingStore.contentSetting.thumbnail_show_location : true
-var detail_show_location = isValueNotEmpty(settingStore.contentSetting.detail_show_location )?settingStore.contentSetting.detail_show_location : true
-var thumbnail_show_time = isValueNotEmpty(settingStore.contentSetting.thumbnail_show_time )?settingStore.contentSetting.thumbnail_show_time : false
+var thumbnail_suffix = isValueNotEmpty(settingStore.contentSetting?.thumbnail_suffix) ? settingStore.contentSetting?.thumbnail_suffix : ""
+var detail_suffix = isValueNotEmpty(settingStore.contentSetting?.detail_suffix) ? settingStore.contentSetting?.detail_suffix : ""
+var thumbnail_show_location = isValueNotEmpty(settingStore.contentSetting.thumbnail_show_location) ? settingStore.contentSetting.thumbnail_show_location : true
+var detail_show_location = isValueNotEmpty(settingStore.contentSetting.detail_show_location) ? settingStore.contentSetting.detail_show_location : true
+var thumbnail_show_time = isValueNotEmpty(settingStore.contentSetting.thumbnail_show_time) ? settingStore.contentSetting.thumbnail_show_time : false
 var thumbnail_time_format = settingStore.contentSetting.thumbnail_time_format && settingStore.contentSetting.thumbnail_time_format != "" ? settingStore.contentSetting.thumbnail_time_format : "YYYY年M月D日"
-var detail_show_time = isValueNotEmpty(settingStore.contentSetting.detail_show_time )?settingStore.contentSetting.detail_show_time : true
+var detail_show_time = isValueNotEmpty(settingStore.contentSetting.detail_show_time) ? settingStore.contentSetting.detail_show_time : true
 var detail_time_format = settingStore.contentSetting.detail_time_format && settingStore.contentSetting.detail_time_format != "" ? settingStore.contentSetting.detail_time_format : "YYYY-MM-DD HH:mm"
 watch(() => props.data, (value) => {
-    props.data.thumbnail = props.data.image + thumbnail_suffix
-    props.data.detail = props.data.image + detail_suffix
+    props.data.currentIndex = 0
+    props.data.detail_image_urls = []
+    for (var index in props.data.images) {
+        var image = props.data.images[index]
+        image.thumbnail = image.image_url + thumbnail_suffix
+        image.detail = image.image_url + detail_suffix
+        props.data.detail_image_urls.push(image.detail)
+    }
+    props.data.detail = props.data.images[0].detail
+    props.data.thumbnail = props.data.images[0].thumbnail
     var time = parseDateTime(props.data.time)
     thumbnail_time.value = formatDateTime(time, thumbnail_time_format)
     detail_time.value = formatDateTime(time, detail_time_format)
 }, { immediate: true, deep: true })
+
+function handleSwipe(data, event) {
+    alert("triggered!")
+    const index = Number(event.target.dataset.index)
+    if (!isNaN(index)) {
+        data.currentIndex = index
+        const image = data.images[index]
+        data.detail = image.detail
+        data.thumbnail = image.thumbnail
+    }
+}
 </script>
 <style>
-.thumb .tags .tag-detail-time,
-.thumb .tags .tag-detail-location {
-    display: none;
-}
-.thumb .thumb-desc{
-    display: none;
-}
-.poptrox-overlay .caption .thumb-desc{
-    padding-top: 5px;
-    display: block;
-}
-.poptrox-overlay .tags .tag-thumbnail-time,
-.poptrox-overlay .tags .tag-thumbnail-location {
+.thumb .detail-tag {
     display: none;
 }
 
-.poptrox-overlay .caption ul.tags {
-    margin-bottom: 1.6em;
+.thumb .thumb-desc {
+    display: none;
+}
+
+.lightbox-content .caption .thumb-desc {
+    padding-top: 5px;
+    display: block;
+}
+
+.lightbox-content .thumbnail-tag {
+    display: none;
+}
+
+.lightbox-content .caption ul.tags {
+    margin-bottom: 0.6em;
+}
+
+.lightbox-content .caption .breadcrumb-nav {
+    margin-bottom: 0.6em;
 }
 
 .thumb-image {

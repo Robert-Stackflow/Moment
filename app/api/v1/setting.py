@@ -7,7 +7,7 @@ from app.schemas.base import Fail, Success, SuccessExtra
 from app.schemas.setting import *
 from app.core.dependency import DependPermisson
 
-logger = logging.getLogger(__name__)
+from app.utils.logger import logger
 
 setting_router = APIRouter()
 

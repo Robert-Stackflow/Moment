@@ -11,13 +11,21 @@ class Blog(BaseModel, TimestampMixin):
     is_hidden = fields.BooleanField(
         null=False, default=False, description="是否隐藏此博客"
     )
-    categories = fields.ManyToManyField(
-        "models.Category", related_name="blog_categories", description="分类"
-    )
     remark = fields.JSONField(null=True, description="保留字段")
+    categories = fields.ManyToManyField(
+        "models.Category",
+        related_name="blog_categories",
+        description="分类",
+        through="blog_category",
+    )
 
     class Meta:
         table = "blog"
+
+    async def to_dict_with_images(self, m2m=False):
+        blog_dict = await self.to_dict(m2m)
+        blog_dict["images"] = [await image.to_dict() for image in self.images]
+        return blog_dict
 
 
 class BlogImage(BaseModel, TimestampMixin):

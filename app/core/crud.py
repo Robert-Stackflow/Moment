@@ -14,6 +14,7 @@ from typing import (
 from pydantic import BaseModel
 from tortoise.expressions import Q
 from tortoise.models import Model
+from tortoise.query_utils import Prefetch
 
 Total = NewType("Total", int)
 ModelType = TypeVar("ModelType", bound=Model)
@@ -26,7 +27,7 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         self.model = model
 
     async def get(
-        self, id: int, prefetch_fields: Optional[List[str]] = None
+        self, id: int, prefetch_fields: Optional[List[Union[str, Prefetch]]] = None
     ) -> ModelType:
         query = self.model.get(id=id)
         if prefetch_fields:
@@ -39,7 +40,7 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         page_size: int,
         search: Q = Q(),
         order: list = [],
-        prefetch_fields: Optional[List[str]] = None,
+        prefetch_fields: Optional[List[Union[str, Prefetch]]] = None,
     ) -> Tuple[Total, List[ModelType]]:
         query = self.model.filter(search)
         if prefetch_fields:

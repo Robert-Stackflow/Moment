@@ -8,7 +8,7 @@ from app.core.dependency import DependPermisson
 from app.schemas.base import Fail, Success, SuccessExtra
 from app.schemas.blog import *
 
-logger = logging.getLogger(__name__)
+from app.utils.logger import logger
 
 blog_router = APIRouter()
 
@@ -33,30 +33,21 @@ async def list_blog(query: BlogQuery):
         q &= Q(location__contains=query.location)
     if len(query.categories) > 0:
         q &= Q(categories__in=query.categories)
-    order = None
+    order = []
     for t in order_options:
         if t["value"] == query.order_option:
             order = [t["order"]]
             break
-    if order:
-        total, blog_objs = await blog_controller.list(
-            page=query.page,
-            page_size=query.page_size,
-            search=q,
-            order=order,
-            prefetch_fields=["categories", "images"],
-        )
-    else:
-        total, blog_objs = await blog_controller.list(
-            page=query.page,
-            page_size=query.page_size,
-            search=q,
-            prefetch_fields=["categories", "images"],
-        )
-    data = [await obj.to_dict(m2m=True) for obj in blog_objs]
+    total, blog_objs = await blog_controller.list(
+        page=query.page,
+        page_size=query.page_size,
+        search=q,
+        order=order,
+        prefetch_fields=["images"],
+    )
+    data = [await obj.to_dict_with_images(m2m=True) for obj in blog_objs]
     for blog in data:
-        blog["formatted_categories"] = blog["categories"]
-        blog["categories"] = [item["id"] for item in blog["formatted_categories"]]
+        blog["category_ids"] = [item["id"] for item in blog["categories"]]
     return SuccessExtra(
         data=data, total=total, page=query.page, page_size=query.page_size
     )
@@ -67,8 +58,11 @@ async def get_blog(
     blog_id: int = Query(..., description="图片id"),
 ):
     result = await blog_controller.get(
-        id=blog_id, prefetch_fields=["categories", "images"]
+        id=blog_id,
+        prefetch_fields=["images"],
     )
+    result = await result.to_dict_with_images(m2m=True)
+    result["category_ids"] = [item["id"] for item in result["categories"]]
     return Success(data=result)
 
 

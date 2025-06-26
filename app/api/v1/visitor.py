@@ -9,18 +9,10 @@ from app.controllers.setting import setting_controller
 from app.schemas.base import Fail, Success, SuccessExtra
 from app.schemas.blog import *
 
-logger = logging.getLogger(__name__)
+from app.utils.logger import logger
+from .blog import order_options
 
 visitor_router = APIRouter()
-
-order_options = [
-    {"label": "图片时间-降序", "value": "meta_time_desc", "order": "-time"},
-    {"label": "图片时间-升序", "value": "meta_time_asc", "order": "time"},
-    {"label": "图片创建时间-降序", "value": "created_at_desc", "order": "-created_at"},
-    {"label": "图片创建时间-升序", "value": "created_at_asc", "order": "created_at"},
-    {"label": "图片更新时间-降序", "value": "updated_at_desc", "order": "-updated_at"},
-    {"label": "图片更新时间-升序", "value": "updated_at_asc", "order": "updated_at"},
-]
 
 
 @visitor_router.get("/order/list", summary="查看排序选项")
@@ -50,34 +42,23 @@ async def list_blog(
     if got_category_id != -1:
         q &= Q(categories__not_in=other_category_ids)
     q &= Q(is_hidden=False)
-    result = await setting_controller.get(id=1)
-    content = result.content
-    custom_option = content.get("order_option", "meta_time_desc")
-    order = None
+    settings = await setting_controller.get(id=1)
+    custom_option = settings.content.get("order_option", "meta_time_desc")
+    order = []
     for t in order_options:
         if t["value"] == custom_option:
             order = [t["order"]]
             break
-    if order:
-        total, blog_objs = await blog_controller.list(
-            page=page,
-            page_size=page_size,
-            search=q,
-            order=order,
-            prefetch_fields=["categories", "images"],
-        )
-    else:
-        total, blog_objs = await blog_controller.list(
-            page=page,
-            page_size=page_size,
-            search=q,
-            prefetch_fields=["categories", "images"],
-        )
-    data = [await obj.to_dict(m2m=True) for obj in blog_objs]
+    total, blog_objs = await blog_controller.list(
+        page=page,
+        page_size=page_size,
+        search=q,
+        order=order,
+        prefetch_fields=["images"],
+    )
+    data = [await obj.to_dict_with_images(m2m=True) for obj in blog_objs]
     for blog in data:
-        logger.info(f"Blog: {blog}")
-        blog["formatted_categories"] = blog["categories"]
-        blog["categories"] = [item["id"] for item in blog["formatted_categories"]]
+        blog["category_ids"] = [item["id"] for item in blog["categories"]]
     return SuccessExtra(data=data, total=total, page=page, page_size=page_size)
 
 
