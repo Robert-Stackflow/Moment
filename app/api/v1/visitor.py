@@ -26,6 +26,7 @@ async def list_blog(
     page: int = Query(1, description="页码"),
     page_size: int = Query(10, description="每页数量"),
     category: str = Query("", description="分类alias，用于获取某一分类的图片"),
+    location: str = Query("", description="位置，用于获取某一位置的图片"),
 ):
     got_category_id = -1
     other_category_ids = []
@@ -38,10 +39,20 @@ async def list_blog(
         else:
             got_category_id = got_category[0].id
             other_category_ids = [category.id for category in other_category]
-    q = Q()
+
+    base_q = Q()
     if got_category_id != -1:
-        q &= Q(categories__not_in=other_category_ids)
-    q &= Q(is_hidden=False)
+        base_q &= Q(categories__id__in=[got_category_id])
+    base_q &= Q(is_hidden=False)
+
+    if location:
+        # 方案1: 博客或其关联图片包含该location
+        base_q &= Q(location__contains=location) | Q(
+            images__location__contains=location
+        )
+        # 或者方案2: 只要求关联图片包含该location
+        # base_q &= Q(images__location__contains=location)
+
     settings = await setting_controller.get(id=1)
     custom_option = settings.content.get("order_option", "meta_time_desc")
     order = []
@@ -49,21 +60,25 @@ async def list_blog(
         if t["value"] == custom_option:
             order = [t["order"]]
             break
+
     total, blog_objs = await blog_controller.list(
         page=page,
         page_size=page_size,
-        search=q,
+        search=base_q,
         order=order,
         prefetch_fields=["images"],
     )
+
     data = [await obj.to_dict_with_images(m2m=True) for obj in blog_objs]
     valid_blogs = []
+
     for item in data:
         item["category_ids"] = [category["id"] for category in item["categories"]]
         visible_images = [img for img in item["images"] if not img["is_hidden"]]
         item["images"] = visible_images
         if visible_images:
             valid_blogs.append(item)
+
     return SuccessExtra(data=valid_blogs, total=total, page=page, page_size=page_size)
 
 

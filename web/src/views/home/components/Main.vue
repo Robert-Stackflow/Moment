@@ -2,7 +2,7 @@
     <div id="blog-main" ref="listRef">
         <Image v-for="blog in blogs" :key="blog.id" :data="blog" @click="showImage(blog)" />
         <VueFinalModal v-model="show" content-class="lightbox" :overlay-transition="'vfm-fade'"
-            :content-transition="'vfm-fade'">
+            :content-transition="'vfm-fade'" @before-close="close" @click-outside="close">
             <div style="display:inline-block;height:100%;vertical-align:middle;"></div>
             <div class="lightbox-content" :style="{
                 width: currentSize.width + 'px',
@@ -14,7 +14,7 @@
                 <div class="loader" v-if="!imageVisible"></div>
                 <transition name="fade" mode="out-in">
                     <div class="pic" style="display: block; text-indent: 0px;">
-                        <img :src="imageSrc" :key="imageSrc" alt="" :style="['vertical-align: bottom; max-width: 1150px; max-height: 890px;',
+                        <img :src="imageSrc" :key="imageSrc" alt="" :style="['vertical-align: bottom;',
                             imageVisible ? '' : 'display: none;',
                         ]" @load="onImageLoad" class="img" />
                     </div>
@@ -24,13 +24,17 @@
                     <p class="thumb-desc">{{ currentBlog.current_desc }}</p>
                     <ul class="tag-meta">
                         <router-link class="tag-location detail-tag"
-                            v-if="detail_show_location && currentBlog.current_location"
+                            v-if="detail_show_location && isValueNotEmpty(currentBlog.current_location)"
                             :to="'/location/' + currentBlog.current_location">
                             <i class="iconfont icon-map-pin-2-line"></i>
                             {{ currentBlog.current_full_location }}
                         </router-link>
-                        <a class="tag-time detail-tag" v-if="detail_show_time && currentBlog.current_detail_time">{{
-                            currentBlog.current_detail_time }}</a>
+                        <a class="tag-time detail-tag"
+                            v-if="detail_show_time && isValueNotEmpty(currentBlog.current_metadata)">{{
+                                currentBlog.current_metadata }}</a>
+                        <a class="tag-time detail-tag"
+                            v-if="detail_show_time && isValueNotEmpty(currentBlog.current_detail_time)">{{
+                                currentBlog.current_detail_time }}</a>
                     </ul>
                     <ul class="tags">
                         <li class="tag-categories">
@@ -53,6 +57,7 @@
 </template>
 
 <script setup>
+import { throttle } from 'lodash'
 import Image from './Image.vue'
 import { useSettingStore } from '@/store'
 import api from '@/api'
@@ -65,7 +70,7 @@ var current_location = router.currentRoute.value.params.location
 const blogs = ref([])
 const listRef = ref(null)
 const currentBlog = ref(null)
-const currentSize = ref({ width: 400, height: 300 })
+const currentSize = ref({ width: Math.min(400, window.innerWidth - 40), height: Math.min(300, window.innerHeight - 40) })
 
 const show = ref(false)
 const imageVisible = ref(false)
@@ -86,16 +91,44 @@ var thumbnail_time_format = settingStore.contentSetting.thumbnail_time_format &&
 var detail_show_time = isValueNotEmpty(settingStore.contentSetting.detail_show_time) ? settingStore.contentSetting.detail_show_time : true
 var detail_time_format = settingStore.contentSetting.detail_time_format && settingStore.contentSetting.detail_time_format != "" ? settingStore.contentSetting.detail_time_format : "YYYY-MM-DD HH:mm"
 
+function updateAttr(blog) {
+    blog.current_thumbnail = blog.images[0].thumbnail
+    blog.current_detail = blog.images[blog.currentIndex].detail
+    blog.current_desc = blog.images[blog.currentIndex].desc || blog.desc
+    blog.current_title = blog.images[blog.currentIndex].title || blog.title
+    blog.current_detail_time = blog.images[blog.currentIndex].detail_time || blog.detail_time
+    blog.current_location = blog.images[blog.currentIndex].location || blog.location
+    blog.current_metadata = blog.images[blog.currentIndex].metadata
+    if (isValueNotEmpty(blog.location)) {
+        if (isValueNotEmpty(blog.images[blog.currentIndex].location)) {
+            blog.current_full_location = `${blog.location} - ${blog.images[blog.currentIndex].location}`;
+        } else {
+            blog.current_full_location = blog.location
+        }
+    } else {
+        if (isValueNotEmpty(blog.images[blog.currentIndex].location)) {
+            blog.current_full_location = blog.images[blog.currentIndex].location;
+        } else {
+            blog.current_full_location = null
+        }
+    }
+}
+
+function handleResize() {
+    throttle(() => {
+        showImage(currentBlog.value)
+    }, 300)()
+}
+
+onMounted(() => {
+    window.addEventListener('resize', handleResize)
+})
+
 function handleSwipe(blog, event) {
     const index = Number(event.target.dataset.index)
     if (!isNaN(index)) {
         blog.currentIndex = index
-        blog.current_detail = blog.images[blog.currentIndex].detail
-        blog.current_desc = blog.images[blog.currentIndex].desc || blog.desc
-        blog.current_title = blog.images[blog.currentIndex].title || blog.title
-        blog.current_detail_time = blog.images[blog.currentIndex].detail_time || blog.detail_time
-        blog.current_location = blog.images[blog.currentIndex].location || blog.location
-        blog.current_full_location = blog.images[blog.currentIndex].location ? `${blog.location} - ${blog.images[blog.currentIndex].location}` : blog.location
+        updateAttr(blog)
         showImage(blog)
     }
 }
@@ -104,7 +137,7 @@ function close() {
     imageVisible.value = false
     imageTransitioning.value = false
     currentBlog.value = null
-    currentSize.value = { width: 400, height: 300 }
+    currentSize.value = { width: Math.min(400, window.innerWidth - 40), height: Math.min(300, window.innerHeight - 40) }
     imageSrc.value = ''
     nextImageUrl.value = ''
 }
@@ -124,13 +157,19 @@ function showImage(blog) {
     currentBlog.value = blog
     imageVisible.value = false
     imageTransitioning.value = true
-
+    setTimeout(() => {
+        imageSrc.value = nextImageUrl.value
+        imageTransitioning.value = false
+        imageVisible.value = true
+    }, 1200)
     const img = new window.Image()
-    img.src = blog.current_detail
+    if (blog) {
+        img.src = blog.current_detail
+    }
     // console.log("Loading image:", img.src)
     img.onload = () => {
-        const maxW = 1150
-        const maxH = 890
+        const maxW = Math.min(1150, window.innerWidth - 40)
+        const maxH = Math.min(890, window.innerHeight - 40)
         const ratio = Math.min(maxW / img.width, maxH / img.height, 1)
         currentSize.value = {
             width: img.width * ratio,
@@ -144,7 +183,7 @@ function showImage(blog) {
 }
 function onTransitionEnd(e) {
     // console.log("Transition ended for property:", e.propertyName);
-    if ((e.propertyName === 'width' || e.propertyName === 'height') && imageTransitioning.value) {
+    if ((e == null || e.propertyName === 'width' || e.propertyName === 'height') && imageTransitioning.value) {
         imageSrc.value = nextImageUrl.value
         imageTransitioning.value = false
     }
@@ -187,26 +226,7 @@ function formatBlogs() {
         var time = parseDateTime(blog.time)
         blog.thumbnail_time = formatDateTime(time, thumbnail_time_format)
         blog.detail_time = formatDateTime(time, detail_time_format)
-        // 当前图片相关信息
-        blog.current_thumbnail = blog.images[blog.currentIndex].thumbnail
-        blog.current_detail = blog.images[blog.currentIndex].detail
-        blog.current_title = blog.images[blog.currentIndex].title || blog.title
-        blog.current_desc = blog.images[blog.currentIndex].desc || blog.desc
-        blog.current_detail_time = blog.images[blog.currentIndex].detail_time || blog.detail_time
-        blog.current_location = blog.images[blog.currentIndex].location || blog.location
-        if (blog.action) {
-            if (blog.images[blog.currentIndex].location) {
-                blog.current_full_location = `${blog.location} - ${blog.images[blog.currentIndex].location}`;
-            } else {
-                blog.current_full_location = blog.location
-            }
-        } else {
-            if (blog.images[blog.currentIndex].location) {
-                blog.current_full_location = blog.images[blog.currentIndex].location;
-            } else {
-                blog.current_full_location = null
-            }
-        }
+        updateAttr(blog)
     }
 }
 async function getCategory() {
@@ -232,6 +252,7 @@ function loadMore() {
 watch(() => router.currentRoute.value, (value) => {
     current_category = value.params.category
     current_location = value.params.location
+    close()
     blogs.value = []
     getBlogs()
     getCategory()
@@ -264,7 +285,7 @@ scrollToload(null, loadMore)
 }
 
 .lightbox {
-    backdrop-filter: saturate(180%) blur(20px);
+    backdrop-filter: saturate(180%) blur(10px);
     background: var(--moment-maskbgdeep);
     position: fixed;
     left: 0px;
@@ -294,8 +315,8 @@ scrollToload(null, loadMore)
     width: auto;
     height: auto;
     overflow: hidden;
-    max-width: 1150px;
-    max-height: 890px;
+    /* max-width: 1150px;
+    max-height: 890px; */
 }
 
 .lightbox-content:before {
@@ -313,7 +334,7 @@ scrollToload(null, loadMore)
 
 .lightbox-content .loader {
     animation: spinner 1s infinite linear !important;
-    background-image: url(/images/spinner.svg);
+    background-image: url(/assets/spinner.svg);
     background-position: center;
     background-repeat: no-repeat;
     background-size: contain;
@@ -333,7 +354,7 @@ scrollToload(null, loadMore)
 .lightbox-content .nav-previous,
 .lightbox-content .nav-next {
     transition: opacity .2s ease-in-out;
-    background-image: url(/images/arrow.svg);
+    background-image: url(/assets/arrow.svg);
     background-position: center;
     background-repeat: no-repeat;
     background-size: 5em;
@@ -370,7 +391,7 @@ scrollToload(null, loadMore)
 
 .lightbox-content .closer {
     transition: opacity .2s ease-in-out;
-    background-image: url(/images/close.svg);
+    background-image: url(/assets/close.svg);
     background-position: center;
     background-repeat: no-repeat;
     background-size: 3em;
@@ -572,11 +593,11 @@ ul.tags {
         position: fixed;
     }
 
-    .lightbox-content .closer,
+    /* .lightbox-content .closer,
     .lightbox-content .nav-previous,
     .lightbox-content .nav-next {
         display: none !important;
-    }
+    } */
 
     .nav-item .nav-item-child {
         top: 30px;
@@ -690,7 +711,7 @@ body.modal-active #wrapper:after {
     -webkit-transition: top 0.75s ease-in-out, opacity 0.35s ease-out, visibility 0.35s;
     -ms-transition: top 0.75s ease-in-out, opacity 0.35s ease-out, visibility 0.35s;
     transition: top 0.75s ease-in-out, opacity 0.35s ease-out, visibility 0.35s;
-    background-image: url("/images/spinner.svg");
+    background-image: url("/assets/spinner.svg");
     background-position: center;
     background-repeat: no-repeat;
     background-size: contain;

@@ -77,21 +77,11 @@ async def lifespan(app: FastAPI):
     # await init_superuser()
     # await init_setting()
 
-    # app.mount(
-    #     "/assets",
-    #     StaticFiles(directory=f"./dist/assets"),
-    #     name="assets",
-    # )
-    # app.mount(
-    #     "/images",
-    #     StaticFiles(directory=f"./dist/images"),
-    #     name="images",
-    # )
-    # app.mount(
-    #     "/js",
-    #     StaticFiles(directory=f"./dist/js"),
-    #     name="js",
-    # )
+    app.mount(
+        "/assets",
+        StaticFiles(directory=f"./dist/assets"),
+        name="assets",
+    )
 
     logger.info("应用初始化完成")
 

@@ -56,7 +56,7 @@ CREATE TABLE "blog_image" (
     "desc" TEXT,
     "location" TEXT,
     "is_hidden" INT NOT NULL DEFAULT 0,
-    "metadata" JSON,
+    "metadata" TEXT,
     "time" TIMESTAMP,
     "order" INT NOT NULL DEFAULT 0,
     "blog_id" BIGINT NOT NULL REFERENCES "blog_new" ("id") ON DELETE CASCADE

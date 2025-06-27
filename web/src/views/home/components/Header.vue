@@ -243,6 +243,10 @@ li.category-level-0.category-parent {
     margin-right: 1rem;
 }
 
+body:has(div.lightbox) #header {
+    transform: translateY(80px);
+}
+
 @media screen and (max-width: 736px) {
     body {
         padding: 4em 0 0 0 !important;
@@ -254,6 +258,10 @@ li.category-level-0.category-parent {
         height: 60px;
         padding: 0 1em;
         top: 0;
+    }
+
+    body:has(div.lightbox) #header {
+        transform: translateY(-80px);
     }
 
     #header h1 {
@@ -269,9 +277,5 @@ li.category-level-0.category-parent {
     #header .description {
         display: none;
     }
-}
-
-body:has(div.lightbox) #header {
-    transform: translateY(80px);
 }
 </style>

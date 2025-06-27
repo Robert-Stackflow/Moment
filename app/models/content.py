@@ -46,7 +46,7 @@ class BlogImage(BaseModel, TimestampMixin):
     )
     time = fields.DatetimeField(null=True, description="图片时间，留空则使用博客时间")
     is_hidden = fields.BooleanField(default=False, description="是否隐藏此图片")
-    metadata = fields.JSONField(null=True, description="拍摄参数，EXIF信息等")
+    metadata = fields.TextField(null=True, description="拍摄参数，EXIF信息等")
     order = fields.IntField(default=0, description="排序")
 
     class Meta:

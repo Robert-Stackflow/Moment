@@ -6,21 +6,23 @@ from pydantic import BaseModel, Field
 class BlogImageBase(BaseModel):
     image_url: str
     title: Optional[str] = None
-    description: Optional[str] = None
+    desc: Optional[str] = None
     location: Optional[str] = None
     is_hidden: bool = False
-    metadata: Optional[Dict[str, Any]] = None
+    metadata: Optional[str] = None
     order: int = 0
+    time: Optional[datetime] = None
 
 
 class BlogImageCreate(BaseModel):
     image_url: str
     title: Optional[str] = None
-    description: Optional[str] = None
+    desc: Optional[str] = None
     location: Optional[str] = None
     is_hidden: bool = False
-    metadata: Optional[Dict[str, Any]] = None
+    metadata: Optional[str] = None
     order: int = 0
+    time: Optional[datetime] = None
 
 
 class BlogImageUpdate(BlogImageBase):

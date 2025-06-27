@@ -95,7 +95,7 @@ async def _migrate_blog_images():
                     blog=blog,
                     image_url=image_url,
                     title=None,
-                    description=None,
+                    desc=None,
                     location=None,
                     is_hidden=False,
                     order=0,
@@ -191,7 +191,7 @@ async def _remove_image_column(connection):
                 "desc" TEXT,
                 "location" TEXT,
                 "is_hidden" INT NOT NULL DEFAULT 0,
-                "metadata" JSON,
+                "metadata" TEXT,
                 "time" TIMESTAMP,
                 "order" INT NOT NULL DEFAULT 0,
                 "blog_id" BIGINT NOT NULL REFERENCES "blog_new" ("id") ON DELETE CASCADE

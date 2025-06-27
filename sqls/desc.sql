@@ -28,7 +28,7 @@ CREATE TABLE "blog_image" (
     "desc" TEXT,                /* 图片描述，留空则使用博客描述 */
     "location" TEXT,            /* 图片的具体位置 */
     "is_hidden" INT NOT NULL DEFAULT 0, /* 是否隐藏此图片 */
-    "metadata" JSON,            /* 拍摄参数，EXIF信息等 */
+    "metadata" TEXT,            /* 拍摄参数，EXIF信息等 */
     "order" INT NOT NULL DEFAULT 0, /* 排序 */
     "time" TIMESTAMP,           /* 图片时间，留空则使用博客时间 */
     "blog_id" BIGINT NOT NULL REFERENCES "blog" ("id") ON DELETE CASCADE /* 所属博客 */

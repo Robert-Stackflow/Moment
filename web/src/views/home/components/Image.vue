@@ -1,7 +1,7 @@
 <template>
     <article class="thumb img-area">
         <a class="thumb-a my-photo">
-            <img class="thumb-image my-photo" onerror="this.src=`/images/loading.gif`;this.onerror=null"
+            <img class="thumb-image my-photo" onerror="this.src=`/assets/loading.gif`;this.onerror=null"
                 :src="data.current_thumbnail" lazy>
         </a>
         <h2 class="thumb-title">{{ data.title }}</h2>
@@ -12,7 +12,7 @@
                     :to="'/location/' + data.location">{{
                         data.location }}</router-link>
                 <a class="tag-time thumbnail-tag" v-if="thumbnail_show_time && data.time">{{ data.thumbnail_time
-                }}</a>
+                    }}</a>
                 <router-link v-for="category in data.categories" :key="category.alias"
                     :to="'/category/' + category.alias">{{ category.name }}</router-link>
             </li>
@@ -73,21 +73,21 @@ const props = defineProps({
 
 @media (max-width:768px) {
     .thumb-image {
-        background-image: url(/images/20200212-6dafa53ecf4e3.gif);
+        background-image: url(/assets/20200212-6dafa53ecf4e3.gif);
         background-size: 100% 100%;
     }
 }
 
 @media only screen and (device-width:375px) and (device-height:812px) and (-webkit-device-pixel-ratio:3) {
     .thumb-image {
-        background-image: url(/images/20200212-38ce26bb0bd0d.gif);
+        background-image: url(/assets/20200212-38ce26bb0bd0d.gif);
         background-size: 100% 100%;
     }
 }
 
 @media only screen and (device-width:375px) and (device-height:667px) {
     .thumb-image {
-        background-image: url(/images/20200212-e056a5f2914d6.gif);
+        background-image: url(/assets/20200212-e056a5f2914d6.gif);
         background-size: 100% 100%;
     }
 }

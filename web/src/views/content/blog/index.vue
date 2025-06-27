@@ -13,6 +13,7 @@ import {
   NModal,
   NTag,
   NTreeSelect,
+  c,
 } from 'naive-ui'
 import * as exifr from 'exifr'
 import draggable from 'vuedraggable'
@@ -49,6 +50,7 @@ const imageForm = ref({
   title: null,
   desc: null,
   is_hidden: false,
+  metadata: null,
 })
 
 // 编辑按钮点击
@@ -296,50 +298,54 @@ async function handleUpdateHidden(row) {
 
 function fetchMetadata() {
   var url = imageForm.value.image_url + thumbnail_suffix;
-  handleGetPictureTimeFromUrl(url).then(res => {
-    parsingEXIF.value = false;
-    if (res) {
-      imageForm.value.metadata = res;
+  extractExifFromUrl(url).then(exif => {
+    if (exif) {
+      const make = exif.Make || ''
+      const model = exif.Model || ''
+      const iso = exif.ISO ? `ISO${exif.ISO}` : ''
+      const focal = exif.FocalLength ? `${exif.FocalLength}mm` : ''
+      const fNumber = exif.FNumber ? `f/${exif.FNumber}` : ''
+      let camera = model || `${make} ${model}`.trim()
+      let result = [camera, focal, fNumber, iso].filter(Boolean).join(' ')
+      $message.success("成功获取EXIF信息");
+      console.log("EXIF信息：", exif);
+      imageForm.value.metadata = result;
     }
   })
 }
 
-async function handleGetPictureTimeFromUrl(imageUrl) {
-  parsingEXIF.value = true;
-  try {
-    const exif = await extractExifFromUrl(imageUrl);
-    const time = exif.DateTimeOriginal || exif.DateTime || null
-    if (time) {
-      $message.success("成功获取拍摄时间！");
-      console.log('EXIF 拍摄时间:', time)
-      return time
-    } else {
-      $message.warning("没有拍摄时间信息");
-      return null
+function fetchPictureTime() {
+  var url = imageForm.value.image_url + thumbnail_suffix;
+  extractExifFromUrl(url).then(exif => {
+    parsingEXIF.value = false;
+    if (exif) {
+      const time = exif.DateTimeOriginal || exif.DateTime || null
+      if (time) {
+        $message.success("成功获取拍摄时间");
+        imageForm.value.time = formatDateTime(new Date(time));
+        return time;
+      } else {
+        $message.warning("没有拍摄时间信息");
+        return null
+      }
     }
-  } catch (err) {
-    $message.error(err.message)
-    return null
-  }
+  })
 }
 
 async function extractExifFromUrl(imageUrl) {
-  $message.loading("下载图片中...")
-  const blob = await fetch(imageUrl).then(res => res.blob());
-  $message.loading("解析中...")
-  const exif = await exifr.parse(blob)
-  console.log('EXIF:', exif)
-  const make = exif.Make || ''
-  const model = exif.Model || ''
-  const lens = exif.LensModel || ''
-  const focal = exif.FocalLength ? `${exif.FocalLength}mm` : ''
-  const fNumber = exif.FNumber ? `f${exif.FNumber}` : ''
-
-  // 格式化输出
-  let camera = model || `${make} ${model}`.trim()
-  let result = [camera, focal, fNumber].filter(Boolean).join('，')
-  console.log(result)
-  return exif
+  try {
+    parsingEXIF.value = true;
+    $message.loading("下载图片中...");
+    const blob = await fetch(imageUrl).then(res => res.blob());
+    $message.loading("解析中...");
+    const exif = await exifr.parse(blob);
+    parsingEXIF.value = false;
+    return exif;
+  } catch (err) {
+    parsingEXIF.value = false;
+    $message.error("解析失败：" + err.message);
+    throw err;
+  }
 }
 
 
@@ -464,7 +470,7 @@ api.getOrderOptionVisitor().then((res) => {
               <template #item="{ element, index }">
                 <div class="image-card" @mouseenter="hoverIndex = index" @mouseleave="hoverIndex = -1">
                   <n-image style="width:100%;height:100%" object-fit="cover" width="100%" height="100%"
-                    :src="element.image_url + thumbnail_suffix" fallback-src="/images/error.svg" show-toolbar-tooltip />
+                    :src="element.image_url + thumbnail_suffix" fallback-src="/assets/error.svg" show-toolbar-tooltip />
                   <div v-if="hoverIndex === index" class="image-actions">
                     <n-button size="tiny" text @click="editImage(index)" class="image-action">
                       <TheIcon icon="material-symbols:edit-outline" :size="18" class="mr-5" color="white" />
@@ -498,7 +504,7 @@ api.getOrderOptionVisitor().then((res) => {
                     </template>
                     <NImage width="200" :src="imageForm.image_url + thumbnail_suffix"
                       v-if="imageForm.image_url != undefined && imageForm.image_url != ''" style="border-radius: 8px;"
-                      show-toolbar-tooltip fallback-src="/images/error.svg">
+                      show-toolbar-tooltip fallback-src="/assets/error.svg">
                     </NImage>
                     <template #footer>
                     </template>
@@ -522,11 +528,6 @@ api.getOrderOptionVisitor().then((res) => {
                 <NFormItem label="时间" path="time" style="flex:1;">
                   <NDatePicker type="datetime" v-model:formatted-value="imageForm.time" placeholder="可选，留空则使用帖子时间"
                     value-format="yyyy-MM-dd HH:mm:ss" :is-date-disabled="disablePreviousDate" />
-                  <!-- <NButton type="primary" @click="handleGetPictureTime" style="margin-left: 20px;"
-            :disabled="modalForm.image == undefined || modalForm.image == ''">
-            <TheIcon icon="material-symbols:auto-timer-outline" :size="18" class="mr-5" />{{
-    $t('views.content.label_get_picture_time') }}
-          </NButton> -->
                 </NFormItem>
                 <NFormItem label="地点" path="location" style="flex:1;">
                   <n-auto-complete v-model:value="imageForm.location" :input-props="{
@@ -536,8 +537,12 @@ api.getOrderOptionVisitor().then((res) => {
               </div>
               <NFormItem label="EXIF" path="location" style="flex:1;">
                 <div flex style="width:100%;flex-wrap: nowrap;flex-direction: row;column-gap: 10px;">
-                  <NInput v-model:value="imageForm.metadata" type="textarea" placeholder="图片附带的EXIF信息" />
-                  <n-button @click="fetchMetadata" :disabled="parsingEXIF">提取信息</n-button>
+                  <NInput v-model:value="imageForm.metadata" type="textarea" placeholder="图片附带的EXIF信息"
+                    style="flex: 3;" />
+                  <div flex style="width:100%;flex-wrap: nowrap;flex-direction: column;row-gap: 10px;flex: 1;">
+                    <n-button @click="fetchMetadata" :disabled="parsingEXIF">获取信息</n-button>
+                    <n-button @click="fetchPictureTime" :disabled="parsingEXIF">获取时间</n-button>
+                  </div>
                 </div>
               </NFormItem>
               <NFormItem label="隐藏图片" path="is_hidden">
@@ -556,11 +561,6 @@ api.getOrderOptionVisitor().then((res) => {
           <NFormItem label="时间" path="time" style="flex:1;">
             <NDatePicker type="datetime" v-model:formatted-value="modalForm.time" placeholder="请输入时间"
               value-format="yyyy-MM-dd HH:mm:ss" :is-date-disabled="disablePreviousDate" />
-            <!-- <NButton type="primary" @click="handleGetPictureTime" style="margin-left: 20px;"
-            :disabled="modalForm.image == undefined || modalForm.image == ''">
-            <TheIcon icon="material-symbols:auto-timer-outline" :size="18" class="mr-5" />{{
-    $t('views.content.label_get_picture_time') }}
-          </NButton> -->
           </NFormItem>
           <NFormItem label="地点" path="location" style="flex:1;">
             <n-auto-complete v-model:value="modalForm.location" :input-props="{

@@ -37,11 +37,11 @@ import api from '@/api'
 import { addDynamicRoutes } from '@/router'
 import { useI18n } from 'vue-i18n'
 import { useSettingStore } from '@/store'
-import { updateMeta,isValueNotEmpty } from '@/utils'
+import { updateMeta, isValueNotEmpty } from '@/utils'
 updateMeta()
 const settingStore = useSettingStore()
-const site_icon = isValueNotEmpty(settingStore.metaSetting?.site_icon )?settingStore.metaSetting?.site_icon : import.meta.env.VITE_ICON
-const site_name = isValueNotEmpty(settingStore.metaSetting?.site_name )?settingStore.metaSetting?.site_name : import.meta.env.VITE_TITLE
+const site_icon = isValueNotEmpty(settingStore.metaSetting?.site_icon) ? settingStore.metaSetting?.site_icon : import.meta.env.VITE_ICON
+const site_name = isValueNotEmpty(settingStore.metaSetting?.site_name) ? settingStore.metaSetting?.site_name : import.meta.env.VITE_TITLE
 const router = useRouter()
 const { query } = useRoute()
 const { t } = useI18n({ useScope: 'global' })
