@@ -1,15 +1,7 @@
 <template>
-  <n-menu
-    ref="menu"
-    class="side-menu"
-    accordion
-    :indent="18"
-    :collapsed-icon-size="22"
-    :collapsed-width="64"
-    :options="menuOptions"
-    :value="activeKey"
-    @update:value="handleMenuSelect"
-  />
+  <n-menu ref="menu" class="side-menu" accordion :indent="18" :collapsed-icon-size="22" :collapsed-width="64"
+    :options="menuOptions" :value="activeKey" @update:value="handleMenuSelect"
+    :default-expanded-keys='["内容管理", "系统管理"]' />
 </template>
 
 <script setup>
@@ -114,6 +106,7 @@ function handleMenuSelect(key, item) {
       left: 5px;
       right: 5px;
     }
+
     &.n-menu-item-content--selected,
     &:hover {
       &::before {

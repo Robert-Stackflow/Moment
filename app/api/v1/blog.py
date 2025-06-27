@@ -3,8 +3,10 @@ import logging
 from fastapi import APIRouter, Query
 from tortoise.expressions import Q
 from app.controllers.blog import blog_controller
+from app.controllers.blog_image import blog_image_controller
 from app.controllers.category import category_controller
 from app.core.dependency import DependPermisson
+from app.models.content import Category
 from app.schemas.base import Fail, Success, SuccessExtra
 from app.schemas.blog import *
 
@@ -79,14 +81,20 @@ async def get_count():
 
 @blog_router.get("/locations", summary="查看地点列表")
 async def get_locations():
-    results = await blog_controller.model.all()
+    results = await blog_controller.model.all().prefetch_related("images")
     locations = {}
     for blog in results:
+        blog_locations = []
         if blog.location:
-            if locations.get(blog.location, None) == None:
-                locations[blog.location] = 1
+            blog_locations.append(blog.location)
+        for image in blog.images:
+            if image.location:
+                blog_locations.append(image.location)
+        for location in blog_locations:
+            if locations.get(location, None) == None:
+                locations[location] = 1
             else:
-                locations[blog.location] = locations[blog.location] + 1
+                locations[location] = locations[location] + 1
     locations = sorted(locations.items(), key=lambda d: d[1], reverse=True)
     return Success(data=locations)
 
@@ -95,16 +103,35 @@ async def get_locations():
 async def create_blog(
     blog_in: BlogCreate,
 ):
-    for category_id in blog_in.categories:
-        category = await category_controller.model.filter(id=category_id)
+    # 补全父分类ID，避免遍历时修改原列表导致问题
+    category_ids = set(blog_in.category_ids or [])
+    for category_id in list(category_ids):
+        category = await category_controller.model.filter(id=category_id).first()
         if (
-            len(category) > 0
-            and category[0].parent_id != 0
-            and category[0].parent_id not in blog_in.categories
+            category
+            and category.parent_id != 0
+            and category.parent_id not in category_ids
         ):
-            blog_in.categories.append(category[0].parent_id)
+            category_ids.add(category.parent_id)
+    blog_in.category_ids = list(category_ids)
+
     new_blog = await blog_controller.create(obj_in=blog_in.create_dict())
-    await blog_controller.update_categories(new_blog, blog_in.categories)
+    if not new_blog:
+        return Fail(msg="博客创建失败")
+
+    if blog_in.category_ids:
+        categories = await Category.filter(id__in=blog_in.category_ids).all()
+        await new_blog.categories.add(*categories)
+
+    if blog_in.images is None:
+        return Fail(msg="图片列表不能为空")
+    if not isinstance(blog_in.images, list):
+        return Fail(msg="图片列表必须是一个列表")
+    if len(blog_in.images) == 0:
+        return Fail(msg="图片列表不能为空")
+    await blog_image_controller.create_for_blog(
+        blog_id=new_blog.id, images=blog_in.images
+    )
     return Success(msg="Created Success")
 
 
@@ -112,16 +139,36 @@ async def create_blog(
 async def update_blog(
     blog_in: BlogUpdate,
 ):
-    for category_id in blog_in.categories:
-        category = await category_controller.model.filter(id=category_id)
+    # 先补全父分类id，避免遍历时修改原列表导致问题
+    category_ids = set(blog_in.category_ids or [])
+    for category_id in list(category_ids):
+        category = await category_controller.model.filter(id=category_id).first()
         if (
-            len(category) > 0
-            and category[0].parent_id != 0
-            and category[0].parent_id not in blog_in.categories
+            category
+            and category.parent_id != 0
+            and category.parent_id not in category_ids
         ):
-            blog_in.categories.append(category[0].parent_id)
+            category_ids.add(category.parent_id)
+    blog_in.category_ids = list(category_ids)
+
     blog = await blog_controller.update(id=blog_in.id, obj_in=blog_in.update_dict())
-    await blog_controller.update_categories(blog, blog_in.categories)
+    if not blog:
+        return Fail(msg="博客不存在或更新失败")
+
+    if blog_in.category_ids is not None:
+        await blog.categories.clear()
+        if len(blog_in.category_ids) > 0:
+            categories = await Category.filter(id__in=blog_in.category_ids).all()
+            await blog.categories.add(*categories)
+
+    if blog_in.images is not None:
+        if not isinstance(blog_in.images, list):
+            return Fail(msg="图片列表必须是一个列表")
+        if len(blog_in.images) == 0:
+            return Fail(msg="图片列表不能为空")
+        await blog_image_controller.update_for_blog(
+            blog_id=blog.id, images=blog_in.images
+        )
     return Success(msg="Updated Success")
 
 
@@ -129,5 +176,6 @@ async def update_blog(
 async def delete_blog(
     id: int = Query(..., description="图片id"),
 ):
+    await blog_image_controller.update_for_blog(blog_id=id, images=[])
     await blog_controller.remove(id=id)
     return Success(msg="Deleted Success")

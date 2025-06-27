@@ -13,12 +13,18 @@ class BlogImageBase(BaseModel):
     order: int = 0
 
 
-class BlogImageCreate(BlogImageBase):
-    pass
+class BlogImageCreate(BaseModel):
+    image_url: str
+    title: Optional[str] = None
+    description: Optional[str] = None
+    location: Optional[str] = None
+    is_hidden: bool = False
+    metadata: Optional[Dict[str, Any]] = None
+    order: int = 0
 
 
 class BlogImageUpdate(BlogImageBase):
-    id: Optional[int] = None
+    id: int
 
 
 class BlogImageOut(BlogImageBase):
@@ -58,11 +64,13 @@ class BlogCreate(BaseModel):
     location: Optional[str] = Field(example="黄山", default="")
     remark: Optional[str] = {}
     is_hidden: Optional[bool] = False
-    categories: Optional[List[int]] = []
     images: List[BlogImageCreate] = []
+    category_ids: Optional[List[int]] = []
 
     def create_dict(self):
-        return self.model_dump(exclude_unset=True, exclude={"categories", "images"})
+        return self.model_dump(
+            exclude_unset=True, exclude={"category_ids", "images", "id"}
+        )
 
 
 class BlogUpdate(BaseModel):
@@ -73,10 +81,10 @@ class BlogUpdate(BaseModel):
     location: Optional[str] = Field(example="黄山")
     is_hidden: Optional[bool] = False
     remark: Optional[Dict[str, Any]] = {}
-    categories: Optional[List[int]] = []
-    images: List[BlogImageUpdate] = []
+    images: List[BlogImageUpdate | BlogImageCreate] = []
+    category_ids: Optional[List[int]] = []
 
     def update_dict(self):
         return self.model_dump(
-            exclude_unset=True, exclude={"categories", "id", "images"}
+            exclude_unset=True, exclude={"category_ids", "id", "images"}
         )

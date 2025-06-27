@@ -57,9 +57,14 @@ async def list_blog(
         prefetch_fields=["images"],
     )
     data = [await obj.to_dict_with_images(m2m=True) for obj in blog_objs]
-    for blog in data:
-        blog["category_ids"] = [item["id"] for item in blog["categories"]]
-    return SuccessExtra(data=data, total=total, page=page, page_size=page_size)
+    valid_blogs = []
+    for item in data:
+        item["category_ids"] = [category["id"] for category in item["categories"]]
+        visible_images = [img for img in item["images"] if not img["is_hidden"]]
+        item["images"] = visible_images
+        if visible_images:
+            valid_blogs.append(item)
+    return SuccessExtra(data=valid_blogs, total=total, page=page, page_size=page_size)
 
 
 @visitor_router.get("/category/get/alias", summary="查看分类")

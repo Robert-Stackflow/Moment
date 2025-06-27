@@ -29,11 +29,9 @@ class BlogImageController(CRUDBase[BlogImage, BlogImageCreate, BlogImageUpdate])
         self, blog_id: int, images: List[Union[BlogImageUpdate, Dict[str, Any]]]
     ):
         """更新博客的图片"""
-        # 获取现有图片
         current_images = await self.model.filter(blog_id=blog_id)
         current_ids = {img.id: img for img in current_images}
 
-        # 找出需要保留、更新和新增的图片
         update_ids = []
         result = []
 

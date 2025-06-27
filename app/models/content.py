@@ -25,6 +25,9 @@ class Blog(BaseModel, TimestampMixin):
     async def to_dict_with_images(self, m2m=False):
         blog_dict = await self.to_dict(m2m)
         blog_dict["images"] = [await image.to_dict() for image in self.images]
+        images = blog_dict.get("images", [])
+        images.sort(key=lambda x: x["order"])
+        blog_dict["images"] = images
         return blog_dict
 
 
@@ -36,13 +39,12 @@ class BlogImage(BaseModel, TimestampMixin):
     title = fields.CharField(
         max_length=50, null=True, description="图片标题，留空则使用博客标题"
     )
-    description = fields.TextField(
-        null=True, description="图片描述，留空则使用博客描述"
-    )
+    desc = fields.TextField(null=True, description="图片描述，留空则使用博客描述")
     location = fields.TextField(
         null=True,
         description="图片的具体位置，如莲花峰、天都峰等，如果和博客位置相同则留空",
     )
+    time = fields.DatetimeField(null=True, description="图片时间，留空则使用博客时间")
     is_hidden = fields.BooleanField(default=False, description="是否隐藏此图片")
     metadata = fields.JSONField(null=True, description="拍摄参数，EXIF信息等")
     order = fields.IntField(default=0, description="排序")

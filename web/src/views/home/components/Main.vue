@@ -20,16 +20,17 @@
                     </div>
                 </transition>
                 <div class="caption" style="display: flex;" v-if="imageVisible">
-                    <h2 class="thumb-title">{{ currentBlog.title }}</h2>
-                    <p class="thumb-desc"></p>
+                    <h2 class="thumb-title">{{ currentBlog.current_title }}</h2>
+                    <p class="thumb-desc">{{ currentBlog.current_desc }}</p>
                     <ul class="tag-meta">
-                        <router-link class="tag-location detail-tag" v-if="detail_show_location && currentBlog.location"
-                            :to="'/location/' + currentBlog.location">
+                        <router-link class="tag-location detail-tag"
+                            v-if="detail_show_location && currentBlog.current_location"
+                            :to="'/location/' + currentBlog.current_location">
                             <i class="iconfont icon-map-pin-2-line"></i>
-                            {{ currentBlog.location }}
+                            {{ currentBlog.current_full_location }}
                         </router-link>
-                        <a class="tag-time detail-tag" v-if="detail_show_time && currentBlog.time">{{
-                            currentBlog.detail_time }}</a>
+                        <a class="tag-time detail-tag" v-if="detail_show_time && currentBlog.current_detail_time">{{
+                            currentBlog.current_detail_time }}</a>
                     </ul>
                     <ul class="tags">
                         <li class="tag-categories">
@@ -85,12 +86,17 @@ var thumbnail_time_format = settingStore.contentSetting.thumbnail_time_format &&
 var detail_show_time = isValueNotEmpty(settingStore.contentSetting.detail_show_time) ? settingStore.contentSetting.detail_show_time : true
 var detail_time_format = settingStore.contentSetting.detail_time_format && settingStore.contentSetting.detail_time_format != "" ? settingStore.contentSetting.detail_time_format : "YYYY-MM-DD HH:mm"
 
-function handleSwipe(data, event) {
+function handleSwipe(blog, event) {
     const index = Number(event.target.dataset.index)
     if (!isNaN(index)) {
-        data.currentIndex = index
-        data.detail = data.images[index].detail
-        showImage(data)
+        blog.currentIndex = index
+        blog.current_detail = blog.images[blog.currentIndex].detail
+        blog.current_desc = blog.images[blog.currentIndex].desc || blog.desc
+        blog.current_title = blog.images[blog.currentIndex].title || blog.title
+        blog.current_detail_time = blog.images[blog.currentIndex].detail_time || blog.detail_time
+        blog.current_location = blog.images[blog.currentIndex].location || blog.location
+        blog.current_full_location = blog.images[blog.currentIndex].location ? `${blog.location} - ${blog.images[blog.currentIndex].location}` : blog.location
+        showImage(blog)
     }
 }
 function close() {
@@ -120,24 +126,24 @@ function showImage(blog) {
     imageTransitioning.value = true
 
     const img = new window.Image()
-    img.src = blog.detail
-    console.log("Loading image:", img.src)
+    img.src = blog.current_detail
+    // console.log("Loading image:", img.src)
     img.onload = () => {
-        const maxW = window.innerWidth * 0.8
-        const maxH = window.innerHeight * 0.8
+        const maxW = 1150
+        const maxH = 890
         const ratio = Math.min(maxW / img.width, maxH / img.height, 1)
         currentSize.value = {
             width: img.width * ratio,
             height: img.height * ratio,
         }
         nextImageUrl.value = img.src
-        console.log("Image loaded:", img.src, "Size:", currentSize.value)
+        // console.log("Image loaded:", img.src, "Size:", currentSize.value)
     }
 
     show.value = true
 }
 function onTransitionEnd(e) {
-    console.log("Transition ended for property:", e.propertyName);
+    // console.log("Transition ended for property:", e.propertyName);
     if ((e.propertyName === 'width' || e.propertyName === 'height') && imageTransitioning.value) {
         imageSrc.value = nextImageUrl.value
         imageTransitioning.value = false
@@ -173,13 +179,34 @@ function formatBlogs() {
             var image = blog.images[index]
             image.thumbnail = image.image_url + thumbnail_suffix
             image.detail = image.image_url + detail_suffix
+            if (image.time) {
+                image.detail_time = formatDateTime(parseDateTime(image.time), detail_time_format)
+            }
             blog.detail_image_urls.push(image.detail)
         }
-        blog.detail = blog.images[0].detail
-        blog.thumbnail = blog.images[0].thumbnail
         var time = parseDateTime(blog.time)
         blog.thumbnail_time = formatDateTime(time, thumbnail_time_format)
         blog.detail_time = formatDateTime(time, detail_time_format)
+        // 当前图片相关信息
+        blog.current_thumbnail = blog.images[blog.currentIndex].thumbnail
+        blog.current_detail = blog.images[blog.currentIndex].detail
+        blog.current_title = blog.images[blog.currentIndex].title || blog.title
+        blog.current_desc = blog.images[blog.currentIndex].desc || blog.desc
+        blog.current_detail_time = blog.images[blog.currentIndex].detail_time || blog.detail_time
+        blog.current_location = blog.images[blog.currentIndex].location || blog.location
+        if (blog.action) {
+            if (blog.images[blog.currentIndex].location) {
+                blog.current_full_location = `${blog.location} - ${blog.images[blog.currentIndex].location}`;
+            } else {
+                blog.current_full_location = blog.location
+            }
+        } else {
+            if (blog.images[blog.currentIndex].location) {
+                blog.current_full_location = blog.images[blog.currentIndex].location;
+            } else {
+                blog.current_full_location = null
+            }
+        }
     }
 }
 async function getCategory() {
@@ -267,6 +294,8 @@ scrollToload(null, loadMore)
     width: auto;
     height: auto;
     overflow: hidden;
+    max-width: 1150px;
+    max-height: 890px;
 }
 
 .lightbox-content:before {

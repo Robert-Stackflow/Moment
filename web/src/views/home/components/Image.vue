@@ -2,7 +2,7 @@
     <article class="thumb img-area">
         <a class="thumb-a my-photo">
             <img class="thumb-image my-photo" onerror="this.src=`/images/loading.gif`;this.onerror=null"
-                :src="data.thumbnail" lazy>
+                :src="data.current_thumbnail" lazy>
         </a>
         <h2 class="thumb-title">{{ data.title }}</h2>
         <p class="thumb-desc">{{ data.desc }}</p>
@@ -12,7 +12,7 @@
                     :to="'/location/' + data.location">{{
                         data.location }}</router-link>
                 <a class="tag-time thumbnail-tag" v-if="thumbnail_show_time && data.time">{{ data.thumbnail_time
-                    }}</a>
+                }}</a>
                 <router-link v-for="category in data.categories" :key="category.alias"
                     :to="'/category/' + category.alias">{{ category.name }}</router-link>
             </li>

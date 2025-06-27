@@ -41,11 +41,14 @@ var locations = ref([])
 const showAddImageModal = ref(false)
 const hoverIndex = ref(-1)
 const editIndex = ref(null)
+const parsingEXIF = ref(false)
 
 const imageForm = ref({
   image_url: '',
-  location: '',
-  description: ''
+  location: null,
+  title: null,
+  desc: null,
+  is_hidden: false,
 })
 
 // 编辑按钮点击
@@ -61,26 +64,39 @@ const removeImage = (index) => {
 }
 
 const onDragChange = (evt) => {
-  console.log('拖拽变化', evt)
+  updateOrder();
 }
-
+const updateOrder = () => {
+  const images = [...modalForm.value.images];
+  images.forEach((image, index) => {
+    image.order = index;
+  });
+  modalForm.value.images = images;
+}
 // 添加或保存图片
 const handleSaveImage = () => {
-  if (!imageForm.value.url) return
+  if (!imageForm.value.image_url) return
   if (editIndex.value !== null) {
     modalForm.value.images[editIndex.value] = { ...imageForm.value }
   } else {
     modalForm.value.images.push({ ...imageForm.value })
+    updateOrder();
   }
   editIndex.value = null
-  imageForm.value = { image_url: '', location: '', description: '' }
+  imageForm.value = {
+    image_url: '',
+    location: null,
+    title: null,
+    desc: null,
+    is_hidden: false,
+  }
   showAddImageModal.value = false
 }
 
 const initForm = {
   order: 1,
   images: [],
-  location: undefined,
+  location: "",
 }
 
 function disablePreviousDate(ts) {
@@ -278,17 +294,59 @@ async function handleUpdateHidden(row) {
   $message?.success(row.is_hidden ? '已隐藏' : '已公开')
 }
 
-function handleGetPictureTime() {
-  $message.loading(t('views.content.label_parsing'))
-  EXIF.getData(document.getElementById('preview-image'), function () {
-    if (EXIF.imageHasData(this)) {
-      var time = EXIF.getTag(this, 'SubsecTime')
-      $message.success(t('views.content.label_get_exif_success'))
-    } else {
-      $message.error(t('views.content.label_no_exif'))
+function fetchMetadata() {
+  var url = imageForm.value.image_url + thumbnail_suffix;
+  handleGetPictureTimeFromUrl(url).then(res => {
+    parsingEXIF.value = false;
+    if (res) {
+      imageForm.value.metadata = res;
     }
   })
 }
+
+async function handleGetPictureTimeFromUrl(imageUrl) {
+  parsingEXIF.value = true;
+  try {
+    const exif = await extractExifFromUrl(imageUrl);
+    const time = exif.DateTimeOriginal || exif.DateTime || null
+    if (time) {
+      $message.success("成功获取拍摄时间！");
+      console.log('EXIF 拍摄时间:', time)
+      return time
+    } else {
+      $message.warning("没有拍摄时间信息");
+      return null
+    }
+  } catch (err) {
+    $message.error(err.message)
+    return null
+  }
+}
+
+async function extractExifFromUrl(imageUrl) {
+  $message.loading("下载图片中...")
+  const blob = await fetch(imageUrl).then(res => res.blob());
+  $message.loading("解析中...")
+  const image = await new Promise((resolve, reject) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => resolve(img);
+    img.onerror = reject;
+    img.src = URL.createObjectURL(blob);
+  });
+
+  return new Promise((resolve, reject) => {
+    EXIF.getData(image, function () {
+      const tags = EXIF.getAllTags(this);
+      if (Object.keys(tags).length > 0) {
+        resolve(tags);
+      } else {
+        reject(new Error("未找到 EXIF 数据"));
+      }
+    });
+  });
+}
+
 
 async function getTreeSelect() {
   const { data } = await api.getCategories()
@@ -331,7 +389,7 @@ const customRequest = ({
   }, timeout_time
   ).then((response) => {
     $message.success(response.msg);
-    modalForm.value.image = response.data
+    imageForm.value.image_url = response.data
     onFinish();
   }).catch((error) => {
     onError();
@@ -397,44 +455,27 @@ api.getOrderOptionVisitor().then((res) => {
         </NFormItem>
         <NFormItem label="图片列表" path="images" :rule="{
           required: true,
-          message: '请输入图片列表',
-          trigger: ['input', 'blur'],
+          trigger: ['change', 'blur'],
+          validator: (rule, value) => {
+            if (!Array.isArray(value) || value.length === 0) {
+              return new Error('请至少上传一张图片')
+            }
+            return true
+          }
         }">
-          <!-- <div flex style="width:100%;flex-wrap: nowrap;flex-direction: row;column-gap: 10px;">
-            <n-popover trigger="hover" placement="bottom" :keep-alive-on-hover="false">
-              <template #trigger>
-                <NInput v-model:value="modalForm.image" type="text" placeholder="请输入图片地址" clearable />
-              </template>
-              <NImage width="200" :src="modalForm.image + thumbnail_suffix"
-                v-if="modalForm.image != undefined && modalForm.image != ''" style="border-radius: 8px;"
-                show-toolbar-tooltip fallback-src="/images/error.svg">
-              </NImage>
-              <template #footer>
-              </template>
-            </n-popover>
-            <n-upload style="flex:1;" :action="api.uploadApi" :custom-request="customRequest"
-              v-if="settingStore.storageSetting.enable_storage" @before-upload="beforeUploadImage"
-              accept=".tif,.jpg,.jpeg,.ico,.tiff,.gif,.svg,.jfif,.webp,.png,.bmp,.jpeg,.avif" :show-file-list="false">
-              <n-button>上传图片</n-button>
-            </n-upload>
-          </div> -->
           <div class="image-grid">
             <draggable class="image-draggable" :list="modalForm.images" item-key="image_url" animation="300"
-              @change="onDragChange">
+              @end="onDragChange">
               <template #item="{ element, index }">
                 <div class="image-card" @mouseenter="hoverIndex = index" @mouseleave="hoverIndex = -1">
-                  <n-image width="100%" height="100%" object-fit="cover" :src="element.image_url + thumbnail_suffix"
-                    fallback-src="/images/error.svg" show-toolbar-tooltip />
+                  <n-image style="width:100%;height:100%" object-fit="cover" width="100%" height="100%"
+                    :src="element.image_url + thumbnail_suffix" fallback-src="/images/error.svg" show-toolbar-tooltip />
                   <div v-if="hoverIndex === index" class="image-actions">
-                    <n-button size="tiny" text @click="editImage(index)">
-                      <n-icon>
-                        <EditOutlined />
-                      </n-icon>
+                    <n-button size="tiny" text @click="editImage(index)" class="image-action">
+                      <TheIcon icon="material-symbols:edit-outline" :size="18" class="mr-5" color="white" />
                     </n-button>
-                    <n-button size="tiny" text @click="removeImage(index)">
-                      <n-icon>
-                        <TrashOutline />
-                      </n-icon>
+                    <n-button size="tiny" text @click="removeImage(index)" class="image-action">
+                      <TheIcon icon="material-symbols:delete-outline" :size="18" class="mr-5" color="white" />
                     </n-button>
                   </div>
                 </div>
@@ -442,26 +483,71 @@ api.getOrderOptionVisitor().then((res) => {
 
             </draggable>
             <div slot="footer" class="image-card add-card" @click="showAddImageModal = true">
-              <n-icon size="24">
-                <PlusOutlined />
-              </n-icon>
+              <TheIcon icon="material-symbols:add" :size="28" class="mr-5" />
             </div>
           </div>
-          <!-- 添加图片占位卡片 -->
-
-
           <!-- 弹出框：新增或编辑图片 -->
-          <NModal v-model:show="showAddImageModal" title="添加图片" preset="dialog">
-            <n-form :model="imageForm" label-width="60px">
-              <n-form-item label="URL">
-                <n-input v-model:value="imageForm.image_url" placeholder="请输入图片地址" />
+          <NModal v-model:show="showAddImageModal" :title="editIndex == null ? '添加图片' : '编辑图片'" preset="dialog"
+            :show-icon="false">
+            <n-form :model="imageForm" label-width="60px" style="margin-top: 24px;">
+              <n-form-item label="图片地址" path="image_url" :rule="{
+                required: true,
+                message: '请输入图片地址',
+                trigger: ['input', 'blur'],
+              }">
+                <div flex style="width:100%;flex-wrap: nowrap;flex-direction: row;column-gap: 10px;">
+                  <n-popover trigger="hover" placement="bottom" :keep-alive-on-hover="false"
+                    :disabled="imageForm.image_url == undefined || imageForm.image_url == ''">
+                    <template #trigger>
+                      <NInput v-model:value="imageForm.image_url" type="text" placeholder="请输入图片地址" clearable />
+                    </template>
+                    <NImage width="200" :src="imageForm.image_url + thumbnail_suffix"
+                      v-if="imageForm.image_url != undefined && imageForm.image_url != ''" style="border-radius: 8px;"
+                      show-toolbar-tooltip fallback-src="/images/error.svg">
+                    </NImage>
+                    <template #footer>
+                    </template>
+                  </n-popover>
+                  <n-upload style="flex:1;" :action="api.uploadApi" :custom-request="customRequest"
+                    v-if="settingStore.storageSetting.enable_storage" @before-upload="beforeUploadImage"
+                    accept=".tif,.jpg,.jpeg,.ico,.tiff,.gif,.svg,.jfif,.webp,.png,.bmp,.jpeg,.avif"
+                    :show-file-list="false">
+                    <n-button>上传图片</n-button>
+                  </n-upload>
+                </div>
               </n-form-item>
-              <n-form-item label="地点">
-                <n-input v-model:value="imageForm.location" placeholder="可选" />
-              </n-form-item>
-              <n-form-item label="描述">
-                <n-input v-model:value="imageForm.description" placeholder="可选" />
-              </n-form-item>
+              <NFormItem label="标题" path="title">
+                <NInput v-model:value="imageForm.title" placeholder="可选，留空则使用帖子标题" maxlength="50" show-count
+                  clearable />
+              </NFormItem>
+              <NFormItem label="描述" path="desc">
+                <NInput v-model:value="imageForm.desc" type="textarea" placeholder="可选，留空则使用帖子描述" />
+              </NFormItem>
+              <div flex style="width:100%;flex-wrap: nowrap;flex-direction: row;column-gap: 10px;">
+                <NFormItem label="时间" path="time" style="flex:1;">
+                  <NDatePicker type="datetime" v-model:formatted-value="imageForm.time" placeholder="可选，留空则使用帖子时间"
+                    value-format="yyyy-MM-dd HH:mm:ss" :is-date-disabled="disablePreviousDate" />
+                  <!-- <NButton type="primary" @click="handleGetPictureTime" style="margin-left: 20px;"
+            :disabled="modalForm.image == undefined || modalForm.image == ''">
+            <TheIcon icon="material-symbols:auto-timer-outline" :size="18" class="mr-5" />{{
+    $t('views.content.label_get_picture_time') }}
+          </NButton> -->
+                </NFormItem>
+                <NFormItem label="地点" path="location" style="flex:1;">
+                  <n-auto-complete v-model:value="imageForm.location" :input-props="{
+                    autocomplete: 'enabled'
+                  }" :options="locations" placeholder="可选，留空则使用帖子地点" clearable @search="getLocations" filterable />
+                </NFormItem>
+              </div>
+              <NFormItem label="EXIF" path="location" style="flex:1;">
+                <div flex style="width:100%;flex-wrap: nowrap;flex-direction: row;column-gap: 10px;">
+                  <NInput v-model:value="imageForm.metadata" type="textarea" placeholder="图片附带的EXIF信息" />
+                  <n-button @click="fetchMetadata" :disabled="parsingEXIF">提取信息</n-button>
+                </div>
+              </NFormItem>
+              <NFormItem label="隐藏图片" path="is_hidden">
+                <NSwitch v-model:value="imageForm.is_hidden" />
+              </NFormItem>
             </n-form>
             <template #action>
               <n-button @click="handleSaveImage">保存</n-button>
@@ -488,7 +574,7 @@ api.getOrderOptionVisitor().then((res) => {
           </NFormItem>
         </div>
         <NFormItem label="分类" path="categories">
-          <NTreeSelect v-model:value="modalForm.categories" multiple checkable key-field="id" label-field="name"
+          <NTreeSelect v-model:value="modalForm.category_ids" multiple checkable key-field="id" label-field="name"
             :options="categoryTreeOptions" default-expand-all :disabled="blogDisabled" @click="getTreeSelect" />
         </NFormItem>
         <NFormItem label="隐藏图片" path="is_hidden">
@@ -542,6 +628,21 @@ api.getOrderOptionVisitor().then((res) => {
   gap: 4px;
 }
 
+.image-card .image-action {
+  height: 28px;
+  width: 28px;
+  transition: opacity 0.3s ease-in-out;
+}
+
+.image-card .image-action .mr-5 {
+  margin: 0px;
+}
+
+.image-card .image-action:hover {
+  background-color: rgba(0, 0, 0, 0.5);
+  border-radius: 20px;
+}
+
 .add-card {
   display: flex;
   justify-content: center;
@@ -549,5 +650,10 @@ api.getOrderOptionVisitor().then((res) => {
   border: 2px dashed #ccc;
   cursor: pointer;
   color: #999;
+  transition: all 0.3s ease;
+}
+
+.add-card:hover {
+  background-color: #f1f1f1;
 }
 </style>
