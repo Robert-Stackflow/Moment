@@ -14,7 +14,7 @@ import {
   NTag,
   NTreeSelect,
 } from 'naive-ui'
-import EXIF from 'exif-js'
+import * as exifr from 'exifr'
 import draggable from 'vuedraggable'
 import CommonPage from '@/components/page/CommonPage.vue'
 import CrudModal from '@/components/table/CrudModal.vue'
@@ -327,24 +327,19 @@ async function extractExifFromUrl(imageUrl) {
   $message.loading("下载图片中...")
   const blob = await fetch(imageUrl).then(res => res.blob());
   $message.loading("解析中...")
-  const image = await new Promise((resolve, reject) => {
-    const img = new Image();
-    img.crossOrigin = 'anonymous';
-    img.onload = () => resolve(img);
-    img.onerror = reject;
-    img.src = URL.createObjectURL(blob);
-  });
+  const exif = await exifr.parse(blob)
+  console.log('EXIF:', exif)
+  const make = exif.Make || ''
+  const model = exif.Model || ''
+  const lens = exif.LensModel || ''
+  const focal = exif.FocalLength ? `${exif.FocalLength}mm` : ''
+  const fNumber = exif.FNumber ? `f${exif.FNumber}` : ''
 
-  return new Promise((resolve, reject) => {
-    EXIF.getData(image, function () {
-      const tags = EXIF.getAllTags(this);
-      if (Object.keys(tags).length > 0) {
-        resolve(tags);
-      } else {
-        reject(new Error("未找到 EXIF 数据"));
-      }
-    });
-  });
+  // 格式化输出
+  let camera = model || `${make} ${model}`.trim()
+  let result = [camera, focal, fNumber].filter(Boolean).join('，')
+  console.log(result)
+  return exif
 }
 
 
