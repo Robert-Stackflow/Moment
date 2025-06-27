@@ -242,7 +242,7 @@ async def _remove_image_column(connection):
             SELECT blog_id, category_id FROM blog_category_backup_v1;
         """
         )
-
+        await connection.execute_query("DROP TABLE IF EXISTS menu;")
         await connection.execute_query("COMMIT")
     except Exception as e:
         await connection.execute_query("ROLLBACK")

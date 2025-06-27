@@ -1,0 +1,12 @@
+services:
+  moment:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: ruida/moment:test
+    container_name: moment
+    restart: always
+    volumes:
+      - .moment:/app/data
+    ports:
+      - 9999:9999

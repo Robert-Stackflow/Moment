@@ -50,7 +50,8 @@ async def execute_migrations():
             if not executed[1]:
                 logger.info(f"执行迁移: {file_name} for {migration_file}")
                 module_path = (
-                    migration_file.replace("/", ".")
+                    migration_file.replace("./", "")
+                    .replace("/", ".")
                     .replace(".\\", "")
                     .replace("\\", ".")
                     .replace(".py", "")
