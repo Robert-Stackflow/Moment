@@ -7,10 +7,10 @@
             <ul>
                 <li>
                     <a type="button" id="fullscreen" class="btn btn-default visible-lg visible-md" alt="切换全屏"
-                        @click="toggleFullScreen">{{ fullScreenText }}</a>
+                        style="cursor: pointer;" @click="toggleFullScreen">{{ fullScreenText }}</a>
                 </li>
                 <li class="nav-item">
-                    <a class="icon solid fa-info-circle nav-item-name">分类</a>
+                    <a class="icon solid fa-info-circle nav-item-name" style="cursor: pointer;">分类</a>
                     <ul class="nav-item-child">
                         <ul>
                             <li v-for="category in categories" class="category-level-0 category-parent">

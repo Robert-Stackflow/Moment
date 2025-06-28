@@ -38,7 +38,7 @@ async function updateSetting() {
       .then(() => {
         settingStore.setMetaSetting(infoForm.value)
         isLoading.value = false
-        $message.success(t('common.text.update_success'))
+        $message.success(t('common.text.save_success'))
       })
       .catch(() => {
         isLoading.value = false
@@ -48,7 +48,7 @@ async function updateSetting() {
 const infoFormRules = {
 
 }
-function onCreateEntry(){
+function onCreateEntry() {
   return { name: "", icon: "", url: "" };
 }
 const default_primary_color = import.meta.env.VITE_PRIMARY_COLOR
@@ -103,7 +103,7 @@ const default_primary_color = import.meta.env.VITE_PRIMARY_COLOR
         </NFormItem>
         <NFormItem :label="$t('views.setting.label_primary_color')" path="primary_color">
           <n-color-picker v-model:value="infoForm.primary_color" :show-alpha="false"
-            :default-value="default_primary_color" class="w-200"/>
+            :default-value="default_primary_color" class="w-200" />
         </NFormItem>
         <NFormItem :label="$t('views.setting.label_icp')" path="icp">
           <NInput v-model:value="infoForm.icp" type="text" :placeholder="$t('views.setting.placeholder_icp')"
@@ -117,16 +117,16 @@ const default_primary_color = import.meta.env.VITE_PRIMARY_COLOR
             <template #default="{ value }">
               <div style="display: flex; align-items: center; width: 100%">
                 <n-input v-model:value="value.name" :placeholder="$t('views.setting.placeholder_entry_name')"
-                  type="text" style="margin-left: 5px;"/>
-                <IconPicker v-model:value="value.icon" style="margin-left: 5px;"/>
-                <n-input v-model:value="value.url" :placeholder="$t('views.setting.placeholder_entry_url')"
-                  type="text" style="margin-left: 5px;"/>
+                  type="text" style="margin-left: 5px;" />
+                <IconPicker v-model:value="value.icon" style="margin-left: 5px;" />
+                <n-input v-model:value="value.url" :placeholder="$t('views.setting.placeholder_entry_url')" type="text"
+                  style="margin-left: 5px;" />
               </div>
             </template>
           </n-dynamic-input>
         </NFormItem>
         <NButton type="primary" :loading="isLoading" @click="updateSetting">
-          {{ $t('common.buttons.update') }}
+          {{ $t('common.buttons.save') }}
         </NButton>
       </NForm>
     </div>

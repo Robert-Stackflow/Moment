@@ -1,8 +1,8 @@
 import { createRouter, createWebHistory, createWebHashHistory } from 'vue-router'
 import { setupRouterGuard } from './guard'
-import { basicRoutes, EMPTY_ROUTE,NOT_FOUND_ROUTE } from './routes'
+import { basicRoutes, EMPTY_ROUTE, NOT_FOUND_ROUTE } from './routes'
 import { getToken, isNullOrWhitespace } from '@/utils'
-import { useUserStore, usePermissionStore,useSettingStore } from '@/store'
+import { useUserStore, usePermissionStore, useSettingStore } from '@/store'
 
 const isHash = import.meta.env.VITE_USE_HASH === 'true'
 export const router = createRouter({

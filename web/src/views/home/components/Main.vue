@@ -116,6 +116,7 @@ function updateAttr(blog) {
 
 function handleResize() {
     throttle(() => {
+        if (currentBlog.value == null) return
         showImage(currentBlog.value)
     }, 300)()
 }

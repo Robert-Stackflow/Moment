@@ -38,7 +38,7 @@ async function updateSetting(verbose) {
         settingStore.setStorageSetting(infoForm.value)
         isLoading.value = false
         if (verbose)
-          $message.success(t('common.text.update_success'))
+          $message.success(t('common.text.save_success'))
       })
       .catch(() => {
         isLoading.value = false
@@ -108,7 +108,7 @@ function handleChange(value) {
             :disabled="!infoForm.enable_storage" clearable />
         </NFormItem>
         <NButton type="primary" :loading="isLoading" @click="updateSetting(true)">
-          {{ $t('common.buttons.update') }}
+          {{ $t('common.buttons.save') }}
         </NButton>
       </NForm>
     </div>

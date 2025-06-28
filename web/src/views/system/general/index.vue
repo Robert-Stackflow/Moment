@@ -24,13 +24,13 @@ async function updateSetting() {
   infoFormRef.value?.validate(async (err) => {
     if (err) return
     var setting = settingStore.totalSetting
-    setting['general']=infoForm.value
+    setting['general'] = infoForm.value
     await api
       .updateSetting(setting)
       .then(() => {
         settingStore.setGeneralSetting(infoForm.value)
         isLoading.value = false
-        $message.success(t('common.text.update_success'))
+        $message.success(t('common.text.save_success'))
       })
       .catch(() => {
         isLoading.value = false
@@ -49,11 +49,11 @@ const infoFormRules = {
         :rules="infoFormRules" class="w-500">
         <NFormItem :label="$t('views.setting.label_workbench_title')" path="workbench_title">
           <NInput v-model:value="infoForm.workbench_title" type="text"
-            :placeholder="$t('views.setting.placeholder_workbench_title',{username:'{username}'})" />
+            :placeholder="$t('views.setting.placeholder_workbench_title', { username: '{username}' })" />
         </NFormItem>
         <NFormItem :label="$t('views.setting.label_workbench_desc')" path="workbench_desc">
           <NInput v-model:value="infoForm.workbench_desc" type="text"
-            :placeholder="$t('views.setting.placeholder_workbench_desc',{username:'{username}'})" />
+            :placeholder="$t('views.setting.placeholder_workbench_desc', { username: '{username}' })" />
         </NFormItem>
         <NFormItem :label="$t('views.setting.label_custom_css')" path="custom_css">
           <NInput v-model:value="infoForm.custom_css" type="textarea"
@@ -64,7 +64,7 @@ const infoFormRules = {
             :placeholder="$t('views.setting.placeholder_custom_js')" />
         </NFormItem>
         <NButton type="primary" :loading="isLoading" @click="updateSetting">
-          {{ $t('common.buttons.update') }}
+          {{ $t('common.buttons.save') }}
         </NButton>
       </NForm>
     </div>

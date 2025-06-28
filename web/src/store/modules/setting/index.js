@@ -43,8 +43,8 @@ export const useSettingStore = defineStore('setting', {
           this.logout()
           return
         }
-        const { custom_css, custom_js,workbench_desc,workbench_title } = res.data
-        this._generalSetting = {custom_css, custom_js,workbench_desc,workbench_title}
+        const { custom_css, custom_js, workbench_desc, workbench_title } = res.data
+        this._generalSetting = { custom_css, custom_js, workbench_desc, workbench_title }
         return res.data
       } catch (error) {
         return error
@@ -142,8 +142,18 @@ export const useSettingStore = defineStore('setting', {
           this.logout()
           return
         }
-        const { endpoint,max_size,timeout_time, region,enable_storage, access_id, secret_key, bucket, path, prefix} =
-          res.data
+        const {
+          endpoint,
+          max_size,
+          timeout_time,
+          region,
+          enable_storage,
+          access_id,
+          secret_key,
+          bucket,
+          path,
+          prefix,
+        } = res.data
         this._storageSetting = {
           endpoint,
           max_size,

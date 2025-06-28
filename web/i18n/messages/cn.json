@@ -158,10 +158,12 @@
   },
   "common": {
     "text": {
-      "update_success": "修改成功"
+      "update_success": "修改成功",
+      "save_success": "保存成功"
     },
     "buttons": {
-      "update": "修改"
+      "update": "修改",
+      "save": "保存"
     }
   }
 }

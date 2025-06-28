@@ -36,7 +36,7 @@ async function updateSetting() {
       .then(() => {
         settingStore.setContentSetting(infoForm.value)
         isLoading.value = false
-        $message.success(t('common.text.update_success'))
+        $message.success(t('common.text.save_success'))
       })
       .catch(() => {
         isLoading.value = false
@@ -94,7 +94,7 @@ api.getOrderOptionVisitor().then((res) => {
             :placeholder="$t('views.setting.placeholder_detail_time_format')" clearable />
         </NFormItem>
         <NButton type="primary" :loading="isLoading" @click="updateSetting">
-          {{ $t('common.buttons.update') }}
+          {{ $t('common.buttons.save') }}
         </NButton>
       </NForm>
     </div>

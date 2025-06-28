@@ -19,7 +19,7 @@ export function formatDate(date = undefined, format = 'YYYY-MM-DD') {
   return formatDateTime(date, format)
 }
 export function isValueEmpty(value) {
-  return value == undefined || value == '' || value === ''
+  return value == undefined || value === ''
 }
 export function isValueNotEmpty(value) {
   return !isValueEmpty(value)

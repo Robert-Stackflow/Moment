@@ -28,7 +28,7 @@ async function updateProfile() {
       .then(() => {
         userStore.setUserInfo(infoForm.value)
         isLoading.value = false
-        $message.success(t('common.text.update_success'))
+        $message.success(t('common.text.save_success'))
       })
       .catch(() => {
         isLoading.value = false
@@ -120,8 +120,8 @@ function validatePasswordSame(rule, value) {
 }
 
 async function beforeUploadImage(data) {
-  var types=['image/avif','image/vnd.microsoft.icon','image/jpeg','image/tiff','image/bmp','image/svg+xml','image/webp','image/png']
-  if (types.indexOf(data.file.file?.type)==-1) {
+  var types = ['image/avif', 'image/vnd.microsoft.icon', 'image/jpeg', 'image/tiff', 'image/bmp', 'image/svg+xml', 'image/webp', 'image/png']
+  if (types.indexOf(data.file.file?.type) == -1) {
     $message.error('只能上传图片文件，请重新上传')
     return false
   }
@@ -190,7 +190,7 @@ const customRequest = ({
               <NInput v-model:value="infoForm.email" type="text" :placeholder="$t('views.profile.placeholder_email')" />
             </NFormItem>
             <NButton type="primary" :loading="isLoading" @click="updateProfile">
-              {{ $t('common.buttons.update') }}
+              {{ $t('common.buttons.save') }}
             </NButton>
           </NForm>
         </div>
@@ -211,7 +211,7 @@ const customRequest = ({
               show-password-on="mousedown" :placeholder="$t('views.profile.placeholder_confirm_password')" />
           </NFormItem>
           <NButton type="primary" :loading="isLoading" @click="updatePassword">
-            {{ $t('common.buttons.update') }}
+            {{ $t('common.buttons.save') }}
           </NButton>
         </NForm>
       </NTabPane>
@@ -223,7 +223,8 @@ const customRequest = ({
   border-radius: 8px;
   margin-bottom: 25px;
 }
-.upload-button{
+
+.upload-button {
   margin-bottom: 24px;
 }
 </style>
