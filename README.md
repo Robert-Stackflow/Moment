@@ -16,7 +16,7 @@
   ```yaml
   services:
     moment:
-      image: ruida/moment:2.0
+      image: ruida/moment:latest
       container_name: moment
       volumes:
         - .moment:/app/data
@@ -58,6 +58,7 @@ image字段已删除
 
 - 使用`<服务器IP地址>:9999`或`域名`访问相册
 - 使用`<服务器IP地址>:9999/admin/workbench`或`<域名>/admin/workbench`访问后台管理
+- 默认管理员账号：`admin`，密码：`123456`，请登录后及时修改用户名和密码
 - 其他指南见[Wiki](https://github.com/Robert-Stackflow/Moment/wiki)
 
 ## 演示
