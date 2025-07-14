@@ -307,9 +307,15 @@ function fetchMetadata() {
       const fNumber = exif.FNumber ? `f/${exif.FNumber}` : ''
       let camera = model || `${make} ${model}`.trim()
       let result = [camera, focal, fNumber, iso].filter(Boolean).join(' ')
-      $message.success("成功获取EXIF信息");
       console.log("EXIF信息：", exif);
       imageForm.value.metadata = result;
+      if (result) {
+        $message.success("成功获取到EXIF信息");
+      } else {
+        $message.warning("获取到的EXIF信息不包含拍摄参数");
+      }
+    } else {
+      $message.warning("未获取到EXIF信息");
     }
   })
 }
@@ -321,13 +327,15 @@ function fetchPictureTime() {
     if (exif) {
       const time = exif.DateTimeOriginal || exif.DateTime || null
       if (time) {
-        $message.success("成功获取拍摄时间");
+        $message.success("成功获取到拍摄时间");
         imageForm.value.time = formatDateTime(new Date(time));
         return time;
       } else {
-        $message.warning("没有拍摄时间信息");
+        $message.warning("获取到的EXIF信息中不包含拍摄时间信息");
         return null
       }
+    } else {
+      $message.warning("未获取到EXIF信息");
     }
   })
 }
