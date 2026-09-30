@@ -37,6 +37,7 @@ const Categories = lazy(() => import("./pages/Categories"));
 const SettingsPage = lazy(() => import("./pages/Settings"));
 const Account = lazy(() => import("./pages/Account"));
 const Security = lazy(() => import("./pages/Security"));
+const Duplicates = lazy(() => import("./pages/Duplicates"));
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: { staleTime: 30_000, retry: false, refetchOnWindowFocus: false },
@@ -187,6 +188,11 @@ const router = createBrowserRouter(
           <Route path="posts/:id" element={<Editor />} />
           <Route path="drafts" element={<Drafts />} />
           <Route path="schedules" element={<Schedules />} />
+          <Route
+            path="organize"
+            element={<Navigate to="/organize/duplicates" replace />}
+          />
+          <Route path="organize/duplicates" element={<Duplicates />} />
           <Route path="trash" element={<Trash />} />
           <Route path="shares" element={<Shares />} />
           <Route path="shares/new" element={<ShareEditor />} />

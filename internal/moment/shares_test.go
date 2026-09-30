@@ -288,6 +288,7 @@ func TestShareBackupPreservesAlbumsNotGrantsAndUpgradesOlderSchema(t *testing.T)
 	status(t, shareMedia(restored.Router(), "GET", path+"/photos/1/original", grant), 401)
 	unlock(t, restored.Router(), path, password)
 	// Model a backup made by the previous release, before migration 006.
+	dropDuplicateSchema(t, restored)
 	for _, sql := range []string{"DROP TABLE moment_passkey_challenges", "DROP TABLE moment_passkeys", "DROP TABLE moment_passkey_users", "DROP TABLE moment_passkey_config", "DROP TABLE moment_schedules", "DROP TABLE moment_image_discovery", "DROP TABLE moment_post_discovery", "DELETE FROM moment_share_sessions", "DROP TABLE moment_share_sessions", "DROP TABLE moment_share_posts", "DROP TABLE moment_shares", "DELETE FROM moment_schema_migrations WHERE version>='006_shares.sql'"} {
 		if _, err = restored.db.Exec(sql); err != nil {
 			t.Fatal(err)

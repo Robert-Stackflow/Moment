@@ -354,6 +354,7 @@ func TestPasskeyBackupRestoreAndOlderUpgrade(t *testing.T) {
 	w := passkeyCall(t, h, "POST", "/passkeys/login/begin", Object{})
 	body := d.assertion(t, passkeyOptions(t, w), 0x05, 1, passkeyTestOrigin, "localhost")
 	status(t, passkeyCall(t, h, "POST", "/passkeys/login/finish", body, passkeyResponseCookie(t, w, "moment_passkey")), 200)
+	dropDuplicateSchema(t, restored)
 	for _, statement := range []string{"DROP TABLE moment_passkey_challenges", "DROP TABLE moment_passkeys", "DROP TABLE moment_passkey_users", "DROP TABLE moment_passkey_config", "DELETE FROM moment_schema_migrations WHERE version='009_passkeys.sql'"} {
 		if _, err = restored.db.Exec(statement); err != nil {
 			t.Fatal(err)

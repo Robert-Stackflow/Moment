@@ -16,6 +16,7 @@ import {
   ArrowUpRight,
   Grid2X2,
   Images,
+  ScanSearch,
   FilePenLine,
   CalendarClock,
   Link2,
@@ -45,6 +46,7 @@ import { Brand } from "./Brand";
 const items = [
   { label: "工作台", path: "/workbench", icon: Grid2X2 },
   { label: "帖子与图片", path: "/posts", icon: Images },
+  { label: "照片整理", path: "/organize", icon: ScanSearch },
   { label: "草稿", path: "/drafts", icon: FilePenLine },
   { label: "定时发布", path: "/schedules", icon: CalendarClock },
   { label: "分享相册", path: "/shares", icon: Link2 },

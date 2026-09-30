@@ -61,6 +61,9 @@ func (a *App) restoreBackup(c *gin.Context) {
 	}
 	_, err = prepared.db.Exec("DELETE FROM moment_sessions; DELETE FROM moment_share_sessions; DELETE FROM moment_passkey_challenges")
 	if err == nil {
+		_, err = prepared.db.Exec("UPDATE moment_duplicate_scans SET status='cancelled',lease_token='',lease_until=0,message='已恢复备份，请重新扫描'; DELETE FROM moment_photo_analysis_cache")
+	}
+	if err == nil {
 		_, err = prepared.db.Exec("UPDATE moment_schedules SET status='failed',error='已从备份恢复，请确认内容后重新安排发布时间',revision=revision+1,updated_at=? WHERE status='pending'", now())
 	}
 	closeErr := prepared.Close()

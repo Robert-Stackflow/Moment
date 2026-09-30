@@ -205,6 +205,7 @@ func TestDiscoveryDraftBackupRollbackAndOlderUpgrade(t *testing.T) {
 	if err = restored.db.QueryRow("SELECT latitude FROM moment_image_discovery LIMIT 1").Scan(&lat); err != nil || lat != -10.456 {
 		t.Fatal("private data not preserved in backup")
 	}
+	dropDuplicateSchema(t, restored)
 	for _, q := range []string{"DROP TABLE moment_passkey_challenges", "DROP TABLE moment_passkeys", "DROP TABLE moment_passkey_users", "DROP TABLE moment_passkey_config", "DROP TABLE moment_schedules", "DROP TABLE moment_image_discovery", "DROP TABLE moment_post_discovery", "DELETE FROM moment_schema_migrations WHERE version>='007_discovery.sql'"} {
 		if _, err = restored.db.Exec(q); err != nil {
 			t.Fatal(err)

@@ -6,6 +6,7 @@ import (
 	"embed"
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
@@ -29,6 +30,8 @@ type App struct {
 	writeMu        sync.RWMutex // Capture the database and local files at one write boundary.
 	backupMu       sync.Mutex
 	thumbnails     *thumbnailCache
+	analysisHTTP   *http.Client
+	analysisMu     sync.Mutex
 }
 type Object = map[string]any
 
@@ -52,7 +55,7 @@ func Open(data, dist string, secure bool) (*App, error) {
 		return nil, err
 	}
 	db.SetMaxOpenConns(1)
-	a := &App{db: db, data: data, dist: dist, secure: secure, limiter: newLoginLimiter(), shareLimiter: newLoginLimiter(), passkeyLimiter: newLoginLimiter(), thumbnails: newThumbnailCache()}
+	a := &App{db: db, data: data, dist: dist, secure: secure, limiter: newLoginLimiter(), shareLimiter: newLoginLimiter(), passkeyLimiter: newLoginLimiter(), thumbnails: newThumbnailCache(), analysisHTTP: analysisHTTPClient()}
 	if err = a.initialize(); err != nil {
 		db.Close()
 		return nil, err
