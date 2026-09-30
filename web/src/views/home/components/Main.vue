@@ -1,5 +1,7 @@
 <template>
     <div id="blog-main" ref="listRef">
+        <p v-if="loadError" role="alert">相册加载失败。<button @click="getBlogs">重试</button></p>
+        <p v-if="!loading && !loadError && !blogs.length">这里还没有公开的照片。</p>
         <Image v-for="blog in blogs" :key="blog.id" :data="blog" @click="showImage(blog)" />
         <VueFinalModal v-model="show" content-class="lightbox" :overlay-transition="'vfm-fade'"
             :content-transition="'vfm-fade'" @before-close="close" @click-outside="close">
@@ -57,7 +59,7 @@
 </template>
 
 <script setup>
-import { throttle } from 'lodash'
+import { throttle } from 'lodash-es'
 import Image from './Image.vue'
 import { useSettingStore } from '@/store'
 import api from '@/api'
@@ -80,10 +82,13 @@ const nextImageUrl = ref('')
 
 var page = 1
 var total = 0
+const loading = ref(false)
+const loadError = ref(false)
+let loadGeneration = 0
 const settingStore = useSettingStore()
 const baseTitle = isValueNotEmpty(settingStore.metaSetting?.site_name) ? settingStore.metaSetting?.site_name : import.meta.env.VITE_TITLE
 const splitter = isValueNotEmpty(settingStore.metaSetting?.site_splitter) ? settingStore.metaSetting?.site_splitter : import.meta.env.VITE_TITLE_SPLITTER
-const page_size = isValueNotEmpty(settingStore.contentSetting?.page_size) ? settingStore.contentSetting?.page_size : import.meta.env.VITE_PAGE_SIZE
+const page_size = Math.min(100, Math.max(1, Number(settingStore.contentSetting?.page_size || 20)))
 var thumbnail_suffix = isValueNotEmpty(settingStore.contentSetting?.thumbnail_suffix) ? settingStore.contentSetting?.thumbnail_suffix : ""
 var detail_suffix = isValueNotEmpty(settingStore.contentSetting?.detail_suffix) ? settingStore.contentSetting?.detail_suffix : ""
 var detail_show_location = isValueNotEmpty(settingStore.contentSetting.detail_show_location) ? settingStore.contentSetting.detail_show_location : true
@@ -193,6 +198,9 @@ function onImageLoad() {
     imageVisible.value = true
 }
 async function getBlogs() {
+    const generation = loadGeneration
+    loading.value = true
+    loadError.value = false
     try {
         var params = { page: page, page_size: page_size }
         if (isValueNotEmpty(current_category))
@@ -200,6 +208,7 @@ async function getBlogs() {
         if (isValueNotEmpty(current_location))
             params.location = current_location
         const res = await api.getBlogsVisitor(params)
+        if (generation !== loadGeneration) return
         if (res.code == 200) {
             res.data.forEach(e => blogs.value.push(e))
             formatBlogs();
@@ -207,7 +216,9 @@ async function getBlogs() {
             total = res.total;
         }
     } catch (e) {
-        console.log(e)
+        if (generation === loadGeneration) loadError.value = true
+    } finally {
+        if (generation === loadGeneration) loading.value = false
     }
 }
 function formatBlogs() {
@@ -217,8 +228,8 @@ function formatBlogs() {
         blog.detail_image_urls = []
         for (var index in blog.images) {
             var image = blog.images[index]
-            image.thumbnail = image.image_url + thumbnail_suffix
-            image.detail = image.image_url + detail_suffix
+            image.thumbnail = image.image_url + (image.image_url.startsWith('/uploads/') ? '' : thumbnail_suffix)
+            image.detail = image.image_url + (image.image_url.startsWith('/uploads/') ? '' : detail_suffix)
             if (image.time) {
                 image.detail_time = formatDateTime(parseDateTime(image.time), detail_time_format)
             }
@@ -245,12 +256,15 @@ async function getCategory() {
     return []
 }
 function loadMore() {
-    if (page * page_size < total) {
+    if (!loading.value && !loadError.value && page * page_size < total) {
         page++;
         getBlogs()
     }
 }
 watch(() => router.currentRoute.value, (value) => {
+    loadGeneration++
+    page = 1
+    total = 0
     current_category = value.params.category
     current_location = value.params.location
     close()

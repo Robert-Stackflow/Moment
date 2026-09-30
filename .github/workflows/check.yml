@@ -1,0 +1,25 @@
+name: Check
+on: [push, pull_request]
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            web/package-lock.json
+            admin/package-lock.json
+      - run: go test ./...
+      - run: go vet ./...
+      - run: npm --prefix web ci
+      - run: npm --prefix admin ci
+      - run: npm --prefix admin run typecheck
+      - run: npm run build
+      - run: docker build -t moment:check .

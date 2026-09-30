@@ -5,4 +5,10 @@ export const PROXY_CONFIG = {
     target: 'http://127.0.0.1:9999',
     changeOrigin: true,
   },
+  '/uploads': {
+    target: 'http://127.0.0.1:9999',
+  },
+  '/avatars': {
+    target: 'http://127.0.0.1:9999',
+  },
 }

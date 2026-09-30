@@ -1,18 +1,1 @@
-<template>
-  <AppPage>
-    <n-result m-auto status="404">
-      <template #icon>
-        <icon-custom-not-found text-400px text-primary></icon-custom-not-found>
-      </template>
-      <template #footer>
-        <n-button type="primary" @click="replace('/')">{{
-          $t('views.errors.text_back_to_home')
-        }}</n-button>
-      </template>
-    </n-result>
-  </AppPage>
-</template>
-
-<script setup>
-const { replace } = useRouter()
-</script>
+<template><main style="padding: 80px 24px; text-align: center"><h1>找不到这个页面</h1><p><a href="/">返回相册</a></p></main></template>

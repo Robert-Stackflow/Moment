@@ -1,82 +1,90 @@
 # Moment
 
-## 简介
+个人相册与照片故事。当前版本使用 **Go + Gin + SQLite** 提供服务，管理后台使用 **React + TypeScript + Vite + Mantine** 从零编写，视觉参考 [Share](https://github.com/Robert-Stackflow/Share)。公开相册继续使用 Vue 3，保留原有展示方式。
 
-- 移植自[TimePlus](https://github.com/zhheo/TimePlus)和[time](https://github.com/wclk/time)的相册博客主题
-- 脱离 Typecho 和 Mysql，基于[vue-fastapi-admin](https://github.com/mizhexiaoxiao/vue-fastapi-admin)使用 Vue+FastAPI 开发
-- 随意发布你的图片、分类、地点
-- 高程度自定义你的网站，自由管理网站 Meta、内容设置、菜单设置
-- 快捷发布所见所闻，支持将图片上传至符合 S3 标准的存储桶中
-- 预览在线效果：[时刻](https://moment.cloudchewie.com/)
+## 功能
 
-## 部署
+- 工作台：帖子、图片、分类和隐藏内容统计，最近发布内容。
+- 帖子：搜索、分类与地点筛选、排序、分页、网格与列表切换、批量公开/隐藏/删除。
+- 编辑：多图上传、上传进度与失败重试、EXIF、图片地址、封面排序、单图隐藏与文字、拍摄时间、地点、分类、内容预览及未保存提醒。
+- 分类：顶级分类和子分类、访问别名、排序、关系管理。
+- 设置：原有网站信息、展示参数、自定义 CSS/JS 和 S3 配置；新增服务器本地存储。
+- 账户：原密码登录、资料修改、本地头像上传、修改密码后使全部设备的会话失效。
 
-- 使用 Docker-compose 部署
+## 本地运行
 
-  ```yaml
-  services:
-    moment:
-      image: ruida/moment:latest
-      container_name: moment
-      volumes:
-        - .moment:/app/data
-      ports:
-        - 9999:9999
-  ```
+需要 Go 1.24+ 和 Node.js 22（建议 22.12+）。在仓库根目录执行：
 
-## 迁移指南
-
-### 从 v1.x 迁移至 v2.x
-
-1. 为避免迁移失败，请**务必备份**你在 v1.x 版本的数据（容器内的`/opt/moment/app/data`目录）
-2. 将你的数据目录（如.moment）挂载到 v2.x 版本的容器中（容器内的`/app/data`目录）
-3. 运行 v2.x 版本的容器
-4. 查看容器日志，确认是否有迁移错误（容器迁移日志示例如下）
-
-```plaintext
-2025-06-27 23:52:39 - Moment - INFO - 正在初始化应用...
-2025-06-27 23:52:39 - Moment - INFO - 执行迁移: migrations_001.py for ./migrations/migrations_001.py
-开始数据库迁移...
-BlogImage表不存在，开始创建...
-表结构创建完成
-检测到 44 篇博客但没有图片记录，开始迁移...
-✅ 已为博客 '测试' (ID: 1) 创建图片记录
-✅ 已为博客 '咳咳' (ID: 2) 创建图片记录
-...
-✅ 已为博客 '小桥' (ID: 12) 创建图片记录
-开始删除Blog表中的image字段...
-image字段已删除
-迁移完成
-2025-06-28 22:48:26 - Moment - INFO - 迁移完成: migrations_001.py
-2025-06-27 23:52:39 - Moment - INFO - 应用初始化完成
+```powershell
+npm --prefix web ci
+npm --prefix admin ci
+npm run build
+go run ./cmd/moment -addr 127.0.0.1:9999
 ```
 
-1. 如果没有错误，访问`<服务器IP地址>:9999/admin/workbench`
-   > 如果迁移过程中出现错误，请提交 Issue，附上容器运行日志
+访问 `http://127.0.0.1:9999/` 和 `http://127.0.0.1:9999/admin/`。默认数据目录为 `data`，数据库为 `data/db.sqlite3`。首次使用空数据库时，需要在登录页创建管理员。已有数据库使用原账号和密码登录。
 
-## 使用指南
+**构建顺序是公开相册在前、后台在后。** 公开相册构建会清理 `dist`，仓库根目录的 `npm run build` 已按此顺序执行。
 
-- 使用`<服务器IP地址>:9999`或`域名`访问相册
-- 使用`<服务器IP地址>:9999/admin/workbench`或`<域名>/admin/workbench`访问后台管理
-- 默认管理员账号：`admin`，密码：`123456`，请登录后及时修改用户名和密码
-- 其他指南见[Wiki](https://github.com/Robert-Stackflow/Moment/wiki)
+开发时运行 Go 服务，再执行 `npm run dev:admin`（5174 端口）或 `npm run dev:gallery`（3100 端口）。前端使用同源代理连接 Go 服务；后台可通过 `MOMENT_DEV_API` 指定其他服务地址。
 
-## 演示
+配置项：
 
-![web](./img/web.png)
+| 项目 | 默认值 | 用途 |
+| --- | --- | --- |
+| `MOMENT_DATA_DIR` / `-data` | `data` | 原数据库目录与本地上传文件 |
+| `MOMENT_DIST_DIR` / `-dist` | `dist` | 已构建前端目录 |
+| `MOMENT_ADDR` / `-addr` | `:9999` | 服务监听地址 |
+| `MOMENT_COOKIE_SECURE` | `false` | HTTPS 部署时设为 `true` |
 
-![admin-workbench](./img/admin-workbench.png)
+## Docker 部署
 
-![admin-blogs](./img/admin-blogs.png)
+镜像从源码构建公开相册、新后台和 Go 服务，无需 Python 运行环境。现有数据目录挂载路径仍为 `/app/data`。
 
-![admin-categories](./img/admin-categories.png)
+```sh
+docker compose up -d --build
+```
 
-![admin-general-setting](./img/admin-general-setting.png)
+默认将 `.moment` 挂载到 `/app/data`，开放 9999 端口。HTTPS 反向代理部署时设置 `MOMENT_COOKIE_SECURE=true`；代理需保留原始 `Host` 并把 `/api`、`/uploads`、`/avatars`、`/assets`、`/admin` 路径统一转发到此服务。
 
-![admin-meta-setting](./img/admin-meta-setting.png)
+## 从 Python 版本迁移
 
-![admin-content-setting](./img/admin-content-setting.png)
+1. 停止原服务及写入，备份完整数据目录，包含 `db.sqlite3` 和存在的 WAL/SHM 文件。数据库备份与图片存储备份分别保留。
+2. 使用新镜像并挂载**原数据目录**到 `/app/data`，不需要导出为其他数据库格式。
+3. 第一次启动 Go 服务会先执行数据库完整性检查，并通过 SQLite `VACUUM INTO` 生成一致的迁移前快照：`data/backups/before-go-*.sqlite3`。备份失败时终止启动。
+4. 新增 `moment_schema_migrations`、`moment_sessions` 与查询索引。保留原有业务表、ID、关系、JSON 设置、密码哈希、旧 `migrates` 表及 `*_backup_v1` 历史表。已有图片地址及原 S3 配置继续使用。
+5. 打开 `/admin/`，使用原账号密码重新登录。登录改为 HttpOnly Cookie 会话，原 JWT 会话不沿用。
+6. 检查帖子/图片/分类数量、隐藏内容、分类访问、图片处理后缀、S3 上传及网站设置，再恢复日常使用。
 
-![admin-storage-setting](./img/admin-storage-setting.png)
+上传文件名会增加随机标识，避免覆盖同名原文件。删除帖子时删除数据库中的图片与分类关系，保留存储中的原始文件。设置接口不回传 S3 凭据；编辑时凭据留空保留现有值。
 
-![admin-menu-setting](./img/admin-menu-setting.png)
+头像始终保存在 `data/avatars`，不使用 S3，也不受照片上传开关、大小上限和路径模板影响。支持不超过 5 MB、3200 万像素的 JPG/PNG/WebP/GIF；解码验证后缩小至最长边 512px，保存为静态 PNG（动图使用首帧）。已有头像 URL 继续兼容，无需修改数据库表结构。
+
+公开查询每次最多返回 100 篇；较大的旧每页设置会由图库分批读取。保存帖子、图片与分类关系使用同一事务，失败后完整回滚。时间继续以原有上海本地时间保存。
+
+**回滚：** 停止 Go 服务，保留新版本数据目录供恢复新增内容，再用迁移前备份恢复数据库并启动原版本。恢复时移走被替换数据库对应的 WAL/SHM，禁止只替换运行中的主数据库文件。原版本无法管理新版本的本地上传流程，回滚前应另行保留上传目录。
+
+## 验证
+
+```sh
+npm run check
+go vet ./...
+npm run build
+```
+
+数据库兼容测试只使用临时副本；可用环境变量 `MOMENT_TEST_DATABASE` 指向通过 SQLite 备份得到的完整快照，然后执行 `go test ./...`。检查原业务表结构与全量记录摘要、首次备份、重复启动及公开接口；不打印记录内容。
+
+自动测试覆盖旧 Argon2id 密码、会话与来源校验、事务回滚、图片 ID 保留、隐藏内容分页、凭据保留、分类层级、本地上传和使用旧配置连接模拟 S3 服务。CI 还执行前端构建和镜像构建。
+
+## 目录
+
+| 目录 | 内容 |
+| --- | --- |
+| `cmd/moment` | Go 服务入口 |
+| `internal/moment` | 认证、内容、设置、存储与数据库逻辑 |
+| `internal/moment/migrations` | 版本化 SQL 迁移 |
+| `admin` | 全新 React 管理后台 |
+| `web` | Vue 公开相册 |
+| `dist` | 本地构建输出 |
+
+主题起源于 [TimePlus](https://github.com/zhheo/TimePlus) 与 [time](https://github.com/wclk/time)，早期版本基于 [vue-fastapi-admin](https://github.com/mizhexiaoxiao/vue-fastapi-admin)。使用仓库原有 LICENSE。

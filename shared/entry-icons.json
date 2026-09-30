@@ -1,0 +1,602 @@
+[
+  {
+    "value": "lucide:link",
+    "name": "链接",
+    "group": "常用",
+    "icon": {
+      "body": "<g fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"><path d=\"M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71\"/><path d=\"M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71\"/></g>",
+      "width": 24,
+      "height": 24
+    }
+  },
+  {
+    "value": "lucide:external-link",
+    "name": "外链",
+    "group": "常用",
+    "icon": {
+      "body": "<path fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M15 3h6v6m-11 5L21 3m-3 10v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6\"/>",
+      "width": 24,
+      "height": 24
+    }
+  },
+  {
+    "value": "lucide:home",
+    "name": "主页",
+    "group": "常用",
+    "icon": {
+      "body": "<g fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"><path d=\"m3 9l9-7l9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z\"/><path d=\"M9 22V12h6v10\"/></g>",
+      "width": 24,
+      "height": 24
+    }
+  },
+  {
+    "value": "lucide:globe",
+    "name": "网站",
+    "group": "常用",
+    "icon": {
+      "body": "<g fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"><circle cx=\"12\" cy=\"12\" r=\"10\"/><path d=\"M12 2a14.5 14.5 0 0 0 0 20a14.5 14.5 0 0 0 0-20M2 12h20\"/></g>",
+      "width": 24,
+      "height": 24
+    }
+  },
+  {
+    "value": "lucide:user",
+    "name": "个人",
+    "group": "常用",
+    "icon": {
+      "body": "<g fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"><path d=\"M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2\"/><circle cx=\"12\" cy=\"7\" r=\"4\"/></g>",
+      "width": 24,
+      "height": 24
+    }
+  },
+  {
+    "value": "lucide:heart",
+    "name": "喜欢",
+    "group": "常用",
+    "icon": {
+      "body": "<path fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2c-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z\"/>",
+      "width": 24,
+      "height": 24
+    }
+  },
+  {
+    "value": "lucide:star",
+    "name": "收藏",
+    "group": "常用",
+    "icon": {
+      "body": "<path fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"m12 2l3.09 6.26L22 9.27l-5 4.87l1.18 6.88L12 17.77l-6.18 3.25L7 14.14L2 9.27l6.91-1.01z\"/>",
+      "width": 24,
+      "height": 24
+    }
+  },
+  {
+    "value": "lucide:bookmark",
+    "name": "书签",
+    "group": "常用",
+    "icon": {
+      "body": "<path fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"m19 21l-7-4l-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z\"/>",
+      "width": 24,
+      "height": 24
+    }
+  },
+  {
+    "value": "lucide:compass",
+    "name": "导航",
+    "group": "常用",
+    "icon": {
+      "body": "<g fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"><circle cx=\"12\" cy=\"12\" r=\"10\"/><path d=\"m16.24 7.76l-2.12 6.36l-6.36 2.12l2.12-6.36z\"/></g>",
+      "width": 24,
+      "height": 24
+    }
+  },
+  {
+    "value": "lucide:search",
+    "name": "搜索",
+    "group": "常用",
+    "icon": {
+      "body": "<g fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"><circle cx=\"11\" cy=\"11\" r=\"8\"/><path d=\"m21 21l-4.3-4.3\"/></g>",
+      "width": 24,
+      "height": 24
+    }
+  },
+  {
+    "value": "lucide:map-pin",
+    "name": "位置",
+    "group": "常用",
+    "icon": {
+      "body": "<g fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"><path d=\"M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0\"/><circle cx=\"12\" cy=\"10\" r=\"3\"/></g>",
+      "width": 24,
+      "height": 24
+    }
+  },
+  {
+    "value": "lucide:calendar",
+    "name": "日历",
+    "group": "常用",
+    "icon": {
+      "body": "<g fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"><path d=\"M8 2v4m8-4v4\"/><rect width=\"18\" height=\"18\" x=\"3\" y=\"4\" rx=\"2\"/><path d=\"M3 10h18\"/></g>",
+      "width": 24,
+      "height": 24
+    }
+  },
+  {
+    "value": "lucide:mail",
+    "name": "邮件",
+    "group": "联系",
+    "icon": {
+      "body": "<g fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"><rect width=\"20\" height=\"16\" x=\"2\" y=\"4\" rx=\"2\"/><path d=\"m22 7l-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7\"/></g>",
+      "width": 24,
+      "height": 24
+    }
+  },
+  {
+    "value": "lucide:send",
+    "name": "发送",
+    "group": "联系",
+    "icon": {
+      "body": "<path fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"m22 2l-7 20l-4-9l-9-4Zm0 0L11 13\"/>",
+      "width": 24,
+      "height": 24
+    }
+  },
+  {
+    "value": "lucide:message-circle",
+    "name": "聊天",
+    "group": "联系",
+    "icon": {
+      "body": "<path fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M7.9 20A9 9 0 1 0 4 16.1L2 22Z\"/>",
+      "width": 24,
+      "height": 24
+    }
+  },
+  {
+    "value": "lucide:messages-square",
+    "name": "消息",
+    "group": "联系",
+    "icon": {
+      "body": "<path fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M14 9a2 2 0 0 1-2 2H6l-4 4V4c0-1.1.9-2 2-2h8a2 2 0 0 1 2 2zm4 0h2a2 2 0 0 1 2 2v11l-4-4h-6a2 2 0 0 1-2-2v-1\"/>",
+      "width": 24,
+      "height": 24
+    }
+  },
+  {
+    "value": "lucide:phone",
+    "name": "电话",
+    "group": "联系",
+    "icon": {
+      "body": "<path fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M22 16.92v3a2 2 0 0 1-2.18 2a19.79 19.79 0 0 1-8.63-3.07a19.5 19.5 0 0 1-6-6a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72a12.84 12.84 0 0 0 .7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45a12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92\"/>",
+      "width": 24,
+      "height": 24
+    }
+  },
+  {
+    "value": "lucide:at-sign",
+    "name": "账号",
+    "group": "联系",
+    "icon": {
+      "body": "<g fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"><circle cx=\"12\" cy=\"12\" r=\"4\"/><path d=\"M16 8v5a3 3 0 0 0 6 0v-1a10 10 0 1 0-4 8\"/></g>",
+      "width": 24,
+      "height": 24
+    }
+  },
+  {
+    "value": "lucide:contact",
+    "name": "联系人",
+    "group": "联系",
+    "icon": {
+      "body": "<g fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"><path d=\"M17 18a2 2 0 0 0-2-2H9a2 2 0 0 0-2 2\"/><rect width=\"18\" height=\"18\" x=\"3\" y=\"4\" rx=\"2\"/><circle cx=\"12\" cy=\"10\" r=\"2\"/><path d=\"M8 2v2m8-2v2\"/></g>",
+      "width": 24,
+      "height": 24
+    }
+  },
+  {
+    "value": "lucide:users",
+    "name": "社区",
+    "group": "联系",
+    "icon": {
+      "body": "<g fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"><path d=\"M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2\"/><circle cx=\"9\" cy=\"7\" r=\"4\"/><path d=\"M22 21v-2a4 4 0 0 0-3-3.87m-3-12a4 4 0 0 1 0 7.75\"/></g>",
+      "width": 24,
+      "height": 24
+    }
+  },
+  {
+    "value": "lucide:radio",
+    "name": "广播",
+    "group": "联系",
+    "icon": {
+      "body": "<g fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"><path d=\"M4.9 19.1C1 15.2 1 8.8 4.9 4.9m2.9 11.3c-2.3-2.3-2.3-6.1 0-8.5\"/><circle cx=\"12\" cy=\"12\" r=\"2\"/><path d=\"M16.2 7.8c2.3 2.3 2.3 6.1 0 8.5m2.9-11.4C23 8.8 23 15.1 19.1 19\"/></g>",
+      "width": 24,
+      "height": 24
+    }
+  },
+  {
+    "value": "lucide:rss",
+    "name": "订阅",
+    "group": "联系",
+    "icon": {
+      "body": "<g fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"><path d=\"M4 11a9 9 0 0 1 9 9M4 4a16 16 0 0 1 16 16\"/><circle cx=\"5\" cy=\"19\" r=\"1\"/></g>",
+      "width": 24,
+      "height": 24
+    }
+  },
+  {
+    "value": "lucide:share-2",
+    "name": "分享",
+    "group": "联系",
+    "icon": {
+      "body": "<g fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"><circle cx=\"18\" cy=\"5\" r=\"3\"/><circle cx=\"6\" cy=\"12\" r=\"3\"/><circle cx=\"18\" cy=\"19\" r=\"3\"/><path d=\"m8.59 13.51l6.83 3.98m-.01-10.98l-6.82 3.98\"/></g>",
+      "width": 24,
+      "height": 24
+    }
+  },
+  {
+    "value": "lucide:qr-code",
+    "name": "二维码",
+    "group": "联系",
+    "icon": {
+      "body": "<g fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"><rect width=\"5\" height=\"5\" x=\"3\" y=\"3\" rx=\"1\"/><rect width=\"5\" height=\"5\" x=\"16\" y=\"3\" rx=\"1\"/><rect width=\"5\" height=\"5\" x=\"3\" y=\"16\" rx=\"1\"/><path d=\"M21 16h-3a2 2 0 0 0-2 2v3m5 0v.01M12 7v3a2 2 0 0 1-2 2H7m-4 0h.01M12 3h.01M12 16v.01M16 12h1m4 0v.01M12 21v-1\"/></g>",
+      "width": 24,
+      "height": 24
+    }
+  },
+  {
+    "value": "lucide:camera",
+    "name": "相机",
+    "group": "媒体",
+    "icon": {
+      "body": "<g fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"><path d=\"M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3z\"/><circle cx=\"12\" cy=\"13\" r=\"3\"/></g>",
+      "width": 24,
+      "height": 24
+    }
+  },
+  {
+    "value": "lucide:image",
+    "name": "图片",
+    "group": "媒体",
+    "icon": {
+      "body": "<g fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"><rect width=\"18\" height=\"18\" x=\"3\" y=\"3\" rx=\"2\" ry=\"2\"/><circle cx=\"9\" cy=\"9\" r=\"2\"/><path d=\"m21 15l-3.086-3.086a2 2 0 0 0-2.828 0L6 21\"/></g>",
+      "width": 24,
+      "height": 24
+    }
+  },
+  {
+    "value": "lucide:images",
+    "name": "相册",
+    "group": "媒体",
+    "icon": {
+      "body": "<g fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"><path d=\"M18 22H4a2 2 0 0 1-2-2V6\"/><path d=\"m22 13l-1.296-1.296a2.41 2.41 0 0 0-3.408 0L11 18\"/><circle cx=\"12\" cy=\"8\" r=\"2\"/><rect width=\"16\" height=\"16\" x=\"6\" y=\"2\" rx=\"2\"/></g>",
+      "width": 24,
+      "height": 24
+    }
+  },
+  {
+    "value": "lucide:aperture",
+    "name": "摄影",
+    "group": "媒体",
+    "icon": {
+      "body": "<g fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"><circle cx=\"12\" cy=\"12\" r=\"10\"/><path d=\"m14.31 8l5.74 9.94M9.69 8h11.48M7.38 12l5.74-9.94M9.69 16L3.95 6.06M14.31 16H2.83m13.79-4l-5.74 9.94\"/></g>",
+      "width": 24,
+      "height": 24
+    }
+  },
+  {
+    "value": "lucide:film",
+    "name": "电影",
+    "group": "媒体",
+    "icon": {
+      "body": "<g fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"><rect width=\"18\" height=\"18\" x=\"3\" y=\"3\" rx=\"2\"/><path d=\"M7 3v18M3 7.5h4M3 12h18M3 16.5h4M17 3v18m0-13.5h4m-4 9h4\"/></g>",
+      "width": 24,
+      "height": 24
+    }
+  },
+  {
+    "value": "lucide:video",
+    "name": "视频",
+    "group": "媒体",
+    "icon": {
+      "body": "<g fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"><path d=\"m22 8l-6 4l6 4z\"/><rect width=\"14\" height=\"12\" x=\"2\" y=\"6\" rx=\"2\" ry=\"2\"/></g>",
+      "width": 24,
+      "height": 24
+    }
+  },
+  {
+    "value": "lucide:music",
+    "name": "音乐",
+    "group": "媒体",
+    "icon": {
+      "body": "<g fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"><path d=\"M9 18V5l12-2v13\"/><circle cx=\"6\" cy=\"18\" r=\"3\"/><circle cx=\"18\" cy=\"16\" r=\"3\"/></g>",
+      "width": 24,
+      "height": 24
+    }
+  },
+  {
+    "value": "lucide:headphones",
+    "name": "耳机",
+    "group": "媒体",
+    "icon": {
+      "body": "<path fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M3 14h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a9 9 0 0 1 18 0v7a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3\"/>",
+      "width": 24,
+      "height": 24
+    }
+  },
+  {
+    "value": "lucide:mic",
+    "name": "播客",
+    "group": "媒体",
+    "icon": {
+      "body": "<g fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"><path d=\"M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3\"/><path d=\"M19 10v2a7 7 0 0 1-14 0v-2m7 9v3\"/></g>",
+      "width": 24,
+      "height": 24
+    }
+  },
+  {
+    "value": "lucide:play",
+    "name": "播放",
+    "group": "媒体",
+    "icon": {
+      "body": "<path fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"m6 3l14 9l-14 9z\"/>",
+      "width": 24,
+      "height": 24
+    }
+  },
+  {
+    "value": "lucide:palette",
+    "name": "绘画",
+    "group": "媒体",
+    "icon": {
+      "body": "<g fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"><circle cx=\"13.5\" cy=\"6.5\" r=\".5\" fill=\"currentColor\"/><circle cx=\"17.5\" cy=\"10.5\" r=\".5\" fill=\"currentColor\"/><circle cx=\"8.5\" cy=\"7.5\" r=\".5\" fill=\"currentColor\"/><circle cx=\"6.5\" cy=\"12.5\" r=\".5\" fill=\"currentColor\"/><path d=\"M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688c0-.437-.18-.835-.437-1.125c-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2\"/></g>",
+      "width": 24,
+      "height": 24
+    }
+  },
+  {
+    "value": "lucide:pen-tool",
+    "name": "设计",
+    "group": "媒体",
+    "icon": {
+      "body": "<g fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"><path d=\"m12 19l7-7l3 3l-7 7z\"/><path d=\"m18 13l-1.5-7.5L2 2l3.5 14.5L13 18zM2 2l7.586 7.586\"/><circle cx=\"11\" cy=\"11\" r=\"2\"/></g>",
+      "width": 24,
+      "height": 24
+    }
+  },
+  {
+    "value": "lucide:book-open",
+    "name": "阅读",
+    "group": "内容",
+    "icon": {
+      "body": "<path fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2zm20 0h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z\"/>",
+      "width": 24,
+      "height": 24
+    }
+  },
+  {
+    "value": "lucide:notebook",
+    "name": "笔记",
+    "group": "内容",
+    "icon": {
+      "body": "<g fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"><path d=\"M2 6h4m-4 4h4m-4 4h4m-4 4h4\"/><rect width=\"16\" height=\"20\" x=\"4\" y=\"2\" rx=\"2\"/><path d=\"M16 2v20\"/></g>",
+      "width": 24,
+      "height": 24
+    }
+  },
+  {
+    "value": "lucide:file-text",
+    "name": "文章",
+    "group": "内容",
+    "icon": {
+      "body": "<g fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"><path d=\"M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z\"/><path d=\"M14 2v4a2 2 0 0 0 2 2h4M10 9H8m8 4H8m8 4H8\"/></g>",
+      "width": 24,
+      "height": 24
+    }
+  },
+  {
+    "value": "lucide:newspaper",
+    "name": "资讯",
+    "group": "内容",
+    "icon": {
+      "body": "<g fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"><path d=\"M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2m0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2m12 5h-8m5 4h-5\"/><path d=\"M10 6h8v4h-8z\"/></g>",
+      "width": 24,
+      "height": 24
+    }
+  },
+  {
+    "value": "lucide:folder",
+    "name": "文件夹",
+    "group": "内容",
+    "icon": {
+      "body": "<path fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z\"/>",
+      "width": 24,
+      "height": 24
+    }
+  },
+  {
+    "value": "lucide:archive",
+    "name": "归档",
+    "group": "内容",
+    "icon": {
+      "body": "<g fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"><rect width=\"20\" height=\"5\" x=\"2\" y=\"3\" rx=\"1\"/><path d=\"M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8m-10 4h4\"/></g>",
+      "width": 24,
+      "height": 24
+    }
+  },
+  {
+    "value": "lucide:tag",
+    "name": "标签",
+    "group": "内容",
+    "icon": {
+      "body": "<g fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"><path d=\"M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z\"/><circle cx=\"7.5\" cy=\"7.5\" r=\".5\" fill=\"currentColor\"/></g>",
+      "width": 24,
+      "height": 24
+    }
+  },
+  {
+    "value": "lucide:cloud",
+    "name": "云盘",
+    "group": "内容",
+    "icon": {
+      "body": "<path fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9\"/>",
+      "width": 24,
+      "height": 24
+    }
+  },
+  {
+    "value": "lucide:download",
+    "name": "下载",
+    "group": "内容",
+    "icon": {
+      "body": "<path fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4m4-5l5 5l5-5m-5 5V3\"/>",
+      "width": 24,
+      "height": 24
+    }
+  },
+  {
+    "value": "lucide:coffee",
+    "name": "咖啡",
+    "group": "内容",
+    "icon": {
+      "body": "<path fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M17 8h1a4 4 0 1 1 0 8h-1M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4Zm3-6v2m4-2v2m4-2v2\"/>",
+      "width": 24,
+      "height": 24
+    }
+  },
+  {
+    "value": "lucide:gift",
+    "name": "礼物",
+    "group": "内容",
+    "icon": {
+      "body": "<g fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"><rect width=\"18\" height=\"4\" x=\"3\" y=\"8\" rx=\"1\"/><path d=\"M12 8v13m7-9v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7m2.5-4a2.5 2.5 0 0 1 0-5A4.8 8 0 0 1 12 8a4.8 8 0 0 1 4.5-5a2.5 2.5 0 0 1 0 5\"/></g>",
+      "width": 24,
+      "height": 24
+    }
+  },
+  {
+    "value": "lucide:shopping-bag",
+    "name": "商店",
+    "group": "内容",
+    "icon": {
+      "body": "<g fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"><path d=\"M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4ZM3 6h18\"/><path d=\"M16 10a4 4 0 0 1-8 0\"/></g>",
+      "width": 24,
+      "height": 24
+    }
+  },
+  {
+    "value": "lucide:code-2",
+    "name": "代码",
+    "group": "开发",
+    "icon": {
+      "body": "<path fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"m18 16l4-4l-4-4M6 8l-4 4l4 4m8.5-12l-5 16\"/>",
+      "width": 24,
+      "height": 24
+    }
+  },
+  {
+    "value": "lucide:terminal",
+    "name": "终端",
+    "group": "开发",
+    "icon": {
+      "body": "<path fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"m4 17l6-6l-6-6m8 14h8\"/>",
+      "width": 24,
+      "height": 24
+    }
+  },
+  {
+    "value": "lucide:monitor",
+    "name": "电脑",
+    "group": "开发",
+    "icon": {
+      "body": "<g fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"><rect width=\"20\" height=\"14\" x=\"2\" y=\"3\" rx=\"2\"/><path d=\"M8 21h8m-4-4v4\"/></g>",
+      "width": 24,
+      "height": 24
+    }
+  },
+  {
+    "value": "lucide:smartphone",
+    "name": "手机",
+    "group": "开发",
+    "icon": {
+      "body": "<g fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"><rect width=\"14\" height=\"20\" x=\"5\" y=\"2\" rx=\"2\" ry=\"2\"/><path d=\"M12 18h.01\"/></g>",
+      "width": 24,
+      "height": 24
+    }
+  },
+  {
+    "value": "lucide:server",
+    "name": "服务器",
+    "group": "开发",
+    "icon": {
+      "body": "<g fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"><rect width=\"20\" height=\"8\" x=\"2\" y=\"2\" rx=\"2\" ry=\"2\"/><rect width=\"20\" height=\"8\" x=\"2\" y=\"14\" rx=\"2\" ry=\"2\"/><path d=\"M6 6h.01M6 18h.01\"/></g>",
+      "width": 24,
+      "height": 24
+    }
+  },
+  {
+    "value": "lucide:database",
+    "name": "数据库",
+    "group": "开发",
+    "icon": {
+      "body": "<g fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"><ellipse cx=\"12\" cy=\"5\" rx=\"9\" ry=\"3\"/><path d=\"M3 5v14a9 3 0 0 0 18 0V5\"/><path d=\"M3 12a9 3 0 0 0 18 0\"/></g>",
+      "width": 24,
+      "height": 24
+    }
+  },
+  {
+    "value": "lucide:github",
+    "name": "GitHub",
+    "group": "开发",
+    "icon": {
+      "body": "<g fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"><path d=\"M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5c.08-1.25-.27-2.48-1-3.5c.28-1.15.28-2.35 0-3.5c0 0-1 0-3 1.5c-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5c-.39.49-.68 1.05-.85 1.65c-.17.6-.22 1.23-.15 1.85v4\"/><path d=\"M9 18c-4.51 2-5-2-7-2\"/></g>",
+      "width": 24,
+      "height": 24
+    }
+  },
+  {
+    "value": "lucide:git-branch",
+    "name": "分支",
+    "group": "开发",
+    "icon": {
+      "body": "<g fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"><path d=\"M6 3v12\"/><circle cx=\"18\" cy=\"6\" r=\"3\"/><circle cx=\"6\" cy=\"18\" r=\"3\"/><path d=\"M18 9a9 9 0 0 1-9 9\"/></g>",
+      "width": 24,
+      "height": 24
+    }
+  },
+  {
+    "value": "lucide:box",
+    "name": "项目",
+    "group": "开发",
+    "icon": {
+      "body": "<g fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"><path d=\"M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z\"/><path d=\"m3.3 7l8.7 5l8.7-5M12 22V12\"/></g>",
+      "width": 24,
+      "height": 24
+    }
+  },
+  {
+    "value": "lucide:puzzle",
+    "name": "应用",
+    "group": "开发",
+    "icon": {
+      "body": "<path fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M19.439 7.85c-.049.322.059.648.289.878l1.568 1.568c.47.47.706 1.087.706 1.704s-.235 1.233-.706 1.704l-1.611 1.611a.98.98 0 0 1-.837.276c-.47-.07-.802-.48-.968-.925a2.501 2.501 0 1 0-3.214 3.214c.446.166.855.497.925.968a.979.979 0 0 1-.276.837l-1.61 1.61a2.404 2.404 0 0 1-1.705.707a2.402 2.402 0 0 1-1.704-.706l-1.568-1.568a1.026 1.026 0 0 0-.877-.29c-.493.074-.84.504-1.02.968a2.5 2.5 0 1 1-3.237-3.237c.464-.18.894-.527.967-1.02a1.026 1.026 0 0 0-.289-.877l-1.568-1.568A2.402 2.402 0 0 1 1.998 12c0-.617.236-1.234.706-1.704L4.23 8.77c.24-.24.581-.353.917-.303c.515.077.877.528 1.073 1.01a2.5 2.5 0 1 0 3.259-3.259c-.482-.196-.933-.558-1.01-1.073c-.05-.336.062-.676.303-.917l1.525-1.525A2.402 2.402 0 0 1 12 1.998c.617 0 1.234.236 1.704.706l1.568 1.568c.23.23.556.338.877.29c.493-.074.84-.504 1.02-.968a2.5 2.5 0 1 1 3.237 3.237c-.464.18-.894.527-.967 1.02Z\"/>",
+      "width": 24,
+      "height": 24
+    }
+  },
+  {
+    "value": "lucide:zap",
+    "name": "闪电",
+    "group": "开发",
+    "icon": {
+      "body": "<path fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z\"/>",
+      "width": 24,
+      "height": 24
+    }
+  },
+  {
+    "value": "lucide:rocket",
+    "name": "启动",
+    "group": "开发",
+    "icon": {
+      "body": "<g fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\"><path d=\"M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09M12 15l-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2\"/><path d=\"M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0m1 7v5s3.03-.55 4-2c1.08-1.62 0-5 0-5\"/></g>",
+      "width": 24,
+      "height": 24
+    }
+  }
+]

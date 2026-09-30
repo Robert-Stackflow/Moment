@@ -54,11 +54,11 @@ function isFullScreen() {
 function toggleFullScreen() {
     if (isFullScreen()) {
         document.exitFullscreen();
-        $("#fullscreen").removeClass("ctrlOn");
+        document.querySelector("#fullscreen").classList.remove("ctrlOn");
         fullScreenText.value = "全屏"
     } else {
         document.documentElement.requestFullscreen();
-        $("#fullscreen").addClass("ctrlOn");
+        document.querySelector("#fullscreen").classList.add("ctrlOn");
         fullScreenText.value = "退出全屏"
     }
 }

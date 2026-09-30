@@ -16,3 +16,12 @@ db.sqlite3-wal
 ._.DS_Store
 .moment
 data
+# Source builds and private deployment data
+**/node_modules/
+dist/
+stats.html
+*.exe
+*.zip
+backups/
+**/.env.local
+**/.env.*.local

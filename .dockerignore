@@ -1,5 +1,13 @@
 .git
-data
-web
+**/node_modules
+**/data
+.moment
+dist
 img
-sqls
+*.zip
+*.sqlite3*
+*.db*
+*.exe
+**/backups
+**/.env.local
+**/.env.*.local
