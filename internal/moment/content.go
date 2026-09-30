@@ -12,6 +12,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/gin-gonic/gin"
+	"golang.org/x/text/unicode/norm"
 )
 
 var orderOptions = []Object{{"label": "拍摄时间降序", "value": "meta_time_desc", "order": "-time"}, {"label": "拍摄时间升序", "value": "meta_time_asc", "order": "time"}, {"label": "创建时间降序", "value": "created_at_desc", "order": "-created_at"}, {"label": "创建时间升序", "value": "created_at_asc", "order": "created_at"}, {"label": "更新时间降序", "value": "updated_at_desc", "order": "-updated_at"}, {"label": "更新时间升序", "value": "updated_at_asc", "order": "updated_at"}}
@@ -83,12 +84,12 @@ func (a *App) posts(c *gin.Context, public bool) {
 		conditions = append(conditions, searchSQL)
 		args = append(args, "%"+search+"%", "%"+search+"%")
 		if !public {
-			args = append(args, "%"+strings.ToLower(search)+"%")
+			args = append(args, "%"+strings.ToLower(norm.NFKC.String(search))+"%")
 		}
 	}
 	if tag := strings.TrimSpace(c.Query("tag")); tag != "" && !public {
 		conditions = append(conditions, "EXISTS(SELECT 1 FROM moment_image_tags t JOIN blog_image i ON i.id=t.image_id WHERE i.blog_id=b.id AND t.tag=?)")
-		args = append(args, strings.ToLower(tag))
+		args = append(args, strings.ToLower(norm.NFKC.String(tag)))
 	}
 	if location := c.Query("location"); location != "" {
 		visibility := ""

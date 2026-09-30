@@ -10,6 +10,7 @@ import (
 	"image/color"
 	"image/jpeg"
 	"sort"
+	"strconv"
 	"strings"
 	"unicode"
 	"unicode/utf8"
@@ -105,6 +106,22 @@ func (a *App) tagPhotos(c *gin.Context) {
 	}
 	where := activePost("b")
 	args := []any{}
+	if raw := c.Query("ids"); raw != "" {
+		values := strings.Split(raw, ",")
+		if len(values) > 50 {
+			fail(c, 400, "每次最多核对 50 张图片")
+			return
+		}
+		for _, value := range values {
+			id, err := strconv.ParseInt(value, 10, 64)
+			if err != nil || id < 1 {
+				fail(c, 400, "图片编号无效")
+				return
+			}
+			args = append(args, id)
+		}
+		where += " AND i.id IN (" + placeholders(len(args)) + ")"
+	}
 	if q := strings.TrimSpace(c.Query("q")); q != "" {
 		where += " AND (b.title LIKE ? OR i.title LIKE ? OR EXISTS(SELECT 1 FROM moment_image_tags t WHERE t.image_id=i.id AND t.tag LIKE ?))"
 		args = append(args, "%"+q+"%", "%"+q+"%", "%"+strings.ToLower(norm.NFKC.String(q))+"%")
@@ -303,9 +320,8 @@ func (a *App) applyPhotoTags(c *gin.Context) {
 			databaseError(c, e)
 			return
 		}
-		merged := append(append([]string{}, before...), target.Tags...)
+		merged := make([]string, 0, len(before)+len(target.Tags))
 		unique := map[string]bool{}
-		merged = merged[:0]
 		for _, tag := range append(append([]string{}, before...), target.Tags...) {
 			if !unique[tag] {
 				unique[tag] = true
@@ -328,6 +344,10 @@ func (a *App) applyPhotoTags(c *gin.Context) {
 		}
 	}
 	for postID := range posts {
+		if _, err = tx.Exec("UPDATE blog SET updated_at=? WHERE id=?", now(), postID); err != nil {
+			databaseError(c, err)
+			return
+		}
 		if err = bumpPostRevision(tx, postID); err != nil {
 			databaseError(c, err)
 			return
@@ -366,6 +386,9 @@ func undoPhotoTags(tx *sql.Tx, payload string) error {
 		}
 	}
 	for postID := range posts {
+		if _, err := tx.Exec("UPDATE blog SET updated_at=? WHERE id=?", now(), postID); err != nil {
+			return err
+		}
 		if err := bumpPostRevision(tx, postID); err != nil {
 			return err
 		}

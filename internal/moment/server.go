@@ -140,6 +140,7 @@ func (a *App) Router() http.Handler {
 	}
 	r.Static("/assets", filepath.Join(a.dist, "assets"))
 	r.Static("/admin/assets", filepath.Join(a.dist, "admin", "assets"))
+	r.Static("/admin/tag-model", filepath.Join(a.dist, "admin", "tag-model"))
 	r.Static("/uploads", filepath.Join(a.data, "uploads"))
 	r.GET("/thumbnails/:size/*file", a.thumbnail)
 	r.HEAD("/thumbnails/:size/*file", a.thumbnail)

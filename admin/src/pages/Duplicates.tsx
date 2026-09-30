@@ -20,7 +20,6 @@ import {
   Title,
 } from "@mantine/core";
 import {
-  Check,
   Copy,
   EyeOff,
   History,
@@ -29,11 +28,13 @@ import {
   Play,
   RefreshCw,
   ScanSearch,
-  Undo2,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { api, ApiError, json, notifyError, notifySuccess } from "../api";
 import { Empty, ErrorState, Loading, PageTitle } from "../components/Common";
+import { PhotoHistory } from "../components/PhotoHistory";
+import { OrganizeTabs } from "../components/OrganizeTabs";
+import { photoQueries } from "../lib/photo-actions";
 import { Toggle } from "../components/Toggle";
 import { UnsavedChanges } from "../components/UnsavedChanges";
 import { thumbnail, type Settings } from "../types";
@@ -74,29 +75,11 @@ interface ScanPhoto {
     reason?: string;
   };
 }
-interface PhotoAction {
-  id: string;
-  status: "applied" | "undone";
-  created_at: string;
-  undone_at: string | null;
-  changes: { id: number; post_id: number; post_title: string }[];
-}
 const kinds: Record<Kind, string> = {
   file: "文件内容一致",
   link: "相同链接",
   similar: "画面相似",
 };
-const photoQueries = [
-  "duplicateGroups",
-  "duplicateGroup",
-  "photoActions",
-  "posts",
-  "post",
-  "stats",
-  "drafts",
-  "draft",
-  "postDraft",
-];
 function errorText(error: unknown) {
   return error instanceof TypeError
     ? "连接中断，进度已保留，可以稍后继续。"
@@ -277,6 +260,7 @@ export default function Duplicates() {
           </Button>
         </Group>
       </PageTitle>
+      <OrganizeTabs />
       <Paper withBorder p="lg" mb="xl">
         <Group justify="space-between" align="flex-start">
           <div>
@@ -948,140 +932,5 @@ function ScanIssues({ scan, onClose }: { scan: string; onClose: () => void }) {
         </Stack>
       )}
     </Modal>
-  );
-}
-
-function PhotoHistory({ onClose }: { onClose: () => void }) {
-  const client = useQueryClient();
-  const [page, setPage] = useState(1);
-  const [undo, setUndo] = useState<PhotoAction | null>(null);
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState("");
-  const actions = useQuery({
-    queryKey: ["photoActions", page],
-    queryFn: () =>
-      api<PhotoAction[]>(`/photo-actions?page=${page}&page_size=10`),
-    staleTime: 0,
-  });
-  async function restore() {
-    if (!undo || busy) return;
-    setBusy(true);
-    setError("");
-    try {
-      await api(`/photo-actions/${undo.id}/undo`, json("POST", {}));
-      setUndo(null);
-      await Promise.all(
-        photoQueries.map((key) =>
-          client.invalidateQueries({ queryKey: [key] }),
-        ),
-      );
-      notifySuccess("已撤销本次隐藏");
-    } catch (cause) {
-      setError(errorText(cause));
-    } finally {
-      setBusy(false);
-    }
-  }
-  return (
-    <>
-      <Modal
-        opened
-        onClose={() => !busy && onClose()}
-        title="处理记录"
-        size="lg"
-        centered
-      >
-        {actions.isPending ? (
-          <Loading />
-        ) : actions.error ? (
-          <ErrorState error={actions.error} retry={() => actions.refetch()} />
-        ) : (
-          <Stack gap="md">
-            {actions.data?.data.length ? (
-              actions.data.data.map((item) => (
-                <Paper withBorder p="md" key={item.id}>
-                  <Group justify="space-between" align="flex-start">
-                    <div>
-                      <Text fw={600} size="sm">
-                        隐藏 {item.changes.length} 张重复候选照片
-                      </Text>
-                      <Text size="xs" c="dimmed" mt={5}>
-                        {item.created_at}
-                      </Text>
-                    </div>
-                    {item.status === "undone" ? (
-                      <Badge color="gray" leftSection={<Check size={12} />}>
-                        已撤销
-                      </Badge>
-                    ) : (
-                      <Button
-                        size="xs"
-                        variant="light"
-                        leftSection={<Undo2 size={14} />}
-                        onClick={() => {
-                          setUndo(item);
-                          setError("");
-                        }}
-                      >
-                        撤销
-                      </Button>
-                    )}
-                  </Group>
-                  <Text
-                    size="sm"
-                    c="dimmed"
-                    mt="sm"
-                    style={{ overflowWrap: "anywhere" }}
-                  >
-                    {[...new Set(item.changes.map((photo) => photo.post_title))]
-                      .slice(0, 3)
-                      .join("、")}
-                  </Text>
-                </Paper>
-              ))
-            ) : (
-              <Text size="sm" c="dimmed">
-                还没有处理记录。
-              </Text>
-            )}
-            {(actions.data?.total || 0) > 10 && (
-              <Pagination
-                value={page}
-                onChange={setPage}
-                total={Math.ceil(actions.data!.total! / 10)}
-              />
-            )}
-          </Stack>
-        )}
-      </Modal>
-      <Modal
-        opened={!!undo}
-        onClose={() => !busy && setUndo(null)}
-        title="撤销这次隐藏？"
-        centered
-      >
-        <Text size="sm">
-          本次处理的 {undo?.changes.length}{" "}
-          张照片将恢复可见。如果帖子在整理之后已有修改，会保留最新内容并提示你到编辑页处理。
-        </Text>
-        {error && (
-          <Alert color="red" role="alert" mt="md">
-            {error}
-          </Alert>
-        )}
-        <Group justify="flex-end" mt="lg">
-          <Button
-            variant="default"
-            disabled={busy}
-            onClick={() => setUndo(null)}
-          >
-            取消
-          </Button>
-          <Button loading={busy} onClick={() => void restore()}>
-            确认撤销
-          </Button>
-        </Group>
-      </Modal>
-    </>
   );
 }

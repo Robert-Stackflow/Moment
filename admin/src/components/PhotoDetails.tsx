@@ -31,9 +31,12 @@ export function PhotoDetails({
   const [draft, setDraft] = useState(photo);
   const [error, setError] = useState("");
   const tagError = draft.tags?.some(
-    (tag) => [...tag.normalize("NFKC").trim()].length > 32,
+    (tag) =>
+      !tag.normalize("NFKC").trim() ||
+      [...tag.normalize("NFKC").trim()].length > 32 ||
+      /\p{Cc}/u.test(tag),
   )
-    ? "每个标签最多 32 字"
+    ? "每个标签须为 1–32 字，不含控制字符"
     : undefined;
   const dirty = JSON.stringify(draft) !== JSON.stringify(photo);
   usePendingChanges(dirty);
@@ -99,6 +102,7 @@ export function PhotoDetails({
         error={tagError}
         onChange={(values) => field("tags", values)}
         clearable
+        clearButtonProps={{ "aria-label": "清空图片标签", "aria-hidden": false, tabIndex: 0 }}
       />
       <TextInput
         label="图片地址"

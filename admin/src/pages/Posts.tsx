@@ -180,7 +180,7 @@ export default function Posts() {
         <TextInput
           className="toolbar-search"
           aria-label="搜索帖子"
-          placeholder="搜索标题或描述"
+          placeholder="搜索标题、描述或图片标签"
           leftSection={<Search size={17} />}
           value={search}
           onChange={(e) => {

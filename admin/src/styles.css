@@ -2304,6 +2304,28 @@ input:-webkit-autofill {
 .duplicate-photo-preview { display:block;width:100%;height:220px;padding:0;border:0;background:var(--moment-canvas);cursor:zoom-in; }
 .duplicate-photo-preview img { width:100%;height:100%; }
 .duplicate-photo-copy { padding:14px; }
+.organize-tabs { display:flex;gap:6px;margin:0 0 24px;padding:4px;background:var(--moment-input);border:1px solid var(--moment-border);border-radius:12px;width:fit-content; }
+.organize-tabs a { display:flex;align-items:center;gap:8px;padding:10px 16px;border-radius:9px;color:var(--moment-muted);text-decoration:none;font-size:14px;transition:background .16s,color .16s; }
+.organize-tabs a.active { background:var(--moment-surface);color:var(--moment-accent);box-shadow:0 1px 4px #0000000c; }
+.tag-selection { min-height:36px; }
+.tag-photo { min-width:0;overflow:hidden;transition:border-color .16s,box-shadow .16s; }
+.tag-photo.is-selected { border-color:var(--moment-accent);box-shadow:0 0 0 1px var(--moment-accent); }
+.tag-photo-image { position:relative;height:190px;background:var(--moment-input); }
+.tag-photo-image img { width:100%;height:100%; }
+.tag-photo-image .mantine-Checkbox-root { position:absolute;top:12px;left:12px; }
+.tag-photo-image .mantine-Checkbox-input:not(:checked) { background:var(--moment-surface); }
+.tag-review-row { display:grid;grid-template-columns:140px minmax(0,1fr);gap:16px; }
+.tag-review-image { background:var(--moment-input);border-radius:10px;overflow:hidden;align-self:start; }
+.tag-review-image img { width:100%;height:140px; }
+.tag-review-copy { min-width:0; }
+.tag-suggestions { display:flex;flex-wrap:wrap;gap:6px; }
+.tag-suggestions:empty { display:none; }
+.tag-suggestions button { display:inline-flex;align-items:center;justify-content:center;gap:4px;padding:6px 11px;min-height:32px;border:1px solid var(--moment-border);border-radius:8px;background:var(--moment-input);color:var(--moment-text);font:inherit;font-size:13px;cursor:pointer;transition:background .16s,border-color .16s; }
+.tag-suggestions button:hover { border-color:var(--moment-accent); }
+.tag-suggestions button.is-selected { color:var(--moment-accent);background:var(--moment-soft);border-color:var(--moment-accent); }
+.tag-suggestions button:disabled { cursor:default;opacity:.6; }
+.tag-review-actions { position:sticky;bottom:-16px;padding:16px 0;background:var(--moment-surface);border-top:1px solid var(--moment-border);z-index:1; }
+@media(max-width:600px) { .tag-review-row { grid-template-columns:76px minmax(0,1fr);gap:12px;padding:12px; }.tag-review-image img { height:90px; }.tag-review-actions { bottom:-16px; }.organize-tabs a { padding:10px 14px; } }
 @media (max-width: 600px) {
   .passkey-row { gap: 10px; padding: 14px 10px; flex-wrap: wrap; }
   .passkey-row-icon { padding: 9px; }

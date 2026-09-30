@@ -38,6 +38,7 @@ const SettingsPage = lazy(() => import("./pages/Settings"));
 const Account = lazy(() => import("./pages/Account"));
 const Security = lazy(() => import("./pages/Security"));
 const Duplicates = lazy(() => import("./pages/Duplicates"));
+const SmartTags = lazy(() => import("./pages/SmartTags"));
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: { staleTime: 30_000, retry: false, refetchOnWindowFocus: false },
@@ -193,6 +194,7 @@ const router = createBrowserRouter(
             element={<Navigate to="/organize/duplicates" replace />}
           />
           <Route path="organize/duplicates" element={<Duplicates />} />
+          <Route path="organize/tags" element={<SmartTags />} />
           <Route path="trash" element={<Trash />} />
           <Route path="shares" element={<Shares />} />
           <Route path="shares/new" element={<ShareEditor />} />

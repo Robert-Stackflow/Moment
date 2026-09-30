@@ -68,7 +68,14 @@ try {
   vectors.forEach((value, i) => bytes.writeFloatLE(value, i * 4));
   const directory = new URL("../public/tag-model/", import.meta.url);
   await mkdir(directory, { recursive: true });
-  await writeFile(new URL("vocabulary-v1.bin", directory), bytes);
+  await writeFile(
+    new URL("vocabulary-v1.json", directory),
+    JSON.stringify({
+      version: vocabulary.version,
+      dimensions: vocabulary.dimensions,
+      data: bytes.toString("base64"),
+    }) + "\n",
+  );
   await writeFile(
     new URL("vocabulary-v1.sha256", directory),
     createHash("sha256").update(bytes).digest("hex") + "\n",

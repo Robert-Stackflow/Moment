@@ -8,6 +8,7 @@ import {
 import wasmUrl from "onnxruntime-web/ort-wasm-simd-threaded.jsep.wasm?url";
 import wasmModule from "onnxruntime-web/ort-wasm-simd-threaded.jsep.mjs?url";
 import vocabulary from "./tag-vocabulary.json";
+import vocabularyHash from "../../public/tag-model/vocabulary-v1.sha256?raw";
 
 env.allowLocalModels = true;
 env.cacheKey = "moment-tag-model-v1";
@@ -41,7 +42,7 @@ self.onmessage = async ({ data }) => {
       return;
     }
     if (data.type === "init") {
-      if (model) {
+      if (model && processor && vectors) {
         emit({ id: data.id, type: "ready" });
         return;
       }
@@ -49,13 +50,16 @@ self.onmessage = async ({ data }) => {
       env.allowLocalModels = local;
       env.allowRemoteModels = !local;
       const id = local
-        ? new URL(
-            import.meta.env.BASE_URL + "tag-model/local/",
-            self.location.origin,
-          ).href
+        ? import.meta.env.BASE_URL + "tag-model/local/"
         : vocabulary.model;
+      let lastProgress = 0;
       const progress_callback = (event: any) => {
-        if (event.status === "progress")
+        if (
+          event.status === "progress" &&
+          (event.loaded === event.total ||
+            performance.now() - lastProgress >= 100)
+        ) {
+          lastProgress = performance.now();
           emit({
             id: data.id,
             type: "progress",
@@ -63,6 +67,7 @@ self.onmessage = async ({ data }) => {
             total: event.total,
             file: event.file,
           });
+        }
       };
       const options = {
         revision: vocabulary.revision,
@@ -74,17 +79,31 @@ self.onmessage = async ({ data }) => {
       model = await CLIPVisionModelWithProjection.from_pretrained(id, options);
       const response = await fetch(
         new URL(
-          import.meta.env.BASE_URL + "tag-model/vocabulary-v1.bin",
+          import.meta.env.BASE_URL + "tag-model/vocabulary-v1.json",
           self.location.origin,
         ),
       );
       if (!response.ok) throw new Error("标签词库加载失败");
-      const vectorBytes = await response.arrayBuffer();
+      const vectorData = await response.json();
+      if (
+        vectorData.version !== vocabulary.version ||
+        vectorData.dimensions !== vocabulary.dimensions ||
+        typeof vectorData.data !== "string"
+      )
+        throw new Error("标签词库版本不匹配");
+      const vectorBytes = Uint8Array.from(atob(vectorData.data), (char) =>
+        char.charCodeAt(0),
+      ).buffer;
       if (
         vectorBytes.byteLength !==
         vocabulary.labels.length * vocabulary.dimensions * 4
       )
         throw new Error("标签词库版本不匹配");
+      const digest = await crypto.subtle.digest("SHA-256", vectorBytes);
+      const hash = Array.from(new Uint8Array(digest), (byte) =>
+        byte.toString(16).padStart(2, "0"),
+      ).join("");
+      if (hash !== vocabularyHash.trim()) throw new Error("标签词库校验失败");
       vectors = new Float32Array(vectorBytes);
       emit({ id: data.id, type: "ready" });
     } else if (data.type === "infer") {
@@ -111,16 +130,30 @@ self.onmessage = async ({ data }) => {
                 vectors![index * embedding.length + column];
             return { label, score };
           })
-          .filter((item) => Number.isFinite(item.score) && item.score >= 0.2)
-          .sort((a, b) => b.score - a.score)
-          .slice(0, 6);
-        emit({ id: data.id, type: "result", suggestions: scores });
+          .filter((item) => Number.isFinite(item.score))
+          .sort((a, b) => b.score - a.score);
+        // Cosine similarity is not a probability. Keep only strong nearby
+        // candidates rather than filling the list with unrelated labels.
+        const minimum = Math.max(0.24, (scores[0]?.score || 0) - 0.04);
+        emit({
+          id: data.id,
+          type: "result",
+          suggestions: scores
+            .filter((item) => item.score >= minimum)
+            .slice(0, 4),
+        });
       } finally {
         Object.values(inputs).forEach((value) => (value as Tensor).dispose?.());
         Object.values(output || {}).forEach((value) => value.dispose?.());
       }
     }
   } catch (error) {
+    if (data.type === "init") {
+      await model?.dispose().catch(() => {});
+      model = undefined;
+      processor = undefined;
+      vectors = undefined;
+    }
     emit({
       id: data.id,
       type: "error",
