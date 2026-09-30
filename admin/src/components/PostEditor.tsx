@@ -22,6 +22,8 @@ import {
   ArrowDown,
   ArrowLeft,
   ArrowUp,
+  CloudCheck,
+  FilePenLine,
   Eye,
   EyeOff,
   GripVertical,
@@ -35,7 +37,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
-import { api, json, notifyError, notifySuccess } from "../api";
+import { api, ApiError, json, notifyError, notifySuccess } from "../api";
 import { PageTitle } from "./Common";
 import { UnsavedChanges } from "./UnsavedChanges";
 import { CategoryMultiSelect } from "./CategoryPicker";
@@ -43,10 +45,18 @@ import { DateTimePicker } from "./DateTimePicker";
 import { localDateTime } from "./dateTime";
 import { PhotoDetails } from "./PhotoDetails";
 import { UploadQueue } from "./UploadQueue";
+import { usePostDraft } from "./usePostDraft";
 import { datetime, thumbnail } from "../types";
-import type { Category, Photo, Post, Settings } from "../types";
+import type {
+  Category,
+  Photo,
+  Post,
+  PostContent,
+  PostDraft,
+  Settings,
+} from "../types";
 
-function formValues(post?: Post): {
+function formValues(post?: PostContent): {
   title: string;
   desc: string;
   location: string;
@@ -69,19 +79,57 @@ function formValues(post?: Post): {
   };
 }
 
+function payload(value: ReturnType<typeof formValues>): PostContent {
+  return {
+    ...value,
+    time: value.time || null,
+    category_ids: value.category_ids.map(Number),
+    images: value.images.map(({ _key, ...photo }, order) => ({
+      ...photo,
+      title: photo.title || "",
+      desc: photo.desc || "",
+      location: photo.location || "",
+      metadata: photo.metadata || "",
+      time: photo.time || null,
+      order,
+    })),
+  };
+}
+
 export function PostEditor({
   initial,
+  initialDraft,
+  draftKey,
   categories,
   settings,
 }: {
   initial?: Post;
+  initialDraft: PostDraft | null;
+  draftKey?: string;
   categories: Category[];
   settings: Settings;
 }) {
   const navigate = useNavigate();
   const client = useQueryClient();
-  const [draft, setDraft] = useState(() => formValues(initial));
-  const [snapshot, setSnapshot] = useState(() => JSON.stringify(draft));
+  const [draft, setDraft] = useState(() =>
+    formValues(initialDraft?.payload || initial),
+  );
+  const [snapshot, setSnapshot] = useState(() =>
+    JSON.stringify(
+      payload(
+        initial ? formValues(initial) : initialDraft ? formValues() : draft,
+      ),
+    ),
+  );
+  const [key] = useState(() => draftKey || crypto.randomUUID());
+  const serialized = JSON.stringify(payload(draft));
+  const autosave = usePostDraft(
+    serialized,
+    initialDraft,
+    key,
+    initial?.id,
+    initial?.revision,
+  );
   const [postID, setPostID] = useState(initial?.id);
   const [savedAt, setSavedAt] = useState(initial?.updated_at || "");
   const [editing, setEditing] = useState<string | null>(null);
@@ -92,6 +140,7 @@ export function PostEditor({
   const [busy, setBusy] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
+  const [publishConflict, setPublishConflict] = useState(false);
   const [needsReload, setNeedsReload] = useState(false);
   const [removed, setRemoved] = useState<{
     photo: Photo & { _key: string };
@@ -102,7 +151,7 @@ export function PostEditor({
   const titleInput = useRef<HTMLInputElement>(null);
   const saving = useRef(false);
   const saveShortcut = useRef<() => void>(() => {});
-  const dirty = JSON.stringify(draft) !== snapshot;
+  const dirty = serialized !== snapshot;
   const photos = draft.images;
   const cover = photos.find((photo) => !photo.is_hidden);
   const current = photos.find((photo) => photo._key === editing);
@@ -174,23 +223,10 @@ export function PostEditor({
     setError("");
     let committed = false;
     try {
+      const savedDraft = await autosave.flush();
       const result = await api<{ id: number }>(
-        postID ? `/posts/${postID}` : "/posts",
-        json(postID ? "PUT" : "POST", {
-          ...draft,
-          title: draft.title.trim(),
-          time: draft.time || null,
-          category_ids: draft.category_ids.map(Number),
-          images: photos.map(({ _key, ...photo }, order) => ({
-            ...photo,
-            title: photo.title || "",
-            desc: photo.desc || "",
-            location: photo.location || "",
-            metadata: photo.metadata || "",
-            time: photo.time || null,
-            order,
-          })),
-        }),
+        `/drafts/${savedDraft.id}/publish`,
+        json("POST", { revision: savedDraft.revision }),
       );
       committed = true;
       setPostID(result.data.id);
@@ -199,13 +235,24 @@ export function PostEditor({
       const next = formValues(saved.data);
       flushSync(() => {
         setDraft(next);
-        setSnapshot(JSON.stringify(next));
+        setSnapshot(JSON.stringify(payload(next)));
+        autosave.reset(
+          JSON.stringify(payload(next)),
+          result.data.id,
+          saved.data.revision,
+        );
         setRemoved(null);
         setSavedAt(saved.data.updated_at);
       });
       client.setQueryData(["post", String(result.data.id)], saved);
+      client.setQueryData(["postDraft", String(result.data.id)], {
+        code: 200,
+        msg: "OK",
+        data: null,
+      });
+      client.removeQueries({ queryKey: ["draft", savedDraft.id] });
       void Promise.all(
-        ["posts", "stats", "locations"].map((key) =>
+        ["posts", "stats", "locations", "drafts"].map((key) =>
           client.invalidateQueries({ queryKey: [key] }),
         ),
       );
@@ -217,14 +264,59 @@ export function PostEditor({
       if (committed) {
         setError("帖子已保存，但读取最新状态失败。请刷新页面后继续编辑。");
         setNeedsReload(true);
-        flushSync(() => setSnapshot(JSON.stringify(draft)));
-      } else notifyError(error);
+        flushSync(() => {
+          setSnapshot(serialized);
+          autosave.reset(serialized, postID || 0, 0);
+        });
+      } else {
+        if (error instanceof ApiError && error.status === 409)
+          setPublishConflict(true);
+        notifyError(error);
+      }
     } finally {
       saving.current = false;
       setBusy(false);
     }
   }
-  saveShortcut.current = () => void save();
+  async function saveDraft() {
+    if (busy || uploading || editing || adding || preview || needsReload)
+      return;
+    try {
+      await autosave.flush();
+      notifySuccess("草稿已保存");
+    } catch (cause) {
+      notifyError(cause);
+    }
+  }
+  async function saveCopy() {
+    if (busy) return;
+    setBusy(true);
+    try {
+      const copyID = crypto.randomUUID();
+      const content = payload(draft);
+      const copy = await api<PostDraft>(`/drafts/${copyID}`, {
+        ...json("PUT", {
+          revision: 0,
+          base_revision: 0,
+          mutation_id: crypto.randomUUID(),
+          payload: {
+            ...content,
+            images: content.images.map(({ id, ...photo }) => photo),
+          },
+        }),
+        preserveEditorOnUnauthorized: true,
+      });
+      client.setQueryData(["draft", copyID], copy);
+      void client.invalidateQueries({ queryKey: ["drafts"] });
+      flushSync(() => autosave.reset(serialized, 0, 0));
+      navigate(`/drafts/${copyID}`);
+    } catch (cause) {
+      notifyError(cause);
+    } finally {
+      setBusy(false);
+    }
+  }
+  saveShortcut.current = () => void saveDraft();
   useEffect(() => {
     const listener = (event: KeyboardEvent) => {
       if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "s") {
@@ -285,7 +377,7 @@ export function PostEditor({
           void save();
         }}
       >
-        <UnsavedChanges dirty={dirty} uploading={uploading} />
+        <UnsavedChanges dirty={autosave.dirty} uploading={uploading} />
         <PageTitle title={initial ? "编辑帖子" : "新建帖子"}>
           <Button
             component={Link}
@@ -298,6 +390,78 @@ export function PostEditor({
             返回帖子
           </Button>
         </PageTitle>
+        {publishConflict && (
+          <Alert color="orange" title="帖子已有更新" mb="lg">
+            <Text size="sm" mb="sm">
+              其他窗口已经修改了这篇帖子。草稿仍完整保留，可另存为新草稿后对比整理。
+            </Text>
+            <Button
+              variant="light"
+              color="orange"
+              loading={busy}
+              onClick={() => void saveCopy()}
+            >
+              另存为新草稿
+            </Button>
+          </Alert>
+        )}
+        <div className="draft-notice">
+          <FilePenLine size={17} />
+          <Text size="sm">
+            {initialDraft ? "已恢复未发布的草稿。" : "编辑会自动保存为草稿。"}
+            {postID ? "发布更新后，访客才会看到修改。" : "发布前仅自己可见。"}
+          </Text>
+        </div>
+        {autosave.error && (
+          <Alert
+            color="orange"
+            title={autosave.conflict ? "编辑版本发生冲突" : "草稿尚未同步"}
+            mb="lg"
+          >
+            <Stack gap="sm">
+              <Text size="sm">
+                {autosave.error.message}
+                {autosave.conflict
+                  ? "。当前内容仍在本页，可另存一份新草稿后对比处理。"
+                  : autosave.error instanceof ApiError &&
+                    autosave.error.status === 401
+                  ? "。请在新标签页登录，再回来重试。"
+                  : "。内容仍在本页，恢复连接后会自动重试。"}
+              </Text>
+              <Group>
+                {autosave.conflict ? (
+                  <Button
+                    variant="light"
+                    color="orange"
+                    loading={busy}
+                    onClick={() => void saveCopy()}
+                  >
+                    另存为新草稿
+                  </Button>
+                ) : (
+                  <Button
+                    variant="light"
+                    color="orange"
+                    onClick={() => void saveDraft()}
+                  >
+                    立即重试
+                  </Button>
+                )}
+                {autosave.error instanceof ApiError &&
+                  autosave.error.status === 401 && (
+                    <Button
+                      component="a"
+                      href="/admin/login"
+                      target="_blank"
+                      variant="default"
+                    >
+                      重新登录
+                    </Button>
+                  )}
+              </Group>
+            </Stack>
+          </Alert>
+        )}
         {error && (
           <Alert
             role="alert"
@@ -402,7 +566,13 @@ export function PostEditor({
                   <div className="editor-photos">
                     {photos.map((photo, index) => (
                       <div
-                        className={`photo-editor-card ${dragging === photo._key ? "is-dragging" : ""} ${dragTarget === photo._key && dragging !== photo._key ? "is-drop-target" : ""}`}
+                        className={`photo-editor-card ${
+                          dragging === photo._key ? "is-dragging" : ""
+                        } ${
+                          dragTarget === photo._key && dragging !== photo._key
+                            ? "is-drop-target"
+                            : ""
+                        }`}
                         key={photo._key}
                         draggable={!locked}
                         onDragStart={(event) => {
@@ -439,7 +609,9 @@ export function PostEditor({
                           <Image
                             className="photo-cover"
                             style={{
-                              objectPosition: `${photo.focus_x ?? 50}% ${photo.focus_y ?? 50}%`,
+                              objectPosition: `${photo.focus_x ?? 50}% ${
+                                photo.focus_y ?? 50
+                              }%`,
                             }}
                             src={thumbnail(photo.image_url, settings)}
                             alt={photo.title || `图片 ${index + 1}`}
@@ -452,7 +624,9 @@ export function PostEditor({
                           </span>
                         </button>
                         <span
-                          className={`photo-status-badge ${photo.is_hidden ? "is-hidden" : ""}`}
+                          className={`photo-status-badge ${
+                            photo.is_hidden ? "is-hidden" : ""
+                          }`}
                         >
                           {cover?._key === photo._key ? (
                             <>
@@ -582,7 +756,7 @@ export function PostEditor({
                       <Text size="xs" c="dimmed" mt={4}>
                         {draft.is_hidden
                           ? "当前仅自己可见"
-                          : "保存后，访客可以看到这组照片"}
+                          : "发布后，访客可以看到这组照片"}
                       </Text>
                     </div>
                     <Switch
@@ -647,23 +821,39 @@ export function PostEditor({
         </fieldset>
         <div className="editor-save-dock">
           <div className="editor-save-status" aria-live="polite">
-            <span className={dirty ? "status-dot is-dirty" : "status-dot"} />
+            {autosave.status === "saved" && !autosave.dirty ? (
+              <CloudCheck size={18} />
+            ) : (
+              <span
+                className={
+                  autosave.dirty ? "status-dot is-dirty" : "status-dot"
+                }
+              />
+            )}
             <div>
               <Text size="sm" fw={500}>
                 {uploading
                   ? "照片上传中…"
                   : busy
-                    ? "正在保存…"
-                    : dirty
-                      ? "有未保存的修改"
-                      : postID
-                        ? "所有修改已保存"
-                        : "尚未保存"}
+                  ? "正在保存…"
+                  : autosave.status === "saving"
+                  ? "正在保存草稿…"
+                  : autosave.error
+                  ? "草稿未同步"
+                  : autosave.dirty
+                  ? "等待自动保存…"
+                  : autosave.status === "saved"
+                  ? "草稿已保存 · 未发布"
+                  : postID
+                  ? "所有修改已保存"
+                  : "尚未保存"}
               </Text>
               <Text size="xs" c="dimmed">
-                {savedAt && !dirty
+                {autosave.savedAt
+                  ? `保存于 ${autosave.savedAt}`
+                  : savedAt && !dirty
                   ? `上次保存 ${savedAt}`
-                  : "Ctrl / ⌘ + S 保存"}
+                  : "Ctrl / ⌘ + S 保存草稿"}
               </Text>
             </div>
           </div>
@@ -679,22 +869,33 @@ export function PostEditor({
             </Button>
             <Button
               variant="default"
-              disabled={locked || (!dirty && !postID)}
-              onClick={() => void save(true)}
+              disabled={
+                locked ||
+                autosave.conflict ||
+                autosave.status === "saving" ||
+                (!autosave.dirty && autosave.status === "saved")
+              }
+              onClick={() => void saveDraft()}
             >
-              保存并返回
+              保存草稿
             </Button>
             <Button
               type="submit"
               leftSection={<Save size={16} />}
               loading={busy}
-              disabled={uploading || needsReload || (!dirty && !!postID)}
+              disabled={
+                uploading ||
+                needsReload ||
+                autosave.conflict ||
+                publishConflict ||
+                (!dirty && !!postID)
+              }
             >
               {postID
-                ? "保存修改"
+                ? "发布更新"
                 : draft.is_hidden
-                  ? "保存帖子"
-                  : "保存并公开"}
+                ? "保存帖子"
+                : "保存并公开"}
             </Button>
           </Group>
         </div>

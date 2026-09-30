@@ -146,6 +146,17 @@ func (a *App) attach(blogs []Object, public bool) error {
 	visibility := ""
 	if public {
 		visibility = " AND i.is_hidden=0"
+	} else {
+		for _, b := range blogs {
+			b["revision"] = int64(0)
+		}
+		revisions, err := query(a.db, "SELECT post_id,revision FROM moment_post_revisions WHERE post_id IN ("+placeholders(len(args))+")", args...)
+		if err != nil {
+			return err
+		}
+		for _, r := range revisions {
+			byID[integer(r["post_id"])]["revision"] = r["revision"]
+		}
 	}
 	images, err := query(a.db, `SELECT i.*,COALESCE(f.focus_x,50.0) AS focus_x,COALESCE(f.focus_y,50.0) AS focus_y FROM blog_image i LEFT JOIN moment_image_focus f ON f.image_id=i.id WHERE i.blog_id IN (`+placeholders(len(args))+`)`+visibility+` ORDER BY i."order",i.id`, args...)
 	if err != nil {
@@ -198,10 +209,25 @@ func (a *App) post(c *gin.Context, public bool) {
 	ok(c, blogs[0])
 }
 func (a *App) savePost(c *gin.Context) {
-	var in PostInput
+	var in struct {
+		PostInput
+		ExpectedRevision *int64 `json:"expected_revision"`
+	}
 	if !bind(c, &in) {
 		return
 	}
+	var id int64
+	if c.Param("id") != "" {
+		var valid bool
+		id, valid = routeID(c)
+		if !valid {
+			return
+		}
+	}
+	a.writePost(c, in.PostInput, id, in.ExpectedRevision, nil)
+}
+
+func (a *App) writePost(c *gin.Context, in PostInput, id int64, expected *int64, draft *Draft) {
 	in.Title = strings.TrimSpace(in.Title)
 	if in.Title == "" || utf8.RuneCountInString(in.Title) > 50 || len(in.Images) == 0 || len(in.Images) > 200 || len(in.Categories) > 100 {
 		fail(c, 400, "请填写不超过 50 字的标题和至少一张图片")
@@ -232,20 +258,34 @@ func (a *App) savePost(c *gin.Context) {
 			return
 		}
 	}
-	var id int64
-	if c.Param("id") != "" {
-		var valid bool
-		id, valid = routeID(c)
-		if !valid {
-			return
-		}
-	}
 	tx, err := a.db.Begin()
 	if err != nil {
 		databaseError(c, err)
 		return
 	}
 	defer tx.Rollback()
+	if draft != nil {
+		current, e := readDraft(tx, draftUser(c), "id=?", draft.ID)
+		if e != nil {
+			databaseError(c, e)
+			return
+		}
+		if current == nil || current.PublishedAt != nil || current.Revision != draft.Revision {
+			fail(c, 409, "草稿已改变，请重新打开后发布")
+			return
+		}
+	}
+	if id != 0 && expected != nil {
+		var revision int64
+		if err := tx.QueryRow("SELECT COALESCE((SELECT revision FROM moment_post_revisions WHERE post_id=?),0)", id).Scan(&revision); err != nil {
+			databaseError(c, err)
+			return
+		}
+		if revision != *expected {
+			fail(c, 409, "帖子已在其他窗口更新，草稿仍保留，请对比最新帖子后处理")
+			return
+		}
+	}
 	categoryIDs := map[int64]bool{}
 	for _, categoryID := range in.Categories {
 		if categoryID < 1 {
@@ -328,6 +368,17 @@ func (a *App) savePost(c *gin.Context) {
 	if _, err = tx.Exec("DELETE FROM blog_image WHERE blog_id=? AND id NOT IN ("+placeholders(len(kept)-1)+")", kept...); err != nil {
 		databaseError(c, err)
 		return
+	}
+	if _, err = tx.Exec("INSERT INTO moment_post_revisions(post_id,revision) VALUES (?,1) ON CONFLICT(post_id) DO UPDATE SET revision=revision+1", id); err != nil {
+		databaseError(c, err)
+		return
+	}
+	if draft != nil {
+		// Keep a receipt so a repeated publish after a lost response cannot duplicate a post.
+		if _, err = tx.Exec("UPDATE moment_drafts SET published_at=?,published_post_id=?,payload='{}' WHERE id=? AND user_id=?", stamp, id, draft.ID, draftUser(c)); err != nil {
+			databaseError(c, err)
+			return
+		}
 	}
 	if err = tx.Commit(); err != nil {
 		databaseError(c, err)

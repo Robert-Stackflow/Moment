@@ -2,19 +2,17 @@ import { notifications } from "@mantine/notifications";
 import type { Result } from "./types";
 
 export class ApiError extends Error {
-  constructor(
-    public status: number,
-    message: string,
-  ) {
+  constructor(public status: number, message: string) {
     super(message);
   }
 }
 export async function api<T>(
   path: string,
-  options: RequestInit = {},
+  options: RequestInit & { preserveEditorOnUnauthorized?: boolean } = {},
 ): Promise<Result<T>> {
+  const { preserveEditorOnUnauthorized, ...request } = options;
   const response = await fetch(`/api/admin${path}`, {
-    ...options,
+    ...request,
     credentials: "same-origin",
     headers: {
       ...(options.body instanceof FormData
@@ -25,7 +23,12 @@ export async function api<T>(
   });
   const result = await response.json().catch(() => null);
   if (!response.ok || result?.code !== 200) {
-    if (response.status === 401 && path !== "/login" && path !== "/me")
+    if (
+      response.status === 401 &&
+      !preserveEditorOnUnauthorized &&
+      path !== "/login" &&
+      path !== "/me"
+    )
       window.dispatchEvent(new Event("moment-session-expired"));
     throw new ApiError(response.status, result?.msg || "请求失败，请稍后重试");
   }

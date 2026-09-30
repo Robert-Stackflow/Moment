@@ -2300,3 +2300,10 @@ input:-webkit-autofill {
 .focus-previews figure:first-child img { aspect-ratio: 1.5; }
 .focus-previews figcaption { margin-top: 5px; font-size: 11px; color: var(--mantine-color-dimmed); text-align: center; }
 .focus-sliders { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; padding: 4px 4px 8px; }
+.draft-notice { display: flex; gap: 10px; align-items: center; padding: 12px 16px; margin-bottom: 22px; border-radius: 10px; background: var(--mantine-primary-color-light); color: var(--mantine-primary-color-light-color); }
+.draft-notice svg { flex-shrink: 0; }
+.draft-row { display: flex; align-items: center; gap: 16px; }
+.draft-row-main { display: flex; gap: 16px; align-items: center; color: inherit; text-decoration: none; flex: 1; min-width: 0; border-radius: 9px; }
+.draft-row-main:focus-visible { outline: 2px solid var(--mantine-primary-color-filled); outline-offset: 5px; }
+.draft-cover { display: grid; place-items: center; width: 76px; height: 68px; border-radius: 9px; background: var(--mantine-color-default-hover); color: var(--mantine-color-dimmed); flex-shrink: 0; overflow: hidden; }
+.draft-row-copy { min-width: 0; flex: 1; }

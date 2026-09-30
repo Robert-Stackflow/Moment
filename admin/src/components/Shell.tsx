@@ -16,6 +16,7 @@ import {
   ArrowUpRight,
   Grid2X2,
   Images,
+  FilePenLine,
   FolderTree,
   Settings2,
   UserRound,
@@ -41,6 +42,7 @@ import { Brand } from "./Brand";
 const items = [
   { label: "工作台", path: "/workbench", icon: Grid2X2 },
   { label: "帖子与图片", path: "/posts", icon: Images },
+  { label: "草稿", path: "/drafts", icon: FilePenLine },
   { label: "分类管理", path: "/categories", icon: FolderTree },
   { label: "网站设置", path: "/settings/meta", icon: Settings2 },
   { label: "我的账户", path: "/account", icon: UserRound },

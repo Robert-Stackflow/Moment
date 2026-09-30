@@ -25,6 +25,10 @@ import { ChevronDown } from "lucide-react";
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const Posts = lazy(() => import("./pages/Posts"));
 const Editor = lazy(() => import("./pages/Editor"));
+const NewPost = lazy(() =>
+  import("./pages/Editor").then((module) => ({ default: module.NewPost })),
+);
+const Drafts = lazy(() => import("./pages/Drafts"));
 const Categories = lazy(() => import("./pages/Categories"));
 const SettingsPage = lazy(() => import("./pages/Settings"));
 const Account = lazy(() => import("./pages/Account"));
@@ -174,8 +178,10 @@ const router = createBrowserRouter(
           <Route index element={<Navigate to="/workbench" replace />} />
           <Route path="workbench" element={<Dashboard />} />
           <Route path="posts" element={<Posts />} />
-          <Route path="posts/new" element={<Editor />} />
+          <Route path="posts/new" element={<NewPost />} />
           <Route path="posts/:id" element={<Editor />} />
+          <Route path="drafts" element={<Drafts />} />
+          <Route path="drafts/:draftID" element={<Editor />} />
           <Route path="categories" element={<Categories />} />
           <Route path="settings/:section" element={<SettingsPage />} />
           <Route path="account" element={<Account />} />

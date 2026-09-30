@@ -31,6 +31,7 @@ export interface Photo {
 }
 export interface Post {
   id: number;
+  revision: number;
   title: string;
   desc: string | null;
   location: string | null;
@@ -40,6 +41,38 @@ export interface Post {
   category_ids: number[];
   categories: Category[];
   created_at: string;
+  updated_at: string;
+}
+export type PostContent = Pick<
+  Post,
+  | "title"
+  | "desc"
+  | "location"
+  | "time"
+  | "is_hidden"
+  | "images"
+  | "category_ids"
+>;
+export interface PostDraft {
+  id: string;
+  post_id: number | null;
+  base_revision: number;
+  revision: number;
+  mutation_id: string;
+  payload: PostContent;
+  created_at: string;
+  updated_at: string;
+  published_at: string | null;
+  published_post_id: number | null;
+}
+export interface DraftSummary {
+  id: string;
+  post_id: number | null;
+  revision: number;
+  title: string;
+  description: string;
+  cover: string | null;
+  image_count: number;
   updated_at: string;
 }
 export interface Result<T> {
