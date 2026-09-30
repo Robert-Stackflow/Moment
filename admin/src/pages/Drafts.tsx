@@ -20,6 +20,7 @@ import { api, json, notifyError, notifySuccess } from "../api";
 import { Empty, ErrorState, Loading, PageTitle } from "../components/Common";
 import { thumbnail } from "../types";
 import type { DraftSummary, Settings } from "../types";
+import { scheduleTime } from "../components/ScheduleDialog";
 
 export default function Drafts() {
   const client = useQueryClient();
@@ -134,10 +135,25 @@ export default function Drafts() {
                     >
                       {draft.post_id ? "待发布更新" : "新帖子"}
                     </Badge>
+                    {draft.schedule_status === "pending" && (
+                      <Badge size="xs" color="blue">
+                        定时发布
+                      </Badge>
+                    )}
+                    {draft.schedule_status === "failed" && (
+                      <Badge size="xs" color="red">
+                        发布失败
+                      </Badge>
+                    )}
                   </Group>
                   <Text size="sm" c="dimmed" truncate mt={4}>
                     {draft.description || "尚未添加描述"}
                   </Text>
+                  {draft.schedule_status === "pending" && draft.publish_at && (
+                    <Text size="xs" c="dimmed" mt={4}>
+                      {scheduleTime(draft.publish_at)} · 北京时间
+                    </Text>
+                  )}
                   <Text size="xs" c="dimmed" mt={6}>
                     {draft.image_count} 张照片 · {draft.updated_at}
                   </Text>
@@ -145,6 +161,7 @@ export default function Drafts() {
               </Link>
               <ActionIcon
                 variant="subtle"
+                disabled={draft.schedule_status === "pending"}
                 color="red"
                 aria-label={`删除草稿 ${draft.title || "未命名草稿"}`}
                 onClick={() => setDeleting(draft)}

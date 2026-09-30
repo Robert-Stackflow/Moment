@@ -366,6 +366,7 @@ export default function Backups() {
               <Summary backup={restoring} />
               <Alert color="orange">
                 开始前会自动备份当前内容。恢复成功后需要用备份中的账户重新登录，请确认你知道该账户的密码。
+                备份中的待发布计划将暂停，需要重新确认发布时间。
               </Alert>
               <PasswordInput
                 label="当前账户密码"

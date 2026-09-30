@@ -1,6 +1,8 @@
 package moment
 
 import (
+	"database/sql"
+	"errors"
 	"fmt"
 	"net/url"
 	"regexp"
@@ -232,94 +234,112 @@ func (a *App) savePost(c *gin.Context) {
 	a.writePost(c, in.PostInput, id, in.ExpectedRevision, nil)
 }
 
+type postError struct {
+	status  int
+	message string
+}
+
+func (e *postError) Error() string { return e.message }
+func respondPostError(c *gin.Context, err error) {
+	var failure *postError
+	if errors.As(err, &failure) {
+		fail(c, failure.status, failure.message)
+	} else {
+		databaseError(c, err)
+	}
+}
+
 func (a *App) writePost(c *gin.Context, in PostInput, id int64, expected *int64, draft *Draft) {
-	in.Title = strings.TrimSpace(in.Title)
-	if in.Title == "" || utf8.RuneCountInString(in.Title) > 50 || len(in.Images) == 0 || len(in.Images) > 200 || len(in.Categories) > 100 {
-		fail(c, 400, "请填写不超过 50 字的标题和至少一张图片")
-		return
-	}
-	postTime, err := normalizeTime(in.Time)
-	if err != nil {
-		fail(c, 400, err.Error())
-		return
-	}
-	if err = validateDiscovery(in.Discovery, false); err != nil {
-		fail(c, 400, err.Error())
-		return
-	}
-	imageTimes := make([]any, len(in.Images))
-	imageIDs := map[int64]bool{}
-	for i, img := range in.Images {
-		if err = validateDiscovery(img.Discovery, true); err != nil {
-			fail(c, 400, err.Error())
-			return
-		}
-		for _, focus := range []*float64{img.FocusX, img.FocusY} {
-			if focus != nil && (*focus < 0 || *focus > 100) {
-				fail(c, 400, "封面焦点须在 0 到 100 之间")
-				return
-			}
-		}
-		if !validURL(img.URL) || utf8.RuneCountInString(img.Title) > 50 || img.ID < 0 || img.ID > 0 && imageIDs[img.ID] {
-			fail(c, 400, "图片地址、标题或 ID 无效")
-			return
-		}
-		imageIDs[img.ID] = true
-		imageTimes[i], err = normalizeTime(img.Time)
-		if err != nil {
-			fail(c, 400, err.Error())
-			return
-		}
-	}
 	tx, err := a.db.Begin()
 	if err != nil {
 		databaseError(c, err)
 		return
 	}
 	defer tx.Rollback()
+	id, err = writePostTx(tx, in, id, expected, draft, draftUser(c), false)
+	if err == nil {
+		err = tx.Commit()
+	}
+	if err != nil {
+		respondPostError(c, err)
+		return
+	}
+	ok(c, Object{"id": id})
+}
+
+// The caller commits content and its publishing receipt in the same transaction.
+func writePostTx(tx *sql.Tx, in PostInput, id int64, expected *int64, draft *Draft, user int64, scheduled bool) (int64, error) {
+	in.Title = strings.TrimSpace(in.Title)
+	if in.Title == "" || utf8.RuneCountInString(in.Title) > 50 || len(in.Images) == 0 || len(in.Images) > 200 || len(in.Categories) > 100 {
+		return 0, &postError{400, "请填写不超过 50 字的标题和至少一张图片"}
+	}
+	postTime, err := normalizeTime(in.Time)
+	if err != nil {
+		return 0, &postError{400, err.Error()}
+	}
+	if err = validateDiscovery(in.Discovery, false); err != nil {
+		return 0, &postError{400, err.Error()}
+	}
+	imageTimes := make([]any, len(in.Images))
+	imageIDs := map[int64]bool{}
+	for i, img := range in.Images {
+		if err = validateDiscovery(img.Discovery, true); err != nil {
+			return 0, &postError{400, err.Error()}
+		}
+		for _, focus := range []*float64{img.FocusX, img.FocusY} {
+			if focus != nil && (*focus < 0 || *focus > 100) {
+				return 0, &postError{400, "封面焦点须在 0 到 100 之间"}
+			}
+		}
+		if !validURL(img.URL) || utf8.RuneCountInString(img.Title) > 50 || img.ID < 0 || img.ID > 0 && imageIDs[img.ID] {
+			return 0, &postError{400, "图片地址、标题或 ID 无效"}
+		}
+		imageIDs[img.ID] = true
+		imageTimes[i], err = normalizeTime(img.Time)
+		if err != nil {
+			return 0, &postError{400, err.Error()}
+		}
+	}
 	if id != 0 {
 		var count int
 		if err := tx.QueryRow("SELECT COUNT(*) FROM moment_trash_posts WHERE post_id=?", id).Scan(&count); err != nil {
-			databaseError(c, err)
-			return
+			return 0, err
 		}
 		if count > 0 {
-			fail(c, 409, "帖子已移入回收站，请恢复后继续编辑")
-			return
+			return 0, &postError{409, "帖子已移入回收站，请恢复后继续编辑"}
 		}
 	}
 	if draft != nil {
-		current, e := readDraft(tx, draftUser(c), "id=?", draft.ID)
+		if !scheduled {
+			if err := editableDraft(tx, draft.ID); err != nil {
+				return 0, err
+			}
+		}
+		current, e := readDraft(tx, user, "id=?", draft.ID)
 		if e != nil {
-			databaseError(c, e)
-			return
+			return 0, e
 		}
 		if current == nil || current.PublishedAt != nil || current.Revision != draft.Revision {
-			fail(c, 409, "草稿已改变，请重新打开后发布")
-			return
+			return 0, &postError{409, "草稿已改变，请重新打开后发布"}
 		}
 	}
 	if id != 0 && expected != nil {
 		var revision int64
 		if err := tx.QueryRow("SELECT COALESCE((SELECT revision FROM moment_post_revisions WHERE post_id=?),0)", id).Scan(&revision); err != nil {
-			databaseError(c, err)
-			return
+			return 0, err
 		}
 		if revision != *expected {
-			fail(c, 409, "帖子已在其他窗口更新，草稿仍保留，请对比最新帖子后处理")
-			return
+			return 0, &postError{409, "帖子已在其他窗口更新，草稿仍保留，请对比最新帖子后处理"}
 		}
 	}
 	categoryIDs := map[int64]bool{}
 	for _, categoryID := range in.Categories {
 		if categoryID < 1 {
-			fail(c, 400, "分类无效")
-			return
+			return 0, &postError{400, "分类无效"}
 		}
 		var parent int64
 		if err := tx.QueryRow("SELECT parent_id FROM category WHERE id=?", categoryID).Scan(&parent); err != nil {
-			fail(c, 400, "分类不存在")
-			return
+			return 0, &postError{400, "分类不存在"}
 		}
 		categoryIDs[categoryID] = true
 		if parent != 0 {
@@ -330,34 +350,28 @@ func (a *App) writePost(c *gin.Context, in PostInput, id int64, expected *int64,
 	if id == 0 {
 		result, e := tx.Exec("INSERT INTO blog(title,desc,location,time,is_hidden,created_at,updated_at,remark) VALUES (?,?,?,?,?,?,?,'{}')", in.Title, in.Desc, in.Location, postTime, in.Hidden, stamp, stamp)
 		if e != nil {
-			databaseError(c, e)
-			return
+			return 0, e
 		}
 		id, _ = result.LastInsertId()
 	} else {
 		result, e := tx.Exec("UPDATE blog SET title=?,desc=?,location=?,time=?,is_hidden=?,updated_at=? WHERE id=?", in.Title, in.Desc, in.Location, postTime, in.Hidden, stamp, id)
 		if e != nil {
-			databaseError(c, e)
-			return
+			return 0, e
 		}
 		n, _ := result.RowsAffected()
 		if n == 0 {
-			fail(c, 404, "帖子不存在")
-			return
+			return 0, &postError{404, "帖子不存在"}
 		}
 	}
 	if err = saveDiscovery(tx, id, in.Discovery, false); err != nil {
-		databaseError(c, err)
-		return
+		return 0, err
 	}
 	if _, err = tx.Exec("DELETE FROM blog_category WHERE blog_id=?", id); err != nil {
-		databaseError(c, err)
-		return
+		return 0, err
 	}
 	for categoryID := range categoryIDs {
 		if _, err = tx.Exec("INSERT INTO blog_category (blog_id,category_id) VALUES (?,?)", id, categoryID); err != nil {
-			databaseError(c, err)
-			return
+			return 0, err
 		}
 	}
 	kept := []any{id}
@@ -366,57 +380,45 @@ func (a *App) writePost(c *gin.Context, in PostInput, id int64, expected *int64,
 		if img.ID > 0 {
 			result, e := tx.Exec(`UPDATE blog_image SET image_url=?,title=?,desc=?,location=?,time=?,is_hidden=?,metadata=?,"order"=?,updated_at=? WHERE id=? AND blog_id=?`, img.URL, img.Title, img.Desc, img.Location, imageTimes[i], img.Hidden, img.Metadata, i, stamp, img.ID, id)
 			if e != nil {
-				databaseError(c, e)
-				return
+				return 0, e
 			}
 			n, _ := result.RowsAffected()
 			if n != 1 {
-				fail(c, 400, "图片不属于当前帖子")
-				return
+				return 0, &postError{400, "图片不属于当前帖子"}
 			}
 			kept = append(kept, img.ID)
 		} else {
 			result, e := tx.Exec(`INSERT INTO blog_image(blog_id,image_url,title,desc,location,time,is_hidden,metadata,"order",created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?)`, id, img.URL, img.Title, img.Desc, img.Location, imageTimes[i], img.Hidden, img.Metadata, i, stamp, stamp)
 			if e != nil {
-				databaseError(c, e)
-				return
+				return 0, e
 			}
 			imageID, _ = result.LastInsertId()
 			kept = append(kept, imageID)
 		}
 		if err = saveDiscovery(tx, imageID, img.Discovery, true); err != nil {
-			databaseError(c, err)
-			return
+			return 0, err
 		}
 		// Omitted coordinates retain existing focus, including saves by older clients.
 		if img.FocusX != nil || img.FocusY != nil {
 			_, err = tx.Exec(`INSERT INTO moment_image_focus(image_id,focus_x,focus_y) VALUES (?,COALESCE(?,50),COALESCE(?,50)) ON CONFLICT(image_id) DO UPDATE SET focus_x=COALESCE(?,focus_x),focus_y=COALESCE(?,focus_y)`, imageID, img.FocusX, img.FocusY, img.FocusX, img.FocusY)
 			if err != nil {
-				databaseError(c, err)
-				return
+				return 0, err
 			}
 		}
 	}
 	if _, err = tx.Exec("DELETE FROM blog_image WHERE blog_id=? AND id NOT IN ("+placeholders(len(kept)-1)+")", kept...); err != nil {
-		databaseError(c, err)
-		return
+		return 0, err
 	}
 	if _, err = tx.Exec("INSERT INTO moment_post_revisions(post_id,revision) VALUES (?,1) ON CONFLICT(post_id) DO UPDATE SET revision=revision+1", id); err != nil {
-		databaseError(c, err)
-		return
+		return 0, err
 	}
 	if draft != nil {
 		// Keep a receipt so a repeated publish after a lost response cannot duplicate a post.
-		if _, err = tx.Exec("UPDATE moment_drafts SET published_at=?,published_post_id=?,payload='{}' WHERE id=? AND user_id=?", stamp, id, draft.ID, draftUser(c)); err != nil {
-			databaseError(c, err)
-			return
+		if _, err = tx.Exec("UPDATE moment_drafts SET published_at=?,published_post_id=?,payload='{}' WHERE id=? AND user_id=?", stamp, id, draft.ID, user); err != nil {
+			return 0, err
 		}
 	}
-	if err = tx.Commit(); err != nil {
-		databaseError(c, err)
-		return
-	}
-	ok(c, Object{"id": id})
+	return id, nil
 }
 func (a *App) deletePost(c *gin.Context) {
 	id, valid := routeID(c)

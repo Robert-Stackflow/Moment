@@ -29,6 +29,7 @@ const NewPost = lazy(() =>
   import("./pages/Editor").then((module) => ({ default: module.NewPost })),
 );
 const Drafts = lazy(() => import("./pages/Drafts"));
+const Schedules = lazy(() => import("./pages/Schedules"));
 const Trash = lazy(() => import("./pages/Trash"));
 const Shares = lazy(() => import("./pages/Shares"));
 const ShareEditor = lazy(() => import("./pages/ShareEditor"));
@@ -184,6 +185,7 @@ const router = createBrowserRouter(
           <Route path="posts/new" element={<NewPost />} />
           <Route path="posts/:id" element={<Editor />} />
           <Route path="drafts" element={<Drafts />} />
+          <Route path="schedules" element={<Schedules />} />
           <Route path="trash" element={<Trash />} />
           <Route path="shares" element={<Shares />} />
           <Route path="shares/new" element={<ShareEditor />} />

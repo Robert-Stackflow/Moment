@@ -3,7 +3,7 @@
   "private": true,
   "scripts": {
     "build": "npm --prefix web run build && npm --prefix admin run build",
-    "check": "npm --prefix admin run typecheck && go test ./...",
+    "check": "npm --prefix admin run typecheck && npm --prefix admin test && go test ./...",
     "dev:admin": "npm --prefix admin run dev",
     "dev:gallery": "npm --prefix web run dev",
     "dev:server": "go run ./cmd/moment"

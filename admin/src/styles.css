@@ -1362,6 +1362,9 @@ input:-webkit-autofill {
 .editor-cover-summary > div {
   min-width: 0;
 }
+.schedule-copy { display: flex; align-items: center; gap: 16px; }
+.schedule-cover { width: 64px; height: 64px; flex-shrink: 0; display: grid; place-items: center; border-radius: 10px; background: var(--mantine-color-default-hover); color: var(--mantine-color-dimmed); }
+.schedule-details { min-width: 0; }
 .editor-save-dock {
   position: sticky;
   bottom: 16px;
@@ -1471,8 +1474,9 @@ input:-webkit-autofill {
   }
   .editor-save-actions {
     width: 100%;
-    justify-content: space-between;
-    gap: 5px;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
   }
   .editor-save-actions .mantine-Button-root {
     padding: 0 10px;

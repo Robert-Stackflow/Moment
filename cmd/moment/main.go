@@ -27,6 +27,10 @@ func main() {
 	server := &http.Server{Addr: *addr, Handler: app.Router(), ReadHeaderTimeout: 10 * time.Second, ReadTimeout: 5 * time.Minute, WriteTimeout: 5 * time.Minute, IdleTimeout: 60 * time.Second, MaxHeaderBytes: 1 << 20}
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
+	schedulerContext, stopScheduler := context.WithCancel(ctx)
+	schedulerDone := make(chan struct{})
+	go func() { defer close(schedulerDone); app.RunScheduler(schedulerContext) }()
+	defer func() { stopScheduler(); <-schedulerDone }()
 	go func() {
 		<-ctx.Done()
 		timeout, cancel := context.WithTimeout(context.Background(), 15*time.Second)

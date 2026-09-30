@@ -338,7 +338,7 @@ function ShareForm({
                     <DateTimePicker
                       label="到期时间"
                       description="北京时间（UTC+8）"
-                      getNow={() => new Date(shanghaiDate(Date.now()))}
+                      timeZone="Asia/Shanghai"
                       value={deadline}
                       onChange={setDeadline}
                     />

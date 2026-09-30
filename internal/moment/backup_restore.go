@@ -60,6 +60,9 @@ func (a *App) restoreBackup(c *gin.Context) {
 		return
 	}
 	_, err = prepared.db.Exec("DELETE FROM moment_sessions; DELETE FROM moment_share_sessions")
+	if err == nil {
+		_, err = prepared.db.Exec("UPDATE moment_schedules SET status='failed',error='已从备份恢复，请确认内容后重新安排发布时间',revision=revision+1,updated_at=? WHERE status='pending'", now())
+	}
 	closeErr := prepared.Close()
 	if err == nil {
 		err = closeErr

@@ -12,6 +12,7 @@ import (
 )
 
 type Draft struct {
+	Schedule        *Schedule `json:"schedule,omitempty"`
 	ID              string    `json:"id"`
 	PostID          *int64    `json:"post_id"`
 	BaseRevision    int64     `json:"base_revision"`
@@ -48,6 +49,9 @@ func readDraft(q querier, user int64, condition string, arg any) (*Draft, error)
 		d.PublishedAt = &stamp
 	}
 	err = json.Unmarshal([]byte(text(r["payload"])), &d.Payload)
+	if err == nil {
+		d.Schedule, err = readSchedule(q, d.ID)
+	}
 	return d, err
 }
 
@@ -91,7 +95,7 @@ func (a *App) listDrafts(c *gin.Context) {
 		databaseError(c, err)
 		return
 	}
-	rows, err := query(a.db, `SELECT id,post_id,revision,updated_at,json_extract(payload,'$.title') AS title,json_extract(payload,'$.desc') AS description,json_array_length(payload,'$.images') AS image_count,json_extract(payload,'$.images[0].image_url') AS cover FROM moment_drafts WHERE `+where+" ORDER BY updated_at DESC,id LIMIT ? OFFSET ?", user, search, search, size, (page-1)*size)
+	rows, err := query(a.db, `SELECT id,post_id,revision,updated_at,(SELECT status FROM moment_schedules s WHERE s.draft_id=moment_drafts.id) AS schedule_status,(SELECT publish_at FROM moment_schedules s WHERE s.draft_id=moment_drafts.id) AS publish_at,json_extract(payload,'$.title') AS title,json_extract(payload,'$.desc') AS description,json_array_length(payload,'$.images') AS image_count,json_extract(payload,'$.images[0].image_url') AS cover FROM moment_drafts WHERE `+where+" ORDER BY updated_at DESC,id LIMIT ? OFFSET ?", user, search, search, size, (page-1)*size)
 	if err != nil {
 		databaseError(c, err)
 		return
@@ -151,6 +155,10 @@ func (a *App) saveDraft(c *gin.Context) {
 	}
 	if existing != nil && existing.PublishedAt != nil {
 		fail(c, 409, "草稿已发布，请打开帖子继续编辑")
+		return
+	}
+	if err := editableDraft(tx, in.ID); err != nil {
+		respondPostError(c, err)
 		return
 	}
 	// Retrying a request whose response was lost must not create a second version.
@@ -213,11 +221,16 @@ func (a *App) saveDraft(c *gin.Context) {
 			return
 		}
 	}
+	saved, err := readDraft(tx, user, "id=?", in.ID)
+	if err != nil {
+		databaseError(c, err)
+		return
+	}
 	if err = tx.Commit(); err != nil {
 		databaseError(c, err)
 		return
 	}
-	ok(c, in)
+	ok(c, saved)
 }
 
 func (a *App) deleteDraft(c *gin.Context) {
@@ -227,14 +240,14 @@ func (a *App) deleteDraft(c *gin.Context) {
 	if !bind(c, &in) {
 		return
 	}
-	result, err := a.db.Exec("DELETE FROM moment_drafts WHERE id=? AND user_id=? AND revision=? AND published_at IS NULL", c.Param("key"), draftUser(c), in.Revision)
+	result, err := a.db.Exec("DELETE FROM moment_drafts WHERE id=? AND user_id=? AND revision=? AND published_at IS NULL AND NOT EXISTS (SELECT 1 FROM moment_schedules s WHERE s.draft_id=moment_drafts.id AND s.status='pending')", c.Param("key"), draftUser(c), in.Revision)
 	if err != nil {
 		databaseError(c, err)
 		return
 	}
 	n, _ := result.RowsAffected()
 	if n != 1 {
-		fail(c, 409, "草稿已改变，请刷新列表后再删除")
+		fail(c, 409, "草稿已改变或有待发布计划，请取消计划并刷新后再删除")
 		return
 	}
 	ok(c, nil)

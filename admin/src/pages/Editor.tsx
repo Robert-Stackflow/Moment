@@ -20,6 +20,8 @@ export default function Editor() {
         draftID ? `/drafts/${draftID}` : `/posts/${id}/draft`,
       ),
     staleTime: 0,
+    refetchInterval: (query) =>
+      query.state.data?.data?.schedule?.status === "pending" ? 5_000 : false,
   });
   const postID =
     id ||

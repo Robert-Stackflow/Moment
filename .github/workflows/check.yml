@@ -21,5 +21,6 @@ jobs:
       - run: npm --prefix web ci
       - run: npm --prefix admin ci
       - run: npm --prefix admin run typecheck
+      - run: npm --prefix admin test
       - run: npm run build
       - run: docker build -t moment:check .

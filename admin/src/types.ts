@@ -67,6 +67,7 @@ export interface TrashedPost extends Post {
   draft_count: number;
 }
 export interface PostDraft {
+  schedule?: PublishSchedule;
   id: string;
   post_id: number | null;
   base_revision: number;
@@ -79,6 +80,8 @@ export interface PostDraft {
   published_post_id: number | null;
 }
 export interface DraftSummary {
+  schedule_status?: PublishSchedule["status"] | null;
+  publish_at?: number | null;
   id: string;
   post_id: number | null;
   revision: number;
@@ -87,6 +90,20 @@ export interface DraftSummary {
   cover: string | null;
   image_count: number;
   updated_at: string;
+}
+export interface PublishSchedule {
+  draft_id: string;
+  revision: number;
+  draft_revision: number;
+  publish_at: number;
+  status: "pending" | "failed" | "published" | "cancelled";
+  title: string;
+  error: string;
+  updated_at: string;
+  completed_at: string | null;
+  post_id?: number | null;
+  published_post_id?: number | null;
+  cover?: string | null;
 }
 export interface Result<T> {
   code: number;

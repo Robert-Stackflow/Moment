@@ -22,6 +22,7 @@ import {
   ArrowDown,
   ArrowLeft,
   ArrowUp,
+  CalendarClock,
   CloudCheck,
   FilePenLine,
   Eye,
@@ -47,6 +48,7 @@ import { PhotoDetails } from "./PhotoDetails";
 import { DiscoveryEditor, defaultDiscovery } from "./DiscoveryEditor";
 import { UploadQueue } from "./UploadQueue";
 import { usePostDraft } from "./usePostDraft";
+import { ScheduleDialog, scheduleTime } from "./ScheduleDialog";
 import { datetime, thumbnail } from "../types";
 import type {
   Category,
@@ -141,6 +143,8 @@ export function PostEditor({
   const [urls, setUrls] = useState("");
   const [urlError, setUrlError] = useState("");
   const [preview, setPreview] = useState(false);
+  const [scheduling, setScheduling] = useState(false);
+  const pendingSchedule = initialDraft?.schedule?.status === "pending";
   const [busy, setBusy] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
@@ -159,7 +163,7 @@ export function PostEditor({
   const photos = draft.images;
   const cover = photos.find((photo) => !photo.is_hidden);
   const current = photos.find((photo) => photo._key === editing);
-  const locked = busy || uploading || needsReload;
+  const locked = busy || uploading || needsReload || pendingSchedule;
   const visibleCount = photos.filter((photo) => !photo.is_hidden).length;
   function field<K extends keyof typeof draft>(
     key: K,
@@ -203,6 +207,7 @@ export function PostEditor({
       editing ||
       adding ||
       preview ||
+      pendingSchedule ||
       needsReload
     )
       return;
@@ -283,13 +288,45 @@ export function PostEditor({
     }
   }
   async function saveDraft() {
-    if (busy || uploading || editing || adding || preview || needsReload)
+    if (
+      busy ||
+      uploading ||
+      editing ||
+      adding ||
+      preview ||
+      needsReload ||
+      pendingSchedule
+    )
       return;
     try {
       await autosave.flush();
       notifySuccess("草稿已保存");
     } catch (cause) {
       notifyError(cause);
+    }
+  }
+  async function schedule(publishAt: number) {
+    setBusy(true);
+    try {
+      const saved = await autosave.flush();
+      await api(
+        `/drafts/${saved.id}/schedule`,
+        json("PUT", {
+          revision: initialDraft?.schedule?.revision || 0,
+          draft_revision: saved.revision,
+          publish_at: publishAt,
+        }),
+      );
+      await Promise.all(
+        ["schedules", "drafts", "draft", "postDraft"].map((key) =>
+          client.invalidateQueries({ queryKey: [key] }),
+        ),
+      );
+      flushSync(() => setScheduling(false));
+      notifySuccess("已安排定时发布");
+      navigate("/schedules");
+    } finally {
+      setBusy(false);
     }
   }
   async function saveCopy() {
@@ -381,7 +418,9 @@ export function PostEditor({
           void save();
         }}
       >
-        <UnsavedChanges dirty={autosave.dirty} uploading={uploading} />
+        {!scheduling && (
+          <UnsavedChanges dirty={autosave.dirty} uploading={uploading} />
+        )}
         <PageTitle title={initial ? "编辑帖子" : "新建帖子"}>
           <Button
             component={Link}
@@ -409,6 +448,30 @@ export function PostEditor({
             </Button>
           </Alert>
         )}
+        {initialDraft?.schedule &&
+          ["pending", "failed"].includes(initialDraft.schedule.status) && (
+            <Alert
+              color={pendingSchedule ? "blue" : "orange"}
+              title={pendingSchedule ? "已安排定时发布" : "发布计划需要处理"}
+              mb="lg"
+            >
+              <Text size="sm" mb="sm">
+                {pendingSchedule
+                  ? `将于 ${scheduleTime(
+                      initialDraft.schedule.publish_at,
+                    )}（北京时间）公开。修改内容请先取消计划。`
+                  : initialDraft.schedule.error}
+              </Text>
+              <Button
+                variant="light"
+                component={Link}
+                to="/schedules"
+                size="xs"
+              >
+                管理发布计划
+              </Button>
+            </Alert>
+          )}
         <div className="draft-notice">
           <FilePenLine size={17} />
           <Text size="sm">
@@ -477,7 +540,10 @@ export function PostEditor({
             {error}
           </Alert>
         )}
-        <fieldset disabled={busy || needsReload} className="editor-fieldset">
+        <fieldset
+          disabled={busy || needsReload || pendingSchedule}
+          className="editor-fieldset"
+        >
           <div className="editor-layout">
             <Stack gap={22}>
               <Paper withBorder className="editor-story">
@@ -840,7 +906,9 @@ export function PostEditor({
             )}
             <div>
               <Text size="sm" fw={500}>
-                {uploading
+                {pendingSchedule
+                  ? "已安排定时发布"
+                  : uploading
                   ? "照片上传中…"
                   : busy
                   ? "正在保存…"
@@ -870,7 +938,7 @@ export function PostEditor({
               variant="subtle"
               color="gray"
               leftSection={<Eye size={16} />}
-              disabled={!photos.length || locked}
+              disabled={!photos.length || busy || uploading}
               onClick={() => setPreview(true)}
             >
               预览
@@ -888,12 +956,28 @@ export function PostEditor({
               保存草稿
             </Button>
             <Button
+              variant="light"
+              leftSection={<CalendarClock size={16} />}
+              disabled={
+                locked ||
+                autosave.conflict ||
+                publishConflict ||
+                draft.is_hidden ||
+                !visibleCount ||
+                !draft.title.trim()
+              }
+              onClick={() => setScheduling(true)}
+            >
+              定时发布
+            </Button>
+            <Button
               type="submit"
               leftSection={<Save size={16} />}
               loading={busy}
               disabled={
                 uploading ||
                 needsReload ||
+                pendingSchedule ||
                 autosave.conflict ||
                 publishConflict ||
                 (!dirty && !!postID)
@@ -908,6 +992,14 @@ export function PostEditor({
           </Group>
         </div>
       </form>
+      {scheduling && (
+        <ScheduleDialog
+          title={draft.title}
+          parentDirty={autosave.dirty}
+          onClose={() => setScheduling(false)}
+          onConfirm={schedule}
+        />
+      )}
       <Drawer
         opened={!!current}
         onClose={() => setEditing(null)}
