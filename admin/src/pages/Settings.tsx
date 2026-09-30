@@ -4,7 +4,7 @@ import {
   type EditableEntry,
 } from "../components/EntryList";
 import { Toggle as Switch } from "../components/Toggle";
-import { useState } from "react";
+import { lazy, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Collapse,
@@ -31,6 +31,7 @@ import {
   Globe,
   Image,
   Save,
+  Archive,
 } from "lucide-react";
 import { api, json, notifyError, notifySuccess } from "../api";
 import { ErrorState, Loading, PageTitle } from "../components/Common";
@@ -47,11 +48,13 @@ interface Field {
   options?: { value: string; label: string }[];
   fallback?: unknown;
 }
+const Backups = lazy(() => import("./Backups"));
 const sections = [
   { key: "meta", label: "网站信息", icon: Globe },
   { key: "content", label: "相册展示", icon: Image },
   { key: "storage", label: "图片存储", icon: Database },
   { key: "general", label: "个性化", icon: Code2 },
+  { key: "backups", label: "备份与恢复", icon: Archive },
 ] as const;
 const fields: Record<Section, Field[]> = {
   meta: [
@@ -206,7 +209,7 @@ export default function SettingsPage() {
   if (settings.isPending) return <Loading />;
   if (settings.error)
     return <ErrorState error={settings.error} retry={settings.refetch} />;
-  const selected = section as Section;
+  const selected = section as Section | "backups";
   return (
     <>
       <PageTitle title="网站设置" />
@@ -224,11 +227,15 @@ export default function SettingsPage() {
             />
           ))}
         </Paper>
-        <SettingsForm
-          key={selected}
-          section={selected}
-          initial={settings.data.data[selected]}
-        />
+        {selected === "backups" ? (
+          <Backups />
+        ) : (
+          <SettingsForm
+            key={selected}
+            section={selected}
+            initial={settings.data.data[selected]}
+          />
+        )}
       </div>
     </>
   );
@@ -293,7 +300,9 @@ function SettingsForm({
     const configured = initial[`${field.key}_configured`] === true;
     return (
       <div
-        className={`setting-row ${field.kind === "textarea" ? "setting-wide" : ""}`}
+        className={`setting-row ${
+          field.kind === "textarea" ? "setting-wide" : ""
+        }`}
         key={field.key}
       >
         <div>
@@ -321,15 +330,15 @@ function SettingsForm({
                 field.key === "max_size"
                   ? 0.1
                   : field.key === "timeout_time"
-                    ? 5
-                    : 1
+                  ? 5
+                  : 1
               }
               max={
                 field.key === "max_size"
                   ? 256
                   : field.key === "timeout_time"
-                    ? 600
-                    : 100
+                  ? 600
+                  : 100
               }
               onChange={(value) => set(field.key, Number(value || 0))}
             />

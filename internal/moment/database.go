@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"time"
 
 	_ "modernc.org/sqlite"
@@ -22,6 +23,9 @@ type App struct {
 	data, dist string
 	secure     bool
 	limiter    *loginLimiter
+	stateMu    sync.RWMutex // Protect database replacement and static-file readers.
+	writeMu    sync.RWMutex // Capture the database and local files at one write boundary.
+	backupMu   sync.Mutex
 }
 type Object = map[string]any
 
@@ -32,6 +36,9 @@ func now() string { return time.Now().In(zone).Format("2006-01-02 15:04:05") }
 func Open(data, dist string, secure bool) (*App, error) {
 	if err := os.MkdirAll(data, 0700); err != nil {
 		return nil, err
+	}
+	if err := recoverRestore(data); err != nil {
+		return nil, fmt.Errorf("recover interrupted restore: %w", err)
 	}
 	path, err := filepath.Abs(filepath.Join(data, "db.sqlite3"))
 	if err != nil {
