@@ -5,6 +5,7 @@ import { Navigate, Outlet, useLocation } from "react-router-dom";
 import { Alert, Button, Center, Loader, Stack } from "@mantine/core";
 import { api, ApiError, json } from "./api";
 import type { User } from "./types";
+import { authenticatePasskey } from "./passkeys";
 
 interface Auth {
   user?: User;
@@ -12,6 +13,10 @@ interface Auth {
   error: Error | null;
   refresh: () => Promise<unknown>;
   login: (username: string, password: string) => Promise<void>;
+  loginWithPasskey: (
+    signal: AbortSignal,
+    onVerified: () => void,
+  ) => Promise<void>;
   logout: () => Promise<void>;
 }
 const AuthContext = createContext<Auth | null>(null);
@@ -29,17 +34,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     window.addEventListener("moment-session-expired", expired);
     return () => window.removeEventListener("moment-session-expired", expired);
   }, [client]);
+  async function completeLogin() {
+    await client.cancelQueries({
+      predicate: (query) => query.queryKey[0] !== "me",
+    });
+    client.removeQueries({ predicate: (query) => query.queryKey[0] !== "me" });
+    await me.refetch({ throwOnError: true });
+  }
   const value: Auth = {
-    user: me.data?.data,
+    user:
+      me.error instanceof ApiError && me.error.status === 401
+        ? undefined
+        : me.data?.data,
     loading: me.isPending,
     error: me.error,
     refresh: me.refetch,
     login: async (username, password) => {
       await api("/login", json("POST", { username, password }));
-      client.removeQueries({
-        predicate: (query) => query.queryKey[0] !== "me",
-      });
-      await me.refetch({ throwOnError: true });
+      await completeLogin();
+    },
+    loginWithPasskey: async (signal, onVerified) => {
+      await authenticatePasskey(signal, onVerified);
+      await completeLogin();
     },
     logout: async () => {
       await api("/logout", json("POST", {}));

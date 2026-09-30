@@ -82,6 +82,7 @@ function serialize(credential: PublicKeyCredential) {
   };
 }
 export function passkeyError(cause: unknown) {
+  if (cause instanceof TypeError) return "连接中断，请检查网络后重试。";
   if (cause instanceof DOMException) {
     if (cause.name === "NotAllowedError" || cause.name === "AbortError")
       return "验证已取消或未完成，可以重试，或使用密码登录。";
@@ -98,6 +99,7 @@ export async function registerPasskey(
   name: string,
   password: string,
   signal: AbortSignal,
+  onVerified: () => void,
 ) {
   const result = await api<{ publicKey: CreateOptions }>("/me/passkeys/begin", {
     ...json("POST", { name, password }),
@@ -117,12 +119,16 @@ export async function registerPasskey(
     signal,
   })) as PublicKeyCredential | null;
   if (!credential) throw new Error("设备未返回通行密钥，请重试");
+  signal.throwIfAborted();
+  onVerified();
   await api("/me/passkeys/finish", {
     ...json("POST", serialize(credential)),
-    signal,
   });
 }
-export async function authenticatePasskey(signal: AbortSignal) {
+export async function authenticatePasskey(
+  signal: AbortSignal,
+  onVerified: () => void,
+) {
   const result = await api<{ publicKey: GetOptions }>("/passkeys/login/begin", {
     ...json("POST", {}),
     signal,
@@ -140,9 +146,10 @@ export async function authenticatePasskey(signal: AbortSignal) {
     signal,
   })) as PublicKeyCredential | null;
   if (!credential) throw new Error("未选择通行密钥，可以使用密码登录");
+  signal.throwIfAborted();
+  onVerified();
   await api("/passkeys/login/finish", {
     ...json("POST", serialize(credential)),
-    signal,
     preserveEditorOnUnauthorized: true,
   });
 }

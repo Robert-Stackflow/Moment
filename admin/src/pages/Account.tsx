@@ -12,11 +12,11 @@ import {
   TextInput,
   Title,
 } from "@mantine/core";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { api, json, notifyError, notifySuccess } from "../api";
 import { PageTitle } from "../components/Common";
 import { useAuth } from "../session";
-import { Upload } from "lucide-react";
+import { Fingerprint, Upload } from "lucide-react";
 import { UnsavedChanges } from "../components/UnsavedChanges";
 
 export default function Account() {
@@ -103,7 +103,16 @@ export default function Account() {
   return (
     <>
       <UnsavedChanges dirty={dirty} uploading={uploading} />
-      <PageTitle title="我的账户" />
+      <PageTitle title="我的账户">
+        <Button
+          component={Link}
+          to="/account/security"
+          variant="default"
+          leftSection={<Fingerprint size={18} />}
+        >
+          登录与安全
+        </Button>
+      </PageTitle>
       <SimpleGrid cols={{ base: 1, md: 2 }} spacing="xl">
         <Paper withBorder p="xl">
           <form onSubmit={save}>

@@ -2290,6 +2290,15 @@ input:-webkit-autofill {
 .account-avatar-upload > button {
   flex-shrink: 0;
 }
+
+.passkey-row { display: flex; align-items: center; gap: 16px; padding: 18px; border: 1px solid var(--moment-border); border-radius: 12px; background: var(--moment-input); }
+.passkey-row-icon { box-sizing: content-box; padding: 12px; border-radius: 12px; background: var(--moment-soft); color: var(--moment-accent); flex-shrink: 0; }
+.passkey-row-copy { flex: 1; min-width: 0; }
+@media (max-width: 600px) {
+  .passkey-row { gap: 10px; padding: 14px 10px; flex-wrap: wrap; }
+  .passkey-row-icon { padding: 9px; }
+  .passkey-row > .mantine-Group-root { width: 100%; justify-content: flex-end; }
+}
 /* Focus editing uses the original image; previews show responsive cover crops. */
 .focus-picker { padding: 16px; border: 1px solid var(--mantine-color-default-border); border-radius: 14px; background: var(--mantine-color-default); }
 .focus-source-wrap { display: flex; justify-content: center; align-items: center; padding: 16px; min-height: 100px; border-radius: 9px; background: var(--mantine-color-body); overflow: hidden; }

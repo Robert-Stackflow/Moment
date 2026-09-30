@@ -10,6 +10,7 @@ import (
 	"net"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 	"time"
 	"unicode/utf8"
@@ -17,6 +18,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-webauthn/webauthn/protocol"
 	"github.com/go-webauthn/webauthn/webauthn"
+	"golang.org/x/net/idna"
 	"golang.org/x/net/publicsuffix"
 )
 
@@ -55,17 +57,48 @@ func passkeyOrigin(value string) (string, error) {
 		return "", errors.New("通行密钥需要固定域名；本地调试请使用 localhost")
 	}
 	if host != "localhost" {
+		host, err = idna.Lookup.ToASCII(host)
+		if err != nil || len(host) > 253 {
+			return "", errors.New("请填写有效的网站域名")
+		}
 		if _, err = publicsuffix.EffectiveTLDPlusOne(host); err != nil {
 			return "", errors.New("请填写有效的网站域名")
 		}
 	}
+	port := u.Port()
+	if port != "" {
+		number, err := strconv.Atoi(port)
+		if err != nil || number < 1 || number > 65535 {
+			return "", errors.New("登录网址的端口无效")
+		}
+		port = strconv.Itoa(number)
+	}
 	if u.Scheme != "https" && !(u.Scheme == "http" && host == "localhost") {
 		return "", errors.New("通行密钥需要 HTTPS；仅 localhost 可使用 HTTP")
 	}
-	if (u.Scheme == "https" && u.Port() == "443") || (u.Scheme == "http" && u.Port() == "80") {
-		u.Host = host
+	if (u.Scheme == "https" && port == "443") || (u.Scheme == "http" && port == "80") {
+		port = ""
 	}
-	return u.Scheme + "://" + u.Host, nil
+	if port != "" {
+		host = net.JoinHostPort(host, port)
+	}
+	return u.Scheme + "://" + host, nil
+}
+
+// Run inside the write transaction: a password change or key removal may have
+// revoked this session while the password was being verified outside it.
+func currentPasskeyAccountSession(c *gin.Context, q querier) bool {
+	token, _ := c.Cookie("moment_session")
+	rows, err := query(q, "SELECT user_id FROM moment_sessions WHERE token_hash=? AND user_id=? AND expires_at>?", tokenDigest(token), draftUser(c), time.Now().Unix())
+	if err != nil {
+		databaseError(c, err)
+		return false
+	}
+	if len(rows) != 1 {
+		fail(c, 401, "登录已失效，请重新登录后再操作")
+		return false
+	}
+	return true
 }
 
 func passkeyRP(config passkeyConfig) (*webauthn.WebAuthn, error) {
@@ -142,6 +175,9 @@ func (a *App) configurePasskeys(c *gin.Context) {
 		fail(c, 409, "登录配置已在其他窗口改变，请刷新后重试")
 		return
 	}
+	if !currentPasskeyAccountSession(c, tx) {
+		return
+	}
 	if _, err = tx.Exec("DELETE FROM moment_passkey_challenges"); err == nil {
 		err = tx.Commit()
 	}
@@ -149,6 +185,7 @@ func (a *App) configurePasskeys(c *gin.Context) {
 		databaseError(c, err)
 		return
 	}
+	a.limiter.reset(c.ClientIP())
 	a.passkeyStatus(c)
 }
 
@@ -247,6 +284,9 @@ func (a *App) savePasskeyChallenge(c *gin.Context, config passkeyConfig, kind, n
 	}
 	if !latest.Enabled || latest.Revision != config.Revision {
 		fail(c, 409, "登录设置已变化，请重新开始")
+		return false
+	}
+	if user != nil && !currentPasskeyAccountSession(c, tx) {
 		return false
 	}
 	var count int
@@ -610,6 +650,9 @@ func (a *App) deletePasskey(c *gin.Context) {
 		fail(c, 409, "通行密钥已改变，请刷新后重试")
 		return
 	}
+	if !currentPasskeyAccountSession(c, tx) {
+		return
+	}
 	if _, err = tx.Exec("DELETE FROM moment_sessions WHERE user_id=?", draftUser(c)); err == nil {
 		_, err = tx.Exec("DELETE FROM moment_passkey_challenges WHERE user_id=? OR kind='login'", draftUser(c))
 	}
@@ -620,6 +663,7 @@ func (a *App) deletePasskey(c *gin.Context) {
 		databaseError(c, err)
 		return
 	}
+	a.limiter.reset(c.ClientIP())
 	a.cookie(c, "", -1)
 	ok(c, nil)
 }

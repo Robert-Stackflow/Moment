@@ -21,11 +21,12 @@ import {
   KeyRound,
   Pencil,
   Plus,
+  RefreshCw,
   Settings2,
   Trash2,
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
-import { api, json, notifySuccess } from "../api";
+import { api, ApiError, json, notifySuccess } from "../api";
 import {
   canUsePasskeys,
   passkeyError,
@@ -63,6 +64,9 @@ export default function Security() {
   const [origin, setOrigin] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [finishing, setFinishing] = useState(false);
+  const [conflict, setConflict] = useState(false);
+  const [reloadPrompt, setReloadPrompt] = useState(false);
   const controller = useRef<AbortController | null>(null);
   useEffect(() => () => controller.current?.abort(), []);
   const dirty =
@@ -79,6 +83,7 @@ export default function Security() {
     setName("key" in value ? value.key.name : "");
     setPassword("");
     setError("");
+    setConflict(false);
     if (value.kind === "config") {
       setEnabled(value.config.enabled);
       setOrigin(value.config.origin || location.origin);
@@ -95,6 +100,8 @@ export default function Security() {
     if (!dialog || busy) return;
     setBusy(true);
     setError("");
+    setConflict(false);
+    setFinishing(false);
     controller.current = new AbortController();
     try {
       switch (dialog.kind) {
@@ -110,7 +117,9 @@ export default function Security() {
           );
           break;
         case "create":
-          await registerPasskey(name, password, controller.current.signal);
+          await registerPasskey(name, password, controller.current.signal, () =>
+            setFinishing(true),
+          );
           break;
         case "rename":
           await api(
@@ -142,9 +151,39 @@ export default function Security() {
       void client.invalidateQueries({ queryKey: ["passkeyConfig"] });
     } catch (cause) {
       setError(passkeyError(cause));
+      setConflict(cause instanceof ApiError && cause.status === 409);
+      if (dialog.kind === "create") void keys.refetch();
     } finally {
       setBusy(false);
+      setFinishing(false);
       controller.current = null;
+    }
+  }
+  async function reloadLatest() {
+    setReloadPrompt(false);
+    setBusy(true);
+    try {
+      if (dialog?.kind === "config") {
+        const latest = await config.refetch({ throwOnError: true });
+        if (latest.data) open({ kind: "config", config: latest.data.data });
+      } else if (dialog && "key" in dialog) {
+        const latest = await keys.refetch({ throwOnError: true });
+        const key = latest.data?.data.find((key) => key.id === dialog.key.id);
+        if (key) open({ kind: dialog.kind, key });
+        else {
+          setDialog(null);
+          setPassword("");
+          notifySuccess("此通行密钥已被移除");
+        }
+      } else {
+        setDialog(null);
+        setPassword("");
+        await Promise.all([config.refetch(), keys.refetch()]);
+      }
+    } catch (cause) {
+      setError(passkeyError(cause));
+    } finally {
+      setBusy(false);
     }
   }
   const settings = config.data?.data;
@@ -228,19 +267,32 @@ export default function Security() {
           <Paper withBorder p="xl">
             <Group justify="space-between" mb="lg">
               <Title order={4}>我的通行密钥</Title>
-              <Button
-                size="sm"
-                leftSection={<Plus size={16} />}
-                disabled={
-                  !settings?.enabled ||
-                  !correctOrigin ||
-                  !canUsePasskeys() ||
-                  (keys.data?.data.length || 0) >= 20
-                }
-                onClick={() => open({ kind: "create" })}
-              >
-                添加通行密钥
-              </Button>
+              <Group gap="xs">
+                <ActionIcon
+                  variant="subtle"
+                  aria-label="刷新通行密钥"
+                  loading={config.isFetching || keys.isFetching}
+                  onClick={() => {
+                    void config.refetch();
+                    void keys.refetch();
+                  }}
+                >
+                  <RefreshCw size={17} />
+                </ActionIcon>
+                <Button
+                  size="sm"
+                  leftSection={<Plus size={16} />}
+                  disabled={
+                    !settings?.enabled ||
+                    !correctOrigin ||
+                    !canUsePasskeys() ||
+                    (keys.data?.data.length || 0) >= 20
+                  }
+                  onClick={() => open({ kind: "create" })}
+                >
+                  添加通行密钥
+                </Button>
+              </Group>
             </Group>
             {!keys.data?.data.length ? (
               <Text c="dimmed" size="sm">
@@ -397,18 +449,28 @@ export default function Security() {
               )}
               {busy && dialog.kind === "create" && (
                 <Text size="sm" c="dimmed" role="status">
-                  正在等待设备验证…
+                  {finishing ? "验证成功，正在保存…" : "正在等待设备验证…"}
                 </Text>
               )}
               {error && (
                 <Alert color="red" role="alert">
                   {error}
+                  {conflict && (
+                    <Button
+                      variant="subtle"
+                      color="red"
+                      size="xs"
+                      onClick={() => setReloadPrompt(true)}
+                    >
+                      重新加载
+                    </Button>
+                  )}
                 </Alert>
               )}
               <Group justify="flex-end">
                 <Button
                   variant="default"
-                  disabled={busy && dialog.kind !== "create"}
+                  disabled={busy && (dialog.kind !== "create" || finishing)}
                   onClick={() => (busy ? controller.current?.abort() : close())}
                 >
                   {busy ? "取消验证" : "取消"}
@@ -428,6 +490,24 @@ export default function Security() {
             </Stack>
           </form>
         )}
+      </Modal>
+      <Modal
+        opened={reloadPrompt}
+        onClose={() => setReloadPrompt(false)}
+        title="放弃当前修改并重新加载？"
+        centered
+      >
+        <Text size="sm">
+          另一处修改已保存。重新加载后，此窗口尚未保存的内容会被替换。
+        </Text>
+        <Group justify="flex-end" mt="lg">
+          <Button variant="default" onClick={() => setReloadPrompt(false)}>
+            继续编辑
+          </Button>
+          <Button onClick={() => void reloadLatest()}>
+            放弃修改并重新加载
+          </Button>
+        </Group>
       </Modal>
     </>
   );

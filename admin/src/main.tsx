@@ -36,6 +36,7 @@ const ShareEditor = lazy(() => import("./pages/ShareEditor"));
 const Categories = lazy(() => import("./pages/Categories"));
 const SettingsPage = lazy(() => import("./pages/Settings"));
 const Account = lazy(() => import("./pages/Account"));
+const Security = lazy(() => import("./pages/Security"));
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: { staleTime: 30_000, retry: false, refetchOnWindowFocus: false },
@@ -194,6 +195,7 @@ const router = createBrowserRouter(
           <Route path="categories" element={<Categories />} />
           <Route path="settings/:section" element={<SettingsPage />} />
           <Route path="account" element={<Account />} />
+          <Route path="account/security" element={<Security />} />
           <Route
             path="content/blog"
             element={<Navigate to="/posts" replace />}
