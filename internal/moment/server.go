@@ -100,6 +100,8 @@ func (a *App) Router() http.Handler {
 	r.Static("/assets", filepath.Join(a.dist, "assets"))
 	r.Static("/admin/assets", filepath.Join(a.dist, "admin", "assets"))
 	r.Static("/uploads", filepath.Join(a.data, "uploads"))
+	r.GET("/thumbnails/:size/*file", a.thumbnail)
+	r.HEAD("/thumbnails/:size/*file", a.thumbnail)
 	r.Static("/avatars", filepath.Join(a.data, "avatars"))
 	r.NoRoute(func(c *gin.Context) {
 		path := c.Request.URL.Path

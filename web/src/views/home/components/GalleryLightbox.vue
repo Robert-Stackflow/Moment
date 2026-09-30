@@ -540,7 +540,7 @@ onBeforeUnmount(() => {
           :aria-current="index === i ? 'true' : undefined"
           @click="choose(i)"
         >
-          <img :src="imageURL(item, content, 'thumbnail')" alt="" loading="lazy" /><span>{{
+          <img :src="imageURL(item, content, 'thumbnail', 320)" alt="" loading="lazy" /><span>{{
             i + 1
           }}</span>
         </button>

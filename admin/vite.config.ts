@@ -14,6 +14,9 @@ export default defineConfig({
       "/uploads": {
         target: process.env.MOMENT_DEV_API || "http://127.0.0.1:9999",
       },
+      "/thumbnails": {
+        target: process.env.MOMENT_DEV_API || "http://127.0.0.1:9999",
+      },
       "/avatars": {
         target: process.env.MOMENT_DEV_API || "http://127.0.0.1:9999",
       },

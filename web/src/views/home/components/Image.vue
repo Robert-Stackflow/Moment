@@ -1,7 +1,7 @@
 <script setup>
 import { computed, ref } from 'vue'
 import { useSettingStore } from '@/store'
-import { imageURL, focusPosition, photoPath, photoDate } from './gallery'
+import { imageURL, thumbnailSources, focusPosition, photoPath, photoDate } from './gallery'
 const props = defineProps({ data: Object, index: Number })
 const emit = defineEmits(['open'])
 const content = useSettingStore().contentSetting
@@ -33,6 +33,7 @@ function retry() {
         :key="attempt"
         class="thumb-image my-photo"
         :src="imageURL(cover, content, 'thumbnail')"
+        :srcset="thumbnailSources(cover, content)"
         :alt="cover.title || data.title"
         :loading="index < 3 ? 'eager' : 'lazy'"
         :fetchpriority="index === 0 ? 'high' : 'auto'"

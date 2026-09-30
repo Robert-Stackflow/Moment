@@ -71,6 +71,13 @@ const fields: Record<Section, Field[]> = {
     { key: "icp", label: "ICP备案号" },
   ],
   content: [
+    {
+      key: "local_thumbnails",
+      label: "自动生成本地缩略图",
+      kind: "switch",
+      fallback: true,
+      description: "加快照片墙和后台预览；保留原图，远程照片沿用图片处理后缀",
+    },
     { key: "page_size", label: "每页帖子数量", kind: "number", fallback: 20 },
     {
       key: "order_option",

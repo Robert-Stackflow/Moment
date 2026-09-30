@@ -2,6 +2,7 @@ package moment
 
 import (
 	"encoding/json"
+	"math"
 	"net/mail"
 	"strings"
 	"unicode/utf8"
@@ -71,6 +72,7 @@ func (a *App) saveSettings(c *gin.Context) {
 		fail(c, 409, "原设置数据格式无效，请先备份并修复")
 		return
 	}
+	originalPageSize, originalPageSizeIsNumber := current["page_size"].(float64)
 	for key, value := range changes {
 		if strings.HasSuffix(key, "_configured") {
 			continue
@@ -86,9 +88,21 @@ func (a *App) saveSettings(c *gin.Context) {
 		current[key] = value
 	}
 	if section == "content" {
-		if value, found := current["page_size"]; found && (integer(value) < 1 || integer(value) > 100) {
-			fail(c, 400, "每页数量必须在 1 到 100 之间")
-			return
+		if value, found := current["local_thumbnails"]; found {
+			if _, valid := value.(bool); !valid {
+				fail(c, 400, "自动缩略图开关无效")
+				return
+			}
+		}
+		if value, found := changes["page_size"]; found {
+			size, numeric := value.(float64)
+			// Preserve an unchanged legacy limit when another option is saved.
+			// The gallery already splits large legacy pages into bounded requests.
+			unchanged := numeric && originalPageSizeIsNumber && size == originalPageSize
+			if !numeric || !unchanged && (size < 1 || size > 100 || math.Trunc(size) != size) {
+				fail(c, 400, "每页数量必须是 1 到 100 之间的整数")
+				return
+			}
 		}
 		if order := text(current["order_option"]); order != "" {
 			if _, found := sortSQL[order]; !found {

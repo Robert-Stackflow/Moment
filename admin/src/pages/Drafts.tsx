@@ -18,7 +18,8 @@ import { FilePenLine, Plus, Search, Trash2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { api, json, notifyError, notifySuccess } from "../api";
 import { Empty, ErrorState, Loading, PageTitle } from "../components/Common";
-import type { DraftSummary } from "../types";
+import { thumbnail } from "../types";
+import type { DraftSummary, Settings } from "../types";
 
 export default function Drafts() {
   const client = useQueryClient();
@@ -27,6 +28,10 @@ export default function Drafts() {
   const [page, setPage] = useState(1);
   const [deleting, setDeleting] = useState<DraftSummary | null>(null);
   const [busy, setBusy] = useState(false);
+  const settings = useQuery({
+    queryKey: ["settings"],
+    queryFn: () => api<Settings>("/settings"),
+  });
   const drafts = useQuery({
     queryKey: ["drafts", page, q],
     queryFn: () =>
@@ -106,7 +111,13 @@ export default function Drafts() {
               >
                 <div className="draft-cover">
                   {draft.cover ? (
-                    <Image src={draft.cover} alt="" w={76} h={68} radius={9} />
+                    <Image
+                      src={thumbnail(draft.cover, settings.data?.data, 320)}
+                      alt=""
+                      w={76}
+                      h={68}
+                      radius={9}
+                    />
                   ) : (
                     <FilePenLine size={23} />
                   )}

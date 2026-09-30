@@ -1,8 +1,16 @@
 import dayjs from 'dayjs'
 
-export function imageURL(photo, content, kind = 'detail') {
+export function imageURL(photo, content, kind = 'detail', size = 640) {
   const url = photo?.image_url || ''
+  if (kind === 'thumbnail' && url.startsWith('/uploads/') && content?.local_thumbnails !== false)
+    return `/thumbnails/${size}/` + url.slice('/uploads/'.length).split(/[?#]/)[0]
   return /^https?:/i.test(url) ? url + (content?.[`${kind}_suffix`] || '') : url
+}
+export function thumbnailSources(photo, content) {
+  const url = imageURL(photo, content, 'thumbnail')
+  return url.startsWith('/thumbnails/640/')
+    ? `${url} 1x, ${url.replace('/640/', '/1280/')} 2x`
+    : undefined
 }
 export function focusPosition(photo) {
   return `${photo?.focus_x ?? 50}% ${photo?.focus_y ?? 50}%`

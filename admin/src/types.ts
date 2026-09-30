@@ -99,7 +99,18 @@ export const orders = [
 ];
 export const flatten = (items: Category[]): Category[] =>
   items.flatMap((item) => [item, ...flatten(item.children || [])]);
-export function thumbnail(url: string, settings?: Settings): string {
+export function thumbnail(
+  url: string,
+  settings?: Settings,
+  size: 320 | 640 | 1280 = 640,
+): string {
+  if (
+    url.startsWith("/uploads/") &&
+    settings?.content.local_thumbnails !== false
+  )
+    return (
+      `/thumbnails/${size}/` + url.slice("/uploads/".length).split(/[?#]/)[0]
+    );
   return /^https?:/.test(url)
     ? url + String(settings?.content.thumbnail_suffix || "")
     : url;
