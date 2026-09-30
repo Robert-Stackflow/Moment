@@ -7,6 +7,8 @@ export const router = createRouter({
   history: createWebHistory('/'),
   routes: [
     { path: '/', component: gallery },
+    { path: '/map', component: gallery },
+    { path: '/timeline', component: gallery },
     { path: '/post/:post(\\d+)', component: gallery },
     { path: '/share/:token', component: () => import('@/views/share/index.vue') },
     { path: '/category/:category', component: gallery },
@@ -15,6 +17,7 @@ export const router = createRouter({
     { path: '/:pathMatch(.*)*', component: () => import('@/views/error-page/404.vue') },
   ],
   scrollBehavior: (to, from, saved) => {
+    if ((to.path === '/map' || to.path === '/timeline') && to.path === from.path) return false
     if (to.params.post) return false
     return saved || { left: 0, top: 0 }
   },

@@ -124,6 +124,8 @@ onBeforeUnmount(() => {
           </div>
         </Transition>
       </div>
+      <GalleryButton v-if="settings.contentSetting?.map_enabled !== false" icon="map" label="地图" href="/map" class="gallery-explore-link" :pressed="route.path === '/map'" />
+      <GalleryButton v-if="settings.contentSetting?.timeline_enabled !== false" icon="timeline" label="拍摄时间线" href="/timeline" class="gallery-explore-link" :pressed="route.path === '/timeline'" />
       <button
         id="header-about"
         type="button"
@@ -139,6 +141,8 @@ onBeforeUnmount(() => {
   </header>
 </template>
 <style>
+#header .gallery-explore-link { width:36px; height:36px; }
+@media(max-width:380px) { #header .gallery-brand strong { display:none; } }
 #header {
   position: fixed;
   bottom: 0;

@@ -16,6 +16,7 @@ var orderOptions = []Object{{"label": "拍摄时间降序", "value": "meta_time_
 var sortSQL = map[string]string{"meta_time_desc": "b.time DESC,b.id DESC", "meta_time_asc": "b.time ASC,b.id ASC", "created_at_desc": "b.created_at DESC,b.id DESC", "created_at_asc": "b.created_at ASC,b.id ASC", "updated_at_desc": "b.updated_at DESC,b.id DESC", "updated_at_asc": "b.updated_at ASC,b.id ASC"}
 
 type PostInput struct {
+	Discovery  *Discovery   `json:"discovery,omitempty"`
 	Title      string       `json:"title"`
 	Desc       string       `json:"desc"`
 	Location   string       `json:"location"`
@@ -25,17 +26,18 @@ type PostInput struct {
 	Categories []int64      `json:"category_ids"`
 }
 type ImageInput struct {
-	ID       int64    `json:"id,omitempty"`
-	URL      string   `json:"image_url"`
-	Title    string   `json:"title"`
-	Desc     string   `json:"desc"`
-	Location string   `json:"location"`
-	Time     *string  `json:"time"`
-	Hidden   bool     `json:"is_hidden"`
-	Metadata string   `json:"metadata"`
-	Order    int      `json:"order"`
-	FocusX   *float64 `json:"focus_x,omitempty"`
-	FocusY   *float64 `json:"focus_y,omitempty"`
+	Discovery *Discovery `json:"discovery,omitempty"`
+	ID        int64      `json:"id,omitempty"`
+	URL       string     `json:"image_url"`
+	Title     string     `json:"title"`
+	Desc      string     `json:"desc"`
+	Location  string     `json:"location"`
+	Time      *string    `json:"time"`
+	Hidden    bool       `json:"is_hidden"`
+	Metadata  string     `json:"metadata"`
+	Order     int        `json:"order"`
+	FocusX    *float64   `json:"focus_x,omitempty"`
+	FocusY    *float64   `json:"focus_y,omitempty"`
 }
 
 func validURL(value string) bool {
@@ -176,6 +178,9 @@ func (a *App) attach(blogs []Object, public bool) error {
 		b["categories"] = append(b["categories"].([]Object), cat)
 		b["category_ids"] = append(b["category_ids"].([]int64), integer(cat["id"]))
 	}
+	if !public {
+		return a.attachDiscovery(blogs, args)
+	}
 	return nil
 }
 func (a *App) getPost(c *gin.Context) {
@@ -238,9 +243,17 @@ func (a *App) writePost(c *gin.Context, in PostInput, id int64, expected *int64,
 		fail(c, 400, err.Error())
 		return
 	}
+	if err = validateDiscovery(in.Discovery, false); err != nil {
+		fail(c, 400, err.Error())
+		return
+	}
 	imageTimes := make([]any, len(in.Images))
 	imageIDs := map[int64]bool{}
 	for i, img := range in.Images {
+		if err = validateDiscovery(img.Discovery, true); err != nil {
+			fail(c, 400, err.Error())
+			return
+		}
 		for _, focus := range []*float64{img.FocusX, img.FocusY} {
 			if focus != nil && (*focus < 0 || *focus > 100) {
 				fail(c, 400, "封面焦点须在 0 到 100 之间")
@@ -333,6 +346,10 @@ func (a *App) writePost(c *gin.Context, in PostInput, id int64, expected *int64,
 			return
 		}
 	}
+	if err = saveDiscovery(tx, id, in.Discovery, false); err != nil {
+		databaseError(c, err)
+		return
+	}
 	if _, err = tx.Exec("DELETE FROM blog_category WHERE blog_id=?", id); err != nil {
 		databaseError(c, err)
 		return
@@ -366,6 +383,10 @@ func (a *App) writePost(c *gin.Context, in PostInput, id int64, expected *int64,
 			}
 			imageID, _ = result.LastInsertId()
 			kept = append(kept, imageID)
+		}
+		if err = saveDiscovery(tx, imageID, img.Discovery, true); err != nil {
+			databaseError(c, err)
+			return
 		}
 		// Omitted coordinates retain existing focus, including saves by older clients.
 		if img.FocusX != nil || img.FocusY != nil {

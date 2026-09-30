@@ -96,8 +96,27 @@ export function UploadQueue({
               if (exif.DateTimeOriginal instanceof Date) {
                 const date = exif.DateTimeOriginal;
                 const pad = (n: number) => String(n).padStart(2, "0");
-                photo.time = `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
+                photo.time = `${date.getFullYear()}-${pad(
+                  date.getMonth() + 1,
+                )}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(
+                  date.getMinutes(),
+                )}:${pad(date.getSeconds())}`;
               }
+            }
+            const gps = await exifr.gps(job.file);
+            if (
+              gps &&
+              Number.isFinite(gps.latitude) &&
+              Number.isFinite(gps.longitude) &&
+              Math.abs(gps.latitude) <= 90 &&
+              Math.abs(gps.longitude) <= 180
+            ) {
+              photo.discovery = {
+                latitude: gps.latitude,
+                longitude: gps.longitude,
+                precision: "private",
+                timeline: "inherit",
+              };
             }
           } catch {
             /* EXIF is optional; an otherwise valid upload remains usable. */
@@ -132,6 +151,11 @@ export function UploadQueue({
   );
   return (
     <Stack gap="md">
+      {!compact && (
+        <Text size="xs" c="dimmed">
+          自动读取拍摄时间与 GPS（如有）；GPS 默认不公开，可在图片详情中调整。
+        </Text>
+      )}
       <Dropzone
         accept={IMAGE_MIME_TYPE}
         maxSize={limit * 1024 * 1024}

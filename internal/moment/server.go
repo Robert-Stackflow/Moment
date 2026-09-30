@@ -85,6 +85,9 @@ func (a *App) Router() http.Handler {
 	shares.GET("/photos/:photo/:size", a.sharedPhoto)
 	shares.HEAD("/photos/:photo/:size", a.sharedPhoto)
 	visitor := r.Group("/api/v1/visitor")
+	visitor.GET("/explore/photos", a.discoveryPhotos)
+	visitor.GET("/explore/points", a.discoveryPoints)
+	visitor.GET("/explore/years", a.discoveryYears)
 	visitor.GET("/blog/list", a.visitorPosts)
 	visitor.GET("/blog/:id", a.visitorPost)
 	visitor.GET("/category/list", a.listCategories)
@@ -127,7 +130,7 @@ func (a *App) Router() http.Handler {
 				return
 			}
 			entry = filepath.Join(a.dist, "admin", "index.html")
-		} else if path != "/" && !strings.HasPrefix(path, "/category/") && !strings.HasPrefix(path, "/location/") && !strings.HasPrefix(path, "/post/") && !strings.HasPrefix(path, "/share/") {
+		} else if path != "/" && path != "/map" && path != "/timeline" && !strings.HasPrefix(path, "/category/") && !strings.HasPrefix(path, "/location/") && !strings.HasPrefix(path, "/post/") && !strings.HasPrefix(path, "/share/") {
 			fail(c, 404, "页面不存在")
 			return
 		}

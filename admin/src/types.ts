@@ -15,7 +15,14 @@ export interface Category {
   parent_id: number;
   children?: Category[];
 }
+export interface Discovery {
+  latitude: number | null;
+  longitude: number | null;
+  precision: "inherit" | "private" | "approximate" | "exact";
+  timeline: "inherit" | "show" | "hide";
+}
 export interface Photo {
+  discovery?: Discovery;
   id?: number;
   image_url: string;
   title: string | null;
@@ -30,6 +37,7 @@ export interface Photo {
   focus_y?: number;
 }
 export interface Post {
+  discovery?: Discovery;
   id: number;
   revision: number;
   title: string;
@@ -46,6 +54,7 @@ export interface Post {
 export type PostContent = Pick<
   Post,
   | "title"
+  | "discovery"
   | "desc"
   | "location"
   | "time"

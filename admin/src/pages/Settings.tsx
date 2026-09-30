@@ -72,6 +72,20 @@ const fields: Record<Section, Field[]> = {
   ],
   content: [
     {
+      key: "map_enabled",
+      label: "地图浏览",
+      description: "仅展示明确公开的坐标；关闭后同时停用地图接口",
+      kind: "switch",
+      fallback: true,
+    },
+    {
+      key: "timeline_enabled",
+      label: "拍摄时间线",
+      description: "按照片拍摄时间排列，可在帖子或照片中单独排除",
+      kind: "switch",
+      fallback: true,
+    },
+    {
       key: "local_thumbnails",
       label: "自动生成本地缩略图",
       kind: "switch",

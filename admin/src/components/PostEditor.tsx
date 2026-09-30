@@ -44,11 +44,13 @@ import { CategoryMultiSelect } from "./CategoryPicker";
 import { DateTimePicker } from "./DateTimePicker";
 import { localDateTime } from "./dateTime";
 import { PhotoDetails } from "./PhotoDetails";
+import { DiscoveryEditor, defaultDiscovery } from "./DiscoveryEditor";
 import { UploadQueue } from "./UploadQueue";
 import { usePostDraft } from "./usePostDraft";
 import { datetime, thumbnail } from "../types";
 import type {
   Category,
+  Discovery,
   Photo,
   Post,
   PostContent,
@@ -57,6 +59,7 @@ import type {
 } from "../types";
 
 function formValues(post?: PostContent): {
+  discovery: Discovery;
   title: string;
   desc: string;
   location: string;
@@ -66,6 +69,7 @@ function formValues(post?: PostContent): {
   images: (Photo & { _key: string })[];
 } {
   return {
+    discovery: post?.discovery || defaultDiscovery(false),
     title: post?.title || "",
     desc: post?.desc || "",
     location: post?.location || "",
@@ -782,6 +786,10 @@ export function PostEditor({
                     categories={categories}
                     value={draft.category_ids}
                     onChange={(value) => field("category_ids", value)}
+                  />
+                  <DiscoveryEditor
+                    value={draft.discovery}
+                    onChange={(value) => field("discovery", value)}
                   />
                 </Stack>
               </Paper>

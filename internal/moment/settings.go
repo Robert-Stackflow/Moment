@@ -88,6 +88,14 @@ func (a *App) saveSettings(c *gin.Context) {
 		current[key] = value
 	}
 	if section == "content" {
+		for _, key := range []string{"map_enabled", "timeline_enabled"} {
+			if v, found := current[key]; found {
+				if _, valid := v.(bool); !valid {
+					fail(c, 400, "地图或时间线开关无效")
+					return
+				}
+			}
+		}
 		if value, found := current["local_thumbnails"]; found {
 			if _, valid := value.(bool); !valid {
 				fail(c, 400, "自动缩略图开关无效")

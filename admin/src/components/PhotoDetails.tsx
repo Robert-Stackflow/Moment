@@ -5,6 +5,7 @@ import { Button, Group, Stack, Text, Textarea, TextInput } from "@mantine/core";
 import { Check } from "lucide-react";
 import { DateTimePicker } from "./DateTimePicker";
 import { FocusPicker } from "./FocusPicker";
+import { DiscoveryEditor } from "./DiscoveryEditor";
 import { datetime } from "../types";
 import type { Photo, Settings } from "../types";
 
@@ -70,6 +71,11 @@ export function PhotoDetails({
         minRows={2}
         value={draft.metadata || ""}
         onChange={(e) => field("metadata", e.currentTarget.value)}
+      />
+      <DiscoveryEditor
+        image
+        value={draft.discovery}
+        onChange={(value) => field("discovery", value)}
       />
       <TextInput
         label="图片地址"

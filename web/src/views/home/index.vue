@@ -1,18 +1,20 @@
 <template>
   <Header :about-open="aboutOpen" @about="aboutOpen = !aboutOpen" />
   <div id="wrapper">
-    <Main />
+    <Explore v-if="route.path === '/map' || route.path === '/timeline'" :key="route.path" />
+    <Main v-else />
     <button v-if="aboutOpen" class="gallery-panel-backdrop" aria-label="关闭关于面板" @click="aboutOpen = false" />
     <Footer :open="aboutOpen" @close="aboutOpen = false" />
   </div>
 </template>
 
 <script setup>
-import { ref, watch, onBeforeUnmount } from 'vue'
+import { ref, watch, onBeforeUnmount, defineAsyncComponent } from 'vue'
 import { useRoute } from 'vue-router'
 import Header from './components/Header.vue'
 import Footer from './components/Footer.vue'
 import Main from './components/Main.vue'
+const Explore = defineAsyncComponent(() => import('../explore/index.vue'))
 const aboutOpen = ref(false)
 const route = useRoute()
 watch(aboutOpen, (open) => document.body.classList.toggle('content-active', open))
