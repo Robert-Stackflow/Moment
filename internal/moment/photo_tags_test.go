@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"image/jpeg"
 	"net/http/httptest"
+	"net/url"
 	"os"
 	"path/filepath"
 	"slices"
@@ -54,10 +55,20 @@ func TestPhotoTagsPersistencePrivacyAndLegacyClients(t *testing.T) {
 			t.Fatal("private tags leaked to visitors")
 		}
 	}
-	w, result = call(t, h, "GET", "/api/admin/posts?q=private-tag", nil, admin)
-	status(t, w, 200)
-	if integer(result["total"]) != 1 {
-		t.Fatal("tag search failed")
+	for _, search := range []string{"private-tag", "ＰＲＩＶＡＴＥ－ＴＡＧ"} {
+		for _, endpoint := range []string{"/api/admin/posts", "/api/admin/photo-tags/photos"} {
+			w, result = call(t, h, "GET", endpoint+"?q="+url.QueryEscape(search), nil, admin)
+			status(t, w, 200)
+			if integer(result["total"]) != 1 {
+				t.Fatalf("tag search failed: %s %s", endpoint, search)
+			}
+		}
+		w, result = call(t, h, "GET", "/api/admin/photo-tags?q="+url.QueryEscape(search), nil, admin)
+		status(t, w, 200)
+		options := result["data"].([]any)
+		if len(options) != 1 || text(object(options[0])["tag"]) != "private-tag" {
+			t.Fatalf("tag options must use the same normalization: %s", search)
+		}
 	}
 	w, result = call(t, h, "GET", "/api/v1/visitor/blog/list?q=private-tag", nil, nil)
 	status(t, w, 200)

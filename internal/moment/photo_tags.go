@@ -92,7 +92,8 @@ func (a *App) attachPhotoTags(blogs []Object, args []any) error {
 	return nil
 }
 func (a *App) photoTagOptions(c *gin.Context) {
-	rows, err := query(a.db, "SELECT t.tag,COUNT(*) AS count FROM moment_image_tags t JOIN blog_image i ON i.id=t.image_id JOIN blog b ON b.id=i.blog_id WHERE "+activePost("b")+" AND t.tag LIKE ? GROUP BY t.tag ORDER BY count DESC,t.tag LIMIT 100", "%"+strings.TrimSpace(c.Query("q"))+"%")
+	search := strings.ToLower(strings.TrimSpace(norm.NFKC.String(c.Query("q"))))
+	rows, err := query(a.db, "SELECT t.tag,COUNT(*) AS count FROM moment_image_tags t JOIN blog_image i ON i.id=t.image_id JOIN blog b ON b.id=i.blog_id WHERE "+activePost("b")+" AND t.tag LIKE ? GROUP BY t.tag ORDER BY count DESC,t.tag LIMIT 100", "%"+search+"%")
 	if err != nil {
 		databaseError(c, err)
 		return
