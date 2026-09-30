@@ -8,7 +8,7 @@ COPY admin ./admin
 COPY shared ./shared
 RUN npm --prefix web run build && npm --prefix admin run build
 
-FROM golang:1.24-alpine AS backend
+FROM golang:1.26-alpine AS backend
 WORKDIR /build
 COPY go.mod go.sum ./
 RUN go mod download

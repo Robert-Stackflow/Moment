@@ -223,6 +223,9 @@ func (a *App) password(c *gin.Context) {
 		_, err = tx.Exec("DELETE FROM moment_sessions WHERE user_id=?", id)
 	}
 	if err == nil {
+		_, err = tx.Exec("DELETE FROM moment_passkey_challenges WHERE user_id=? OR kind='login'", id)
+	}
+	if err == nil {
 		err = tx.Commit()
 	}
 	if err != nil {

@@ -4,6 +4,7 @@ import (
 	"crypto/rand"
 	"crypto/sha256"
 	"crypto/subtle"
+	"database/sql"
 	"encoding/base64"
 	"encoding/hex"
 	"fmt"
@@ -47,6 +48,21 @@ func verifyPassword(password, encoded string) bool {
 func tokenDigest(token string) string {
 	sum := sha256.Sum256([]byte(token))
 	return hex.EncodeToString(sum[:])
+}
+func createLoginSession(tx *sql.Tx, id int64) (string, error) {
+	token := make([]byte, 32)
+	if _, err := rand.Read(token); err != nil {
+		return "", err
+	}
+	value := hex.EncodeToString(token)
+	if _, err := tx.Exec("DELETE FROM moment_sessions WHERE expires_at<=?", time.Now().Unix()); err != nil {
+		return "", err
+	}
+	if _, err := tx.Exec("INSERT INTO moment_sessions VALUES (?,?,?)", tokenDigest(value), id, time.Now().Add(7*24*time.Hour).Unix()); err != nil {
+		return "", err
+	}
+	_, err := tx.Exec("UPDATE user SET last_login=? WHERE id=?", now(), id)
+	return value, err
 }
 func (a *App) cookie(c *gin.Context, value string, age int) {
 	http.SetCookie(c.Writer, &http.Cookie{Name: "moment_session", Value: value, Path: "/", HttpOnly: true, Secure: a.secure, SameSite: http.SameSiteStrictMode, MaxAge: age})
@@ -119,12 +135,6 @@ func (a *App) login(c *gin.Context) {
 		fail(c, 401, "账户或密码错误")
 		return
 	}
-	token := make([]byte, 32)
-	if _, err = rand.Read(token); err != nil {
-		fail(c, 500, "无法创建会话")
-		return
-	}
-	value := hex.EncodeToString(token)
 	id := integer(users[0]["id"])
 	tx, err := a.db.Begin()
 	if err != nil {
@@ -132,12 +142,7 @@ func (a *App) login(c *gin.Context) {
 		return
 	}
 	defer tx.Rollback()
-	if _, err = tx.Exec("DELETE FROM moment_sessions WHERE expires_at<=?", time.Now().Unix()); err == nil {
-		_, err = tx.Exec("INSERT INTO moment_sessions VALUES (?,?,?)", tokenDigest(value), id, time.Now().Add(7*24*time.Hour).Unix())
-	}
-	if err == nil {
-		_, err = tx.Exec("UPDATE user SET last_login=? WHERE id=?", now(), id)
-	}
+	value, err := createLoginSession(tx, id)
 	if err == nil {
 		err = tx.Commit()
 	}
