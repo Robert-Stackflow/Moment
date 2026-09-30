@@ -10,7 +10,6 @@ import IconsResolver from 'unplugin-icons/resolver'
  * 图标库: https://icones.js.org/
  */
 import Icons from 'unplugin-icons/vite'
-import { createSvgIconsPlugin } from 'vite-plugin-svg-icons'
 
 import { getSrcPath } from '../utils'
 
@@ -34,11 +33,5 @@ export default [
       IconsResolver({ customCollections: ['custom'], componentPrefix: 'icon' }),
     ],
     dts: false,
-  }),
-  createSvgIconsPlugin({
-    iconDirs: [customIconPath],
-    symbolId: 'icon-custom-[dir]-[name]',
-    inject: 'body-last',
-    customDomId: '__CUSTOM_SVG_ICON__',
   }),
 ]

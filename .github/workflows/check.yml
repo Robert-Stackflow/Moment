@@ -20,6 +20,8 @@ jobs:
       - run: go vet ./...
       - run: npm --prefix web ci
       - run: npm --prefix admin ci
+      - run: npm --prefix web audit --audit-level=high
+      - run: npm --prefix admin audit --audit-level=high
       - run: npm --prefix admin run typecheck
       - run: npm --prefix admin test
       - run: npm run build

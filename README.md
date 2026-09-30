@@ -20,7 +20,7 @@
 
 ## 本地运行
 
-需要 Go 1.26+ 和 Node.js 22（建议 22.12+）。在仓库根目录执行：
+需要 Go 1.26+ 和 Node.js 22.12+。在仓库根目录执行：
 
 ```powershell
 npm --prefix web ci

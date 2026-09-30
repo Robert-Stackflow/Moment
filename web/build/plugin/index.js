@@ -7,7 +7,7 @@ import vue from '@vitejs/plugin-vue'
 import Unocss from 'unocss/vite'
 
 // rollup打包分析插件
-import visualizer from 'rollup-plugin-visualizer'
+import { visualizer } from 'rollup-plugin-visualizer'
 // 压缩
 import viteCompression from 'vite-plugin-compression'
 
