@@ -666,6 +666,7 @@ function DuplicateGroup({
         title={`${kinds[summary.kind]} · ${summary.count} 张`}
         size="xl"
         centered
+        classNames={{ content: "duplicate-comparison" }}
         closeOnClickOutside={false}
         closeOnEscape={!busy}
       >

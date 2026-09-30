@@ -4,8 +4,9 @@ import (
 	"bytes"
 	"context"
 	"crypto/sha256"
-	"encoding/json"
+	"encoding/binary"
 	"fmt"
+	"hash/crc32"
 	"image"
 	"image/color"
 	"image/gif"
@@ -430,8 +431,151 @@ func TestDuplicateSimilarGroupsDoNotHideExactGroups(t *testing.T) {
 	if len(groups) != 2 || groups[0].Kind != "file" || groups[1].Kind != "similar" || len(groups[0].Images) != 2 || len(groups[1].Images) != 3 {
 		t.Fatal("exact duplicates lost inside similar group", groups)
 	}
-	body, err := json.Marshal(groups)
-	if err != nil || len(body) == 0 {
+}
+
+func TestDuplicateSamePostRevisionAndUndoConflict(t *testing.T) {
+	a, h, admin := testApp(t)
+	duplicateFile(t, a, "same.png", duplicateFixture(t, false))
+	w, created := call(t, h, "POST", "/api/admin/posts", PostInput{Title: "Several photos", Images: []ImageInput{{URL: "/uploads/same.png"}, {URL: "/uploads/same.png"}, {URL: "/uploads/same.png"}}}, admin)
+	status(t, w, 200)
+	id := integer(object(created["data"])["id"])
+	w, detail := call(t, h, "GET", fmt.Sprintf("/api/admin/posts/%d", id), nil, admin)
+	status(t, w, 200)
+	post := object(detail["data"])
+	photos := post["images"].([]any)
+	revision := integer(post["revision"])
+	scan := runDuplicateScan(t, h, admin, false)
+	group := object(duplicateResults(t, h, admin, scan, "file")[0])
+	targets := []Object{{"id": object(photos[0])["id"], "revision": revision}, {"id": object(photos[1])["id"], "revision": revision}}
+	action := strings.Repeat("f", 32)
+	w, _ = call(t, h, "POST", fmt.Sprintf("/api/admin/duplicates/scans/%s/groups/%d/hide", scan, integer(group["id"])), Object{"id": action, "confirm": true, "targets": targets}, admin)
+	status(t, w, 200)
+	var actual int64
+	if err := a.db.QueryRow("SELECT revision FROM moment_post_revisions WHERE post_id=?", id).Scan(&actual); err != nil || actual != revision+1 {
+		t.Fatal("same post was revised more than once", actual, err)
+	}
+	// A later edit must not be overwritten by an older undo receipt.
+	if _, err := a.db.Exec("UPDATE moment_post_revisions SET revision=revision+1 WHERE post_id=?", id); err != nil {
 		t.Fatal(err)
+	}
+	w, _ = call(t, h, "POST", "/api/admin/photo-actions/"+action+"/undo", Object{}, admin)
+	status(t, w, 409)
+	var hidden int
+	if err := a.db.QueryRow("SELECT SUM(is_hidden) FROM blog_image WHERE blog_id=?", id).Scan(&hidden); err != nil || hidden != 2 {
+		t.Fatal("conflicting undo changed photos", hidden, err)
+	}
+}
+
+type analysisCountingReader struct{ bytes int64 }
+
+func (r *analysisCountingReader) Read(p []byte) (int, error) {
+	clear(p)
+	r.bytes += int64(len(p))
+	return len(p), nil
+}
+
+func TestPhotoAnalysisResourceLimitsAndCacheInvalidation(t *testing.T) {
+	a, _, _ := testApp(t)
+	stream := &analysisCountingReader{}
+	a.analysisHTTP = &http.Client{Transport: analysisRoundTrip(func(*http.Request) (*http.Response, error) {
+		return &http.Response{StatusCode: 200, Body: io.NopCloser(stream), Header: http.Header{}, ContentLength: -1}, nil
+	})}
+	result := a.fingerprintPhoto(context.Background(), "https://example.com/chunked.png", true)
+	if result.SHA != "" || !strings.Contains(result.Reason, "32 MB") || stream.bytes != analysisBytes+1 {
+		t.Fatal("unbounded remote response", result, stream.bytes)
+	}
+	// A valid PNG header declaring huge dimensions must never reach image.Decode.
+	oversized := duplicateFixture(t, false)
+	binary.BigEndian.PutUint32(oversized[16:20], 16000)
+	binary.BigEndian.PutUint32(oversized[20:24], 16000)
+	binary.BigEndian.PutUint32(oversized[29:33], crc32.ChecksumIEEE(oversized[12:29]))
+	result = analyzePhotoBytes(context.Background(), oversized)
+	if result.SHA == "" || result.Hash != "" || !strings.Contains(result.Reason, "3200 万像素") {
+		t.Fatal("oversized picture was decoded", result)
+	}
+	duplicateFile(t, a, "changing.png", duplicateFixture(t, false))
+	first := a.fingerprintPhoto(context.Background(), "/uploads/changing.png", false)
+	duplicateFile(t, a, "changing.png", duplicateFixture(t, true))
+	stamp := time.Now().Add(time.Second)
+	if err := os.Chtimes(filepath.Join(a.data, "uploads", "changing.png"), stamp, stamp); err != nil {
+		t.Fatal(err)
+	}
+	second := a.fingerprintPhoto(context.Background(), "/uploads/changing.png", false)
+	if first.SHA == "" || second.SHA == "" || first.SHA == second.SHA {
+		t.Fatal("changed source reused stale analysis")
+	}
+	client := analysisHTTPClient()
+	defer client.CloseIdleConnections()
+	transport := client.Transport.(*http.Transport)
+	if conn, err := transport.DialContext(context.Background(), "tcp", "localhost:80"); err == nil {
+		conn.Close()
+		t.Fatal("resolved loopback address was allowed")
+	}
+}
+
+func TestDuplicateConcurrentStepAndCancelledRead(t *testing.T) {
+	a, h, admin := testApp(t)
+	duplicatePost(t, a, "Remote", "https://example.com/a.png")
+	started := make(chan struct{})
+	a.analysisHTTP = &http.Client{Transport: analysisRoundTrip(func(r *http.Request) (*http.Response, error) {
+		close(started)
+		<-r.Context().Done()
+		return nil, r.Context().Err()
+	})}
+	w, created := call(t, h, "POST", "/api/admin/duplicates/scans", Object{"remote": true}, admin)
+	status(t, w, 200)
+	id := text(object(created["data"])["id"])
+	path := "/api/admin/duplicates/scans/" + id + "/step"
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	request := httptest.NewRequest("POST", path, strings.NewReader("{}")).WithContext(ctx)
+	request.Header.Set("Content-Type", "application/json")
+	request.AddCookie(admin)
+	finished := make(chan struct{})
+	go func() { defer close(finished); h.ServeHTTP(httptest.NewRecorder(), request) }()
+	select {
+	case <-started:
+	case <-time.After(5 * time.Second):
+		t.Fatal("scan never started")
+	}
+	reopened, err := Open(a.data, a.dist, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer reopened.Close()
+	w, _ = call(t, reopened.Router(), "POST", path, Object{}, admin)
+	status(t, w, 409)
+	cancel()
+	select {
+	case <-finished:
+	case <-time.After(5 * time.Second):
+		t.Fatal("cancelled read remained active")
+	}
+	var done int
+	var lease string
+	if err := a.db.QueryRow("SELECT done,lease_token FROM moment_duplicate_scans WHERE id=?", id).Scan(&done, &lease); err != nil || done != 0 || lease != "" {
+		t.Fatal("cancelled read committed progress or retained lease", done, lease, err)
+	}
+	data := duplicateFixture(t, false)
+	reopened.analysisHTTP = &http.Client{Transport: analysisRoundTrip(func(*http.Request) (*http.Response, error) {
+		return &http.Response{StatusCode: 200, Header: http.Header{}, Body: io.NopCloser(bytes.NewReader(data)), ContentLength: int64(len(data))}, nil
+	})}
+	w, _ = call(t, reopened.Router(), "POST", path, Object{}, admin)
+	status(t, w, 200)
+	w, result := call(t, reopened.Router(), "POST", path, Object{}, admin)
+	status(t, w, 200)
+	if integer(object(result["data"])["done"]) != 1 || text(object(result["data"])["status"]) != "ready" {
+		t.Fatal("retry after interrupted read failed", result)
+	}
+}
+
+func TestDuplicateSimilarityDoesNotChain(t *testing.T) {
+	images := []duplicateImage{}
+	for index, hash := range []string{"0", "7f", "3fff"} {
+		images = append(images, duplicateImage{int64(index + 1), fmt.Sprint(index), photoFingerprint{SHA: fmt.Sprint(index), Hash: hash, Width: 100, Height: 100}})
+	}
+	groups, err := clusterDuplicates(context.Background(), images)
+	if err != nil || len(groups) != 1 || len(groups[0].Images) != 2 || groups[0].Images[0].ID != 1 || groups[0].Images[1].ID != 2 {
+		t.Fatal("similarity was chained through an intermediate photo", groups, err)
 	}
 }

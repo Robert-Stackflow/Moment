@@ -19,6 +19,7 @@ export function UnsavedChanges({
       onClose={() => blocker.state === "blocked" && blocker.reset()}
       title="离开当前页面？"
       centered
+      zIndex={500}
     >
       <Text size="sm">
         {message ||
@@ -29,6 +30,7 @@ export function UnsavedChanges({
       <Group justify="flex-end" mt="xl">
         <Button
           variant="default"
+          data-autofocus
           onClick={() => blocker.state === "blocked" && blocker.reset()}
         >
           继续编辑

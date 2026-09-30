@@ -2297,7 +2297,8 @@ input:-webkit-autofill {
 .duplicate-previews { display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;padding:0;border:0;background:var(--moment-input);width:100%;height:190px;border-radius:10px;overflow:hidden;cursor:pointer; }
 .duplicate-previews img { width:100%;height:100%;min-height:0; }
 .duplicate-group-card { min-width:0; }
-.duplicate-selection { padding:12px 0;position:sticky;top:0;z-index:2;background:var(--moment-surface);border-bottom:1px solid var(--moment-border); }
+.duplicate-comparison .mantine-Modal-header { height:60px;min-height:60px; }
+.duplicate-selection { padding:12px 0;position:sticky;top:60px;z-index:2;background:var(--moment-surface);border-bottom:1px solid var(--moment-border);scroll-margin-top:72px; }
 .duplicate-photo { border:1px solid var(--moment-border);border-radius:12px;overflow:hidden;min-width:0;transition:border-color 150ms,background 150ms;background:var(--moment-input); }
 .duplicate-photo.is-selected { border-color:var(--moment-accent);background:var(--moment-soft); }
 .duplicate-photo-preview { display:block;width:100%;height:220px;padding:0;border:0;background:var(--moment-canvas);cursor:zoom-in; }
