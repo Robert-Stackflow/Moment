@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useDebouncedValue } from "@mantine/hooks";
 import {
   ActionIcon,
+  Alert,
   Badge,
   Button,
   Checkbox,
@@ -12,6 +13,7 @@ import {
   Pagination,
   Paper,
   Select,
+  SegmentedControl,
   Stack,
   Table,
   Text,
@@ -26,10 +28,14 @@ import {
   Pencil,
   Plus,
   Search,
+  Tags,
   Trash2,
 } from "lucide-react";
 import { api, json, notifyError, notifySuccess } from "../api";
-import { CategorySelect } from "../components/CategoryPicker";
+import {
+  CategorySelect,
+  CategoryMultiSelect,
+} from "../components/CategoryPicker";
 import { Empty, ErrorState, Loading, PageTitle } from "../components/Common";
 import { orders, thumbnail, coverPosition } from "../types";
 import type { Category, Post, Settings } from "../types";
@@ -46,6 +52,12 @@ export default function Posts() {
   const [selected, setSelected] = useState<number[]>([]);
   const [deleting, setDeleting] = useState<number[] | null>(null);
   const [busy, setBusy] = useState(false);
+  const [classifying, setClassifying] = useState(false);
+  const [categoryMode, setCategoryMode] = useState("add");
+  const [batchCategories, setBatchCategories] = useState<string[]>([]);
+  const [failures, setFailures] = useState<
+    { id: number; title: string; error: string }[]
+  >([]);
   const params = new URLSearchParams({
     page: String(page),
     page_size: "20",
@@ -71,6 +83,12 @@ export default function Posts() {
     queryFn: () => api<Settings>("/settings"),
   });
   const rows = posts.data?.data || [];
+  useEffect(() => {
+    if (posts.data)
+      setSelected((value) =>
+        value.filter((id) => posts.data.data.some((post) => post.id === id)),
+      );
+  }, [posts.data]);
   function reset() {
     setPage(1);
     setSelected([]);
@@ -85,47 +103,66 @@ export default function Posts() {
       client.invalidateQueries({ queryKey: ["posts"] }),
       client.invalidateQueries({ queryKey: ["stats"] }),
       client.invalidateQueries({ queryKey: ["locations"] }),
+      client.invalidateQueries({ queryKey: ["drafts"] }),
+      client.invalidateQueries({ queryKey: ["post"] }),
     ]);
-    setSelected([]);
   }
-  async function visibility(hidden: boolean, ids: number[]) {
+  async function batch(
+    action: "categories" | "visibility" | "delete",
+    ids: number[],
+    hidden?: boolean,
+  ) {
+    if (busy) return;
     setBusy(true);
-    const results = await Promise.allSettled(
-      ids.map(async (id) => {
-        const post = rows.find((row) => row.id === id);
-        if (post)
-          await api(
-            `/posts/${id}`,
-            json("PUT", { ...post, is_hidden: hidden }),
-          );
-      }),
-    );
-    await refresh();
-    setBusy(false);
-    const failed = results.filter((result) => result.status === "rejected");
-    if (failed.length)
-      notifyError(
-        new Error(
-          `${ids.length - failed.length} 项已更新，${failed.length} 项失败，请刷新后重试`,
-        ),
+    setFailures([]);
+    try {
+      const response = await api<{ id: number; ok: boolean; error?: string }[]>(
+        "/posts/batch",
+        json("POST", {
+          action,
+          targets: ids.map((id) => ({
+            id,
+            revision: rows.find((post) => post.id === id)?.revision,
+          })),
+          is_hidden: hidden,
+          mode: categoryMode,
+          category_ids: batchCategories.map(Number),
+        }),
       );
-    else notifySuccess(hidden ? "已隐藏" : "已公开");
-  }
-  async function remove() {
-    if (!deleting) return;
-    setBusy(true);
-    const results = await Promise.allSettled(
-      deleting.map((id) => api(`/posts/${id}`, { method: "DELETE" })),
-    );
-    setDeleting(null);
-    await refresh();
-    if (rows.length === deleting.length && page > 1)
-      setPage((value) => value - 1);
-    setBusy(false);
-    const failed = results.filter((result) => result.status === "rejected");
-    if (failed.length)
-      notifyError(new Error(`${failed.length} 项未删除，请刷新后重试`));
-    else notifySuccess("已删除");
+      const failed = response.data
+        .filter((item) => !item.ok)
+        .map((item) => ({
+          id: item.id,
+          title:
+            rows.find((post) => post.id === item.id)?.title ||
+            `帖子 ${item.id}`,
+          error: item.error || "操作失败",
+        }));
+      const count = response.data.length - failed.length;
+      setFailures(failed);
+      setClassifying(false);
+      setDeleting(null);
+      await refresh();
+      setSelected(failed.map((item) => item.id));
+      if (action === "delete" && count === rows.length && page > 1)
+        setPage(page - 1);
+      if (count)
+        notifySuccess(
+          `${count} 篇帖子已${
+            action === "categories"
+              ? "更新分类"
+              : action === "delete"
+              ? "删除"
+              : hidden
+              ? "隐藏"
+              : "公开"
+          }`,
+        );
+    } catch (error) {
+      notifyError(error);
+    } finally {
+      setBusy(false);
+    }
   }
   return (
     <>
@@ -181,7 +218,9 @@ export default function Posts() {
         />
         <div className="view-switch" role="group" aria-label="显示方式">
           <span
-            className={`view-switch-indicator ${view === "list" ? "is-list" : ""}`}
+            className={`view-switch-indicator ${
+              view === "list" ? "is-list" : ""
+            }`}
             aria-hidden="true"
           />
           <button
@@ -228,7 +267,7 @@ export default function Posts() {
             leftSection={<Eye size={14} />}
             loading={busy}
             disabled={!selected.length}
-            onClick={() => void visibility(false, selected)}
+            onClick={() => void batch("visibility", selected, false)}
           >
             公开
           </Button>
@@ -238,9 +277,28 @@ export default function Posts() {
             color="gray"
             leftSection={<EyeOff size={14} />}
             disabled={busy || !selected.length}
-            onClick={() => void visibility(true, selected)}
+            onClick={() => void batch("visibility", selected, true)}
           >
             隐藏
+          </Button>
+          <Button
+            size="xs"
+            variant="light"
+            color="gray"
+            leftSection={<Tags size={14} />}
+            disabled={
+              busy ||
+              !selected.length ||
+              categories.isPending ||
+              !!categories.error
+            }
+            onClick={() => {
+              setClassifying(true);
+              setCategoryMode("add");
+              setBatchCategories([]);
+            }}
+          >
+            分类
           </Button>
           <Button
             size="xs"
@@ -254,6 +312,35 @@ export default function Posts() {
           </Button>
         </Group>
       </Group>
+      {!!failures.length && (
+        <Alert
+          color="orange"
+          title={`${failures.length} 篇帖子未完成操作`}
+          withCloseButton
+          onClose={() => setFailures([])}
+          mb="lg"
+        >
+          <Stack gap={5}>
+            {failures.map((item) => (
+              <Text size="sm" key={item.id}>
+                <Text
+                  component={Link}
+                  to={`/posts/${item.id}`}
+                  inherit
+                  span
+                  td="underline"
+                >
+                  {item.title}
+                </Text>
+                ：{item.error}
+              </Text>
+            ))}
+          </Stack>
+          <Text size="xs" mt="sm">
+            已刷新列表，失败项目保留选择。检查最新内容后可重新操作。
+          </Text>
+        </Alert>
+      )}
       {posts.isPending ? (
         <Loading />
       ) : posts.error ? (
@@ -377,6 +464,7 @@ export default function Posts() {
                     <Checkbox
                       aria-label={`选择 ${post.title}`}
                       checked={selected.includes(post.id)}
+                      disabled={busy}
                       onChange={(e) => choose(post.id, e.currentTarget.checked)}
                     />
                   </Table.Td>
@@ -467,8 +555,70 @@ export default function Posts() {
             >
               取消
             </Button>
-            <Button color="red" loading={busy} onClick={() => void remove()}>
+            <Button
+              color="red"
+              loading={busy}
+              onClick={() => deleting && void batch("delete", deleting)}
+            >
               确认删除
+            </Button>
+          </Group>
+        </Stack>
+      </Modal>
+      <Modal
+        opened={classifying}
+        onClose={() => !busy && setClassifying(false)}
+        title={`批量分类 · ${selected.length} 篇帖子`}
+        centered
+      >
+        <Stack>
+          <SegmentedControl
+            aria-label="分类操作方式"
+            fullWidth
+            value={categoryMode}
+            onChange={setCategoryMode}
+            disabled={busy}
+            data={[
+              { value: "add", label: "添加" },
+              { value: "replace", label: "替换" },
+              { value: "remove", label: "移除" },
+            ]}
+          />
+          <Text size="sm" c="dimmed">
+            {categoryMode === "add"
+              ? "添加所选分类，保留原有分类。子分类会同时关联父分类。"
+              : categoryMode === "replace"
+              ? "将原有分类替换为所选分类。留空可清除全部分类。"
+              : "移除所选分类。移除父分类时也会移除其下的子分类；只移除子分类会保留父分类。"}
+          </Text>
+          <fieldset className="editor-fieldset" disabled={busy}>
+            <CategoryMultiSelect
+              categories={categories.data?.data || []}
+              value={batchCategories}
+              onChange={setBatchCategories}
+            />
+          </fieldset>
+          {categoryMode === "replace" && (
+            <Alert color="orange">
+              {batchCategories.length
+                ? "原有分类将被替换。"
+                : "这会清除所选帖子的全部分类。"}
+            </Alert>
+          )}
+          <Group justify="flex-end">
+            <Button
+              variant="default"
+              disabled={busy}
+              onClick={() => setClassifying(false)}
+            >
+              取消
+            </Button>
+            <Button
+              loading={busy}
+              disabled={categoryMode !== "replace" && !batchCategories.length}
+              onClick={() => void batch("categories", selected)}
+            >
+              应用到 {selected.length} 篇帖子
             </Button>
           </Group>
         </Stack>
