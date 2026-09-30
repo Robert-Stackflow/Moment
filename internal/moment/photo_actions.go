@@ -200,6 +200,21 @@ func (a *App) undoPhotoAction(c *gin.Context) {
 		ok(c, nil)
 		return
 	}
+	if kind == "tags_add" {
+		if err = undoPhotoTags(tx, payload); err != nil {
+			respondPostError(c, err)
+			return
+		}
+		if _, err = tx.Exec("UPDATE moment_photo_actions SET status='undone',undone_at=? WHERE id=?", now(), id); err == nil {
+			err = tx.Commit()
+		}
+		if err != nil {
+			databaseError(c, err)
+			return
+		}
+		ok(c, nil)
+		return
+	}
 	if kind != "duplicates_hide" {
 		fail(c, 400, "此记录不支持撤销")
 		return

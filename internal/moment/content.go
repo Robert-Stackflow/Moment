@@ -28,6 +28,7 @@ type PostInput struct {
 	Categories []int64      `json:"category_ids"`
 }
 type ImageInput struct {
+	Tags      *[]string  `json:"tags,omitempty"`
 	Discovery *Discovery `json:"discovery,omitempty"`
 	ID        int64      `json:"id,omitempty"`
 	URL       string     `json:"image_url"`
@@ -75,8 +76,19 @@ func (a *App) posts(c *gin.Context, public bool) {
 		conditions = append(conditions, "b.is_hidden=0 AND EXISTS (SELECT 1 FROM blog_image i WHERE i.blog_id=b.id AND i.is_hidden=0)")
 	}
 	if search := strings.TrimSpace(c.Query("q")); search != "" {
-		conditions = append(conditions, "(b.title LIKE ? OR b.desc LIKE ?)")
+		searchSQL := "(b.title LIKE ? OR b.desc LIKE ?)"
+		if !public {
+			searchSQL = "(b.title LIKE ? OR b.desc LIKE ? OR EXISTS(SELECT 1 FROM moment_image_tags t JOIN blog_image i ON i.id=t.image_id WHERE i.blog_id=b.id AND t.tag LIKE ?))"
+		}
+		conditions = append(conditions, searchSQL)
 		args = append(args, "%"+search+"%", "%"+search+"%")
+		if !public {
+			args = append(args, "%"+strings.ToLower(search)+"%")
+		}
+	}
+	if tag := strings.TrimSpace(c.Query("tag")); tag != "" && !public {
+		conditions = append(conditions, "EXISTS(SELECT 1 FROM moment_image_tags t JOIN blog_image i ON i.id=t.image_id WHERE i.blog_id=b.id AND t.tag=?)")
+		args = append(args, strings.ToLower(tag))
 	}
 	if location := c.Query("location"); location != "" {
 		visibility := ""
@@ -181,6 +193,9 @@ func (a *App) attach(blogs []Object, public bool) error {
 		b["category_ids"] = append(b["category_ids"].([]int64), integer(cat["id"]))
 	}
 	if !public {
+		if err = a.attachPhotoTags(blogs, args); err != nil {
+			return err
+		}
 		return a.attachDiscovery(blogs, args)
 	}
 	return nil
@@ -283,6 +298,11 @@ func writePostTx(tx *sql.Tx, in PostInput, id int64, expected *int64, draft *Dra
 	imageTimes := make([]any, len(in.Images))
 	imageIDs := map[int64]bool{}
 	for i, img := range in.Images {
+		if img.Tags != nil {
+			if _, err = normalizePhotoTags(*img.Tags); err != nil {
+				return 0, &postError{400, err.Error()}
+			}
+		}
 		if err = validateDiscovery(img.Discovery, true); err != nil {
 			return 0, &postError{400, err.Error()}
 		}
@@ -396,6 +416,9 @@ func writePostTx(tx *sql.Tx, in PostInput, id int64, expected *int64, draft *Dra
 			kept = append(kept, imageID)
 		}
 		if err = saveDiscovery(tx, imageID, img.Discovery, true); err != nil {
+			return 0, err
+		}
+		if err = savePhotoTags(tx, imageID, img.Tags); err != nil {
 			return 0, err
 		}
 		// Omitted coordinates retain existing focus, including saves by older clients.

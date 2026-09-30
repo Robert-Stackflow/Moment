@@ -120,6 +120,12 @@ func (a *App) saveDraft(c *gin.Context) {
 		return
 	}
 	for _, img := range p.Images {
+		if img.Tags != nil {
+			if _, err := normalizePhotoTags(*img.Tags); err != nil {
+				fail(c, 400, err.Error())
+				return
+			}
+		}
 		if !validURL(img.URL) || img.ID < 0 {
 			fail(c, 400, "图片地址或 ID 无效")
 			return

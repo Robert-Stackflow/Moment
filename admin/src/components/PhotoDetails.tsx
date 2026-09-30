@@ -1,7 +1,15 @@
 import { Toggle as Switch } from "./Toggle";
 import { useState } from "react";
 import { usePendingChanges } from "./PendingChanges";
-import { Button, Group, Stack, Text, Textarea, TextInput } from "@mantine/core";
+import {
+  Button,
+  Group,
+  Stack,
+  TagsInput,
+  Text,
+  Textarea,
+  TextInput,
+} from "@mantine/core";
 import { Check } from "lucide-react";
 import { DateTimePicker } from "./DateTimePicker";
 import { FocusPicker } from "./FocusPicker";
@@ -22,6 +30,11 @@ export function PhotoDetails({
 }) {
   const [draft, setDraft] = useState(photo);
   const [error, setError] = useState("");
+  const tagError = draft.tags?.some(
+    (tag) => [...tag.normalize("NFKC").trim()].length > 32,
+  )
+    ? "每个标签最多 32 字"
+    : undefined;
   const dirty = JSON.stringify(draft) !== JSON.stringify(photo);
   usePendingChanges(dirty);
   function field<K extends keyof Photo>(key: K, value: Photo[K]) {
@@ -77,6 +90,16 @@ export function PhotoDetails({
         value={draft.discovery}
         onChange={(value) => field("discovery", value)}
       />
+      <TagsInput
+        label="图片标签"
+        description="仅用于后台整理与搜索，最多 20 个，每个不超过 32 字"
+        placeholder="输入后按回车添加"
+        value={draft.tags || []}
+        maxTags={20}
+        error={tagError}
+        onChange={(values) => field("tags", values)}
+        clearable
+      />
       <TextInput
         label="图片地址"
         required
@@ -100,6 +123,7 @@ export function PhotoDetails({
           <Button
             leftSection={<Check size={15} />}
             onClick={() => {
+              if (tagError) return;
               if (!/^(https?:\/\/|\/uploads\/)/i.test(draft.image_url.trim())) {
                 setError("请输入有效的图片地址");
                 return;

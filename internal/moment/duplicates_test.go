@@ -26,6 +26,7 @@ import (
 
 func dropDuplicateSchema(t *testing.T, a *App) {
 	t.Helper()
+	dropPhotoTagSchema(t, a)
 	for _, table := range []string{"moment_duplicate_members", "moment_duplicate_groups", "moment_duplicate_items", "moment_duplicate_scans", "moment_duplicate_ignored", "moment_photo_analysis_cache", "moment_photo_actions"} {
 		if _, err := a.db.Exec("DROP TABLE " + table); err != nil {
 			t.Fatal(err)

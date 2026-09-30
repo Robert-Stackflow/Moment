@@ -11,6 +11,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@huggingface/transformers": "4.3.0",
     "@mantine/core": "8.3.18",
     "@mantine/dropzone": "8.3.18",
     "@mantine/hooks": "8.3.18",

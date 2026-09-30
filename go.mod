@@ -13,6 +13,7 @@ require (
 	golang.org/x/image v0.30.0
 	golang.org/x/net v0.58.0
 	golang.org/x/sync v0.23.0
+	golang.org/x/text v0.42.0
 	modernc.org/sqlite v1.36.3
 )
 
@@ -63,7 +64,6 @@ require (
 	golang.org/x/exp v0.0.0-20230315142452-642cacee5cc0 // indirect
 	golang.org/x/mod v0.41.0 // indirect
 	golang.org/x/sys v0.48.0 // indirect
-	golang.org/x/text v0.42.0 // indirect
 	golang.org/x/tools v0.49.0 // indirect
 	google.golang.org/protobuf v1.36.9 // indirect
 	modernc.org/libc v1.61.13 // indirect

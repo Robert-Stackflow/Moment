@@ -7,17 +7,13 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"image"
 	"image/color"
-	"io"
 	"math"
 	"net"
 	"net/http"
 	"net/netip"
 	"net/url"
-	"os"
-	"path/filepath"
 	"sort"
 	"strconv"
 	"strings"
@@ -111,91 +107,14 @@ func analysisHTTPClient() *http.Client {
 
 func (a *App) fingerprintPhoto(ctx context.Context, raw string, remote bool) photoFingerprint {
 	result := photoFingerprint{}
-	var content []byte
-	var sourceKey string
-	var err error
-	if strings.HasPrefix(raw, "/uploads/") {
-		u, e := url.Parse(raw)
-		if e != nil || u.RawQuery != "" || u.Fragment != "" {
-			result.Reason = "本地图片路径无效"
-			return result
-		}
-		name := strings.TrimPrefix(u.Path, "/uploads/")
-		if !validBackupName("uploads/" + name) {
-			result.Reason = "本地图片路径无效"
-			return result
-		}
-		root, e := os.OpenRoot(filepath.Join(a.data, "uploads"))
-		if e != nil {
-			result.Reason = "本地图片不存在"
-			return result
-		}
-		defer root.Close()
-		file, e := root.Open(filepath.FromSlash(name))
-		if e != nil {
-			result.Reason = "本地图片不存在或路径不可用"
-			return result
-		}
-		defer file.Close()
-		stat, e := file.Stat()
-		if e != nil || !stat.Mode().IsRegular() {
-			result.Reason = "本地图片不可读取"
-			return result
-		}
-		if stat.Size() < 1 || stat.Size() > analysisBytes {
-			result.Reason = "文件超过 32 MB 或为空"
-			return result
-		}
-		sourceKey = tokenDigest(fmt.Sprintf("analysis-v1\n%s\n%d\n%d", name, stat.Size(), stat.ModTime().UnixNano()))
+	content, sourceKey, err := a.readAnalysisPhoto(ctx, raw, remote, func(key string) bool {
 		var cached string
-		if a.db.QueryRowContext(ctx, "SELECT fingerprint FROM moment_photo_analysis_cache WHERE source_key=?", sourceKey).Scan(&cached) == nil && json.Unmarshal([]byte(cached), &result) == nil {
-			return result
-		}
-		content, err = io.ReadAll(io.LimitReader(file, analysisBytes+1))
-		after, e := file.Stat()
-		if e != nil || after.Size() != stat.Size() || !after.ModTime().Equal(stat.ModTime()) {
-			result.Reason = "扫描期间文件发生变化，请重新扫描"
-			return result
-		}
-	} else {
-		if !remote {
-			result.Reason = "未启用远程图片读取，仅比较相同链接"
-			return result
-		}
-		u, e := analysisURL(raw)
-		if e != nil {
-			result.Reason = e.Error()
-			return result
-		}
-		req, e := http.NewRequestWithContext(ctx, http.MethodGet, u.String(), nil)
-		if e != nil {
-			result.Reason = "图片地址无效"
-			return result
-		}
-		req.Header.Set("Accept", "image/*")
-		req.Header.Set("User-Agent", "Moment-PhotoAnalysis/1")
-		response, e := a.analysisHTTP.Do(req)
-		if e != nil {
-			result.Reason = "远程图片无法读取（连接失败、超时或地址受限）"
-			return result
-		}
-		defer response.Body.Close()
-		if response.StatusCode != http.StatusOK {
-			result.Reason = fmt.Sprintf("远程图片返回 HTTP %d", response.StatusCode)
-			return result
-		}
-		if response.ContentLength > analysisBytes {
-			result.Reason = "文件超过 32 MB"
-			return result
-		}
-		content, err = io.ReadAll(io.LimitReader(response.Body, analysisBytes+1))
-	}
+		return a.db.QueryRowContext(ctx, "SELECT fingerprint FROM moment_photo_analysis_cache WHERE source_key=?", key).Scan(&cached) == nil && json.Unmarshal([]byte(cached), &result) == nil
+	})
 	if err != nil {
-		result.Reason = "图片读取失败，请稍后重试"
-		return result
+		return photoFingerprint{Reason: err.Error()}
 	}
-	if len(content) == 0 || int64(len(content)) > analysisBytes {
-		result.Reason = "文件超过 32 MB 或为空"
+	if content == nil {
 		return result
 	}
 	result = analyzePhotoBytes(ctx, content)

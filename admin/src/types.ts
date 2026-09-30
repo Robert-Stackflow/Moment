@@ -22,6 +22,7 @@ export interface Discovery {
   timeline: "inherit" | "show" | "hide";
 }
 export interface Photo {
+  tags?: string[];
   discovery?: Discovery;
   id?: number;
   image_url: string;
