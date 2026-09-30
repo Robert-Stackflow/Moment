@@ -51,7 +51,7 @@ func (a *App) exportBackup(ctx context.Context, source string) (info backupInfo,
 	if err != nil {
 		return
 	}
-	if _, err = snapshot.ExecContext(ctx, "DELETE FROM moment_sessions"); err == nil {
+	if _, err = snapshot.ExecContext(ctx, "DELETE FROM moment_sessions; DELETE FROM moment_share_sessions"); err == nil {
 		info, err = backupCounts(ctx, snapshot)
 	}
 	closeErr := snapshot.Close()
@@ -326,17 +326,17 @@ func validateBackupDB(ctx context.Context, path string) (info backupInfo, err er
 		return info, e
 	}
 	known, _ := migrations.ReadDir("migrations")
-	if len(versions) != len(known) {
+	if len(versions) == 0 || len(versions) > len(known) {
 		return info, errors.New("backup schema version differs from this server")
 	}
+	// Older exports can be upgraded by Open after validation. Require a complete
+	// prefix, not an arbitrary subset of migrations or a future schema.
+	present := map[string]bool{}
 	for _, v := range versions {
-		found := false
-		for _, k := range known {
-			if text(v["version"]) == k.Name() {
-				found = true
-			}
-		}
-		if !found {
+		present[text(v["version"])] = true
+	}
+	for _, k := range known[:len(versions)] {
+		if !present[k.Name()] {
 			return info, errors.New("unsupported backup version")
 		}
 	}
@@ -347,7 +347,7 @@ func validateBackupDB(ctx context.Context, path string) (info backupInfo, err er
 	}
 	defer template.Close()
 	template.SetMaxOpenConns(1)
-	for _, k := range known {
+	for _, k := range known[:len(versions)] {
 		content, _ := migrations.ReadFile("migrations/" + k.Name())
 		if _, e = template.ExecContext(ctx, string(content)); e != nil {
 			return info, e

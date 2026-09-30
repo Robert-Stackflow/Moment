@@ -11,6 +11,7 @@ const paths = {
   info: 'M12 11v6m0-10h.01',
   share: 'M12 16V3m-4 4 4-4 4 4M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6',
   check: 'm5 12 4 4L19 6',
+  lock: 'M6 10h12v11H6zM8 10V6a4 4 0 0 1 8 0v4M12 14v3',
 }
 </script>
 <template>

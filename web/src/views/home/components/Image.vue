@@ -2,7 +2,7 @@
 import { computed, ref } from 'vue'
 import { useSettingStore } from '@/store'
 import { imageURL, thumbnailSources, focusPosition, photoPath, photoDate } from './gallery'
-const props = defineProps({ data: Object, index: Number })
+const props = defineProps({ data: Object, index: Number, contained: Boolean, pathFor: { type: Function, default: photoPath } })
 const emit = defineEmits(['open'])
 const content = useSettingStore().contentSetting
 const cover = computed(() => props.data.images[0])
@@ -24,7 +24,7 @@ function retry() {
   <article class="thumb img-area" :class="{ 'is-loaded': loaded, 'is-failed': failed }">
     <a
       class="thumb-a my-photo"
-      :href="photoPath(data)"
+      :href="pathFor(data)"
       :aria-label="`${data.title}，${data.images.length} 张照片`"
       @click="open"
     >
@@ -56,19 +56,19 @@ function retry() {
     </div>
     <ul class="tags">
       <li class="tag-categories">
-        <router-link
+        <component :is="contained ? 'span' : 'router-link'"
           v-if="content.thumbnail_show_location !== false && data.location"
           :to="'/location/' + encodeURIComponent(data.location)"
-          >{{ data.location }}</router-link
+          >{{ data.location }}</component
         >
         <span v-if="content.thumbnail_show_time && data.time">{{
           photoDate(data.time, content.thumbnail_time_format || 'YYYY年M月D日')
         }}</span>
-        <router-link
+        <component :is="contained ? 'span' : 'router-link'"
           v-for="category in data.categories"
           :key="category.id"
           :to="'/category/' + encodeURIComponent(category.alias)"
-          >{{ category.name }}</router-link
+          >{{ category.name }}</component
         >
       </li>
     </ul>

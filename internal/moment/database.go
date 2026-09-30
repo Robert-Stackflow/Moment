@@ -19,14 +19,15 @@ import (
 var migrations embed.FS
 
 type App struct {
-	db         *sql.DB
-	data, dist string
-	secure     bool
-	limiter    *loginLimiter
-	stateMu    sync.RWMutex // Protect database replacement and static-file readers.
-	writeMu    sync.RWMutex // Capture the database and local files at one write boundary.
-	backupMu   sync.Mutex
-	thumbnails *thumbnailCache
+	db           *sql.DB
+	data, dist   string
+	secure       bool
+	limiter      *loginLimiter
+	shareLimiter *loginLimiter
+	stateMu      sync.RWMutex // Protect database replacement and static-file readers.
+	writeMu      sync.RWMutex // Capture the database and local files at one write boundary.
+	backupMu     sync.Mutex
+	thumbnails   *thumbnailCache
 }
 type Object = map[string]any
 
@@ -50,7 +51,7 @@ func Open(data, dist string, secure bool) (*App, error) {
 		return nil, err
 	}
 	db.SetMaxOpenConns(1)
-	a := &App{db: db, data: data, dist: dist, secure: secure, limiter: newLoginLimiter(), thumbnails: newThumbnailCache()}
+	a := &App{db: db, data: data, dist: dist, secure: secure, limiter: newLoginLimiter(), shareLimiter: newLoginLimiter(), thumbnails: newThumbnailCache()}
 	if err = a.initialize(); err != nil {
 		db.Close()
 		return nil, err
@@ -165,7 +166,7 @@ func query(q querier, statement string, args ...any) ([]Object, error) {
 			if b, ok := value.([]byte); ok {
 				value = string(b)
 			}
-			if key == "is_hidden" {
+			if key == "is_hidden" || key == "revoked" || key == "password_required" {
 				value = integer(value) != 0
 			}
 			if key == "remark" || key == "general" || key == "meta" || key == "content" || key == "storage" {

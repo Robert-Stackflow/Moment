@@ -8,6 +8,7 @@ export const router = createRouter({
   routes: [
     { path: '/', component: gallery },
     { path: '/post/:post(\\d+)', component: gallery },
+    { path: '/share/:token', component: () => import('@/views/share/index.vue') },
     { path: '/category/:category', component: gallery },
     { path: '/location/:location', component: gallery },
     { path: '/admin/:pathMatch(.*)*', beforeEnter: to => { window.location.assign(to.fullPath); return false } },

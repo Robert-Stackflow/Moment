@@ -30,6 +30,8 @@ const NewPost = lazy(() =>
 );
 const Drafts = lazy(() => import("./pages/Drafts"));
 const Trash = lazy(() => import("./pages/Trash"));
+const Shares = lazy(() => import("./pages/Shares"));
+const ShareEditor = lazy(() => import("./pages/ShareEditor"));
 const Categories = lazy(() => import("./pages/Categories"));
 const SettingsPage = lazy(() => import("./pages/Settings"));
 const Account = lazy(() => import("./pages/Account"));
@@ -183,6 +185,9 @@ const router = createBrowserRouter(
           <Route path="posts/:id" element={<Editor />} />
           <Route path="drafts" element={<Drafts />} />
           <Route path="trash" element={<Trash />} />
+          <Route path="shares" element={<Shares />} />
+          <Route path="shares/new" element={<ShareEditor />} />
+          <Route path="shares/:id" element={<ShareEditor />} />
           <Route path="drafts/:draftID" element={<Editor />} />
           <Route path="categories" element={<Categories />} />
           <Route path="settings/:section" element={<SettingsPage />} />

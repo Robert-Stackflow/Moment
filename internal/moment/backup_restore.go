@@ -59,7 +59,7 @@ func (a *App) restoreBackup(c *gin.Context) {
 		databaseError(c, err)
 		return
 	}
-	_, err = prepared.db.Exec("DELETE FROM moment_sessions")
+	_, err = prepared.db.Exec("DELETE FROM moment_sessions; DELETE FROM moment_share_sessions")
 	closeErr := prepared.Close()
 	if err == nil {
 		err = closeErr

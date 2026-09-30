@@ -1,6 +1,8 @@
 import dayjs from 'dayjs'
 
 export function imageURL(photo, content, kind = 'detail', size = 640) {
+  if (kind === 'thumbnail' && photo?.thumbnail_url?.startsWith('/api/shares/'))
+    return photo.thumbnail_url.replace(/\/640$/, `/${size}`)
   const url = photo?.image_url || ''
   if (kind === 'thumbnail' && url.startsWith('/uploads/') && content?.local_thumbnails !== false)
     return `/thumbnails/${size}/` + url.slice('/uploads/'.length).split(/[?#]/)[0]
@@ -8,6 +10,7 @@ export function imageURL(photo, content, kind = 'detail', size = 640) {
 }
 export function thumbnailSources(photo, content) {
   const url = imageURL(photo, content, 'thumbnail')
+  if (url.startsWith('/api/shares/')) return `${url} 1x, ${url.replace(/\/640$/, '/1280')} 2x`
   return url.startsWith('/thumbnails/640/')
     ? `${url} 1x, ${url.replace('/640/', '/1280/')} 2x`
     : undefined

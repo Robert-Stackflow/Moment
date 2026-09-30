@@ -2319,3 +2319,21 @@ input:-webkit-autofill {
   .trash-cover { width: 58px; height: 66px; }
   .trash-row-actions { flex-basis: 100%; justify-content: flex-end; padding-top: 8px; border-top: 1px solid var(--moment-border); }
 }
+.share-grid { display: grid; grid-template-columns: repeat(auto-fill,minmax(min(100%,300px),1fr)); gap: 20px; }
+.share-card { min-width: 0; display: flex; flex-direction: column; }
+.share-card-icon { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 13px; color: var(--mantine-primary-color-light-color); background: var(--mantine-primary-color-light); }
+.share-card-title { margin: 22px 0 8px; font-size: 18px; line-height: 1.45; font-weight: 650; color: inherit; text-decoration: none; overflow-wrap: anywhere; }
+.share-card-title:hover { color: var(--mantine-primary-color-light-color); }
+.share-card-actions { border-top: 1px solid var(--moment-border); padding-top: 16px; margin-top: auto; }
+.share-editor-grid { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 24px; align-items: start; }
+.share-picker { min-width: 0; }
+.share-pick-row { display: flex; align-items: center; gap: 12px; padding: 10px; border: 1px solid transparent; border-radius: 12px; cursor: pointer; transition: background 150ms,border-color 150ms; }
+.share-pick-row:hover { background: var(--moment-hover); }
+.share-pick-row.is-selected { border-color: var(--mantine-primary-color-light-hover); background: var(--mantine-primary-color-light); }
+.share-pick-row.is-disabled { opacity: .5; cursor: default; }
+.share-post-copy { min-width: 0; flex: 1; }
+.share-selected-row { display: flex; gap: 10px; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--moment-border); }
+.share-selected-row:last-child { border: 0; }
+.share-position { min-width: 16px; color: var(--mantine-color-dimmed); font-size: 11px; }
+@media (max-width: 1050px) { .share-editor-grid { grid-template-columns: minmax(0,1fr); } }
+@media (max-width: 480px) { .share-selected-row { flex-wrap: wrap; } .share-selected-row > .mantine-Group-root { margin-left: auto; } }

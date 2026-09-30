@@ -49,6 +49,10 @@ func (a *App) thumbnail(c *gin.Context) {
 		return
 	}
 	name := strings.TrimPrefix(c.Param("file"), "/")
+	a.serveThumbnail(c, name, size, false)
+}
+
+func (a *App) serveThumbnail(c *gin.Context, name string, size int, private bool) {
 	if !validBackupName("uploads/" + name) {
 		fail(c, 400, "图片路径无效")
 		return
@@ -72,6 +76,11 @@ func (a *App) thumbnail(c *gin.Context) {
 	}
 	fallback := func() {
 		c.Header("Cache-Control", "no-store")
+		if private {
+			_, _ = file.Seek(0, io.SeekStart)
+			http.ServeContent(c.Writer, c.Request, filepath.Base(name), stat.ModTime(), file)
+			return
+		}
 		c.Redirect(http.StatusTemporaryRedirect, "/uploads/"+escapeKey(name))
 	}
 	var enabled int
@@ -133,6 +142,9 @@ func (a *App) thumbnail(c *gin.Context) {
 	defer output.Close()
 	c.Header("Content-Type", result.contentType)
 	c.Header("Cache-Control", "public, max-age=3600, stale-while-revalidate=86400")
+	if private {
+		c.Header("Cache-Control", "no-store")
+	}
 	c.Header("ETag", `W/"`+key+`"`)
 	http.ServeContent(c.Writer, c.Request, filepath.Base(result.path), stat.ModTime(), output)
 }

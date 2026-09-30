@@ -21,24 +21,26 @@ export function DateTimePicker({
   value,
   onChange,
   placeholder = "选择日期和时间",
+  getNow = () => new Date(),
 }: {
   label: string;
   description?: string;
   value: string;
   onChange: (value: string) => void;
   placeholder?: string;
+  getNow?: () => Date;
 }) {
   const id = useId();
   const [opened, setOpened] = useState(false);
-  const [draft, setDraft] = useState(() => parseDateTime(value) || new Date());
-  const [month, setMonth] = useState(() => new Date());
+  const [draft, setDraft] = useState(() => parseDateTime(value) || getNow());
+  const [month, setMonth] = useState(getNow);
   const [pickingMonth, setPickingMonth] = useState(false);
   const [parts, setParts] = useState(["00", "00", "00"]);
   const grid = useRef<HTMLDivElement>(null);
   const selected = parseDateTime(value);
   const pad = (n: number) => String(n).padStart(2, "0");
   const key = (date: Date) => localDateTime(date).slice(0, 10);
-  const today = key(new Date());
+  const today = key(getNow());
   const validTime = parts.every(
     (part, index) =>
       /^\d{1,2}$/.test(part) && Number(part) <= (index === 0 ? 23 : 59),
@@ -48,7 +50,7 @@ export function DateTimePicker({
     setMonth(new Date(date.getFullYear(), date.getMonth(), 1));
   }
   function open() {
-    const date = parseDateTime(value) || new Date();
+    const date = parseDateTime(value) || getNow();
     choose(date);
     setParts([
       pad(date.getHours()),
@@ -59,7 +61,7 @@ export function DateTimePicker({
     setOpened(true);
   }
   function shortcut(offset: number) {
-    const date = new Date();
+    const date = getNow();
     date.setDate(date.getDate() + offset);
     choose(date);
     setParts([
@@ -128,12 +130,18 @@ export function DateTimePicker({
             type="button"
             className="date-trigger"
             onClick={() => (opened ? setOpened(false) : open())}
-            aria-label={`${label}：${selected ? value.replace("T", " ") : "未设置"}`}
+            aria-label={`${label}：${
+              selected ? value.replace("T", " ") : "未设置"
+            }`}
           >
             <CalendarDays size={17} />
             <span className={selected ? "" : "is-placeholder"}>
               {selected
-                ? `${key(selected).replaceAll("-", " / ")} · ${pad(selected.getHours())}:${pad(selected.getMinutes())}:${pad(selected.getSeconds())}`
+                ? `${key(selected).replaceAll("-", " / ")} · ${pad(
+                    selected.getHours(),
+                  )}:${pad(selected.getMinutes())}:${pad(
+                    selected.getSeconds(),
+                  )}`
                 : placeholder}
             </span>
             <ChevronDown size={15} />

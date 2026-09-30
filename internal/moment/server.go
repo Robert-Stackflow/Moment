@@ -73,6 +73,17 @@ func (a *App) Router() http.Handler {
 	admin.GET("/backups/:key/download", a.downloadBackup)
 	admin.POST("/backups/:key/restore", a.restoreBackup)
 	admin.DELETE("/backups/:key", a.deleteBackup)
+	admin.GET("/shares", a.listShares)
+	admin.POST("/shares", a.saveShare)
+	admin.GET("/shares/:id", a.getShare)
+	admin.PUT("/shares/:id", a.saveShare)
+	admin.POST("/shares/:id/action", a.changeShare)
+	shares := r.Group("/api/shares/:token", sameOrigin)
+	shares.GET("", a.sharedAlbum)
+	shares.POST("/unlock", a.unlockShare)
+	shares.POST("/lock", a.lockShare)
+	shares.GET("/photos/:photo/:size", a.sharedPhoto)
+	shares.HEAD("/photos/:photo/:size", a.sharedPhoto)
 	visitor := r.Group("/api/v1/visitor")
 	visitor.GET("/blog/list", a.visitorPosts)
 	visitor.GET("/blog/:id", a.visitorPost)
@@ -116,7 +127,7 @@ func (a *App) Router() http.Handler {
 				return
 			}
 			entry = filepath.Join(a.dist, "admin", "index.html")
-		} else if path != "/" && !strings.HasPrefix(path, "/category/") && !strings.HasPrefix(path, "/location/") && !strings.HasPrefix(path, "/post/") {
+		} else if path != "/" && !strings.HasPrefix(path, "/category/") && !strings.HasPrefix(path, "/location/") && !strings.HasPrefix(path, "/post/") && !strings.HasPrefix(path, "/share/") {
 			fail(c, 404, "页面不存在")
 			return
 		}
@@ -125,6 +136,11 @@ func (a *App) Router() http.Handler {
 			return
 		}
 		c.Header("Cache-Control", "no-cache")
+		if strings.HasPrefix(path, "/share/") {
+			c.Header("Cache-Control", "no-store")
+			c.Header("Referrer-Policy", "no-referrer")
+			c.Header("X-Robots-Tag", "noindex, nofollow, noarchive")
+		}
 		c.File(entry)
 	})
 	return r

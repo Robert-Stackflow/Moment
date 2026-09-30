@@ -3,7 +3,7 @@ import { ref, computed, watch, nextTick, onMounted, onBeforeUnmount } from 'vue'
 import { useSettingStore } from '@/store'
 import GalleryButton from './GalleryButton.vue'
 import { imageURL, photoPath, photoDate, clamp, fitImage, boundedPan } from './gallery'
-const props = defineProps({ post: Object, index: Number, previous: Object, following: Object })
+const props = defineProps({ post: Object, index: Number, previous: Object, following: Object, contained: Boolean, pathFor: { type: Function, default: photoPath } })
 const emit = defineEmits(['choose', 'post', 'close'])
 const content = useSettingStore().contentSetting
 const photo = computed(() => props.post.images[props.index])
@@ -258,7 +258,7 @@ function notify(message) {
   }, 2400)
 }
 async function share() {
-  const url = new URL(photoPath(props.post, photo.value), window.location.origin).href
+  const url = new URL(props.pathFor(props.post, photo.value), window.location.origin).href
   if (navigator.share && matchMedia('(pointer: coarse)').matches) {
     try {
       await navigator.share({ title: props.post.title, url })
@@ -484,10 +484,10 @@ onBeforeUnmount(() => {
               <h2>{{ caption.title }}</h2>
               <p v-if="caption.description" class="viewer-description">{{ caption.description }}</p>
               <div class="viewer-meta">
-                <router-link
+                <component :is="contained ? 'span' : 'router-link'"
                   v-if="content.detail_show_location !== false && caption.location"
                   :to="'/location/' + encodeURIComponent(caption.location)"
-                  >{{ caption.location }}</router-link
+                  >{{ caption.location }}</component
                 >
                 <span v-if="content.detail_show_time !== false && caption.date">{{
                   caption.date
@@ -495,11 +495,11 @@ onBeforeUnmount(() => {
                 <span v-if="caption.metadata">{{ caption.metadata }}</span>
               </div>
               <div v-if="caption.categories.length" class="viewer-categories">
-                <router-link
+                <component :is="contained ? 'span' : 'router-link'"
                   v-for="category in caption.categories"
                   :key="category.id"
                   :to="'/category/' + encodeURIComponent(category.alias)"
-                  >{{ category.name }}</router-link
+                  >{{ category.name }}</component
                 >
               </div>
             </div>
