@@ -49,6 +49,8 @@ func (a *App) Router() http.Handler {
 	admin.GET("/posts/:id", a.getPost)
 	admin.POST("/posts", a.savePost)
 	admin.POST("/posts/batch", a.batchPosts)
+	admin.GET("/trash", a.listTrash)
+	admin.POST("/trash/batch", a.changeTrash)
 	admin.PUT("/posts/:id", a.savePost)
 	admin.DELETE("/posts/:id", a.deletePost)
 	admin.GET("/posts/:id/draft", a.postDraft)

@@ -177,8 +177,17 @@ func TestAtomicPostUpdatesAndVisibility(t *testing.T) {
 	w, _ = call(t, h, "DELETE", fmt.Sprintf("/api/admin/posts/%d", id), nil, cookie)
 	status(t, w, 200)
 	a.db.QueryRow("SELECT COUNT(*) FROM blog_image WHERE blog_id=?", id).Scan(&preserved)
+	if preserved != 2 {
+		t.Fatal("moving to trash did not preserve post images")
+	}
+	w, result = call(t, h, "GET", "/api/admin/trash", nil, cookie)
+	status(t, w, 200)
+	trashed := object(result["data"].([]any)[0])
+	w, _ = call(t, h, "POST", "/api/admin/trash/batch", Object{"action": "purge", "confirm": true, "targets": []Object{{"id": id, "revision": trashed["revision"]}}}, cookie)
+	status(t, w, 200)
+	a.db.QueryRow("SELECT COUNT(*) FROM blog_image WHERE blog_id=?", id).Scan(&preserved)
 	if preserved != 0 {
-		t.Fatal("post images not cascaded")
+		t.Fatal("permanent deletion did not cascade images")
 	}
 }
 func TestSettingsPreserveCredentialsAndCategoryHierarchy(t *testing.T) {

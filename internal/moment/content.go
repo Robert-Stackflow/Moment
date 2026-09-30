@@ -65,7 +65,7 @@ func (a *App) posts(c *gin.Context, public bool) {
 	if !valid {
 		return
 	}
-	conditions := []string{"1=1"}
+	conditions := []string{activePost("b")}
 	args := []any{}
 	if public {
 		conditions = append(conditions, "b.is_hidden=0 AND EXISTS (SELECT 1 FROM blog_image i WHERE i.blog_id=b.id AND i.is_hidden=0)")
@@ -193,7 +193,7 @@ func (a *App) post(c *gin.Context, public bool) {
 	if public {
 		visibility = " AND is_hidden=0 AND EXISTS (SELECT 1 FROM blog_image WHERE blog_id=blog.id AND is_hidden=0)"
 	}
-	blogs, err := query(a.db, "SELECT * FROM blog WHERE id=?"+visibility, id)
+	blogs, err := query(a.db, "SELECT * FROM blog WHERE id=? AND "+activePost("blog")+visibility, id)
 	if err != nil {
 		databaseError(c, err)
 		return
@@ -264,6 +264,17 @@ func (a *App) writePost(c *gin.Context, in PostInput, id int64, expected *int64,
 		return
 	}
 	defer tx.Rollback()
+	if id != 0 {
+		var count int
+		if err := tx.QueryRow("SELECT COUNT(*) FROM moment_trash_posts WHERE post_id=?", id).Scan(&count); err != nil {
+			databaseError(c, err)
+			return
+		}
+		if count > 0 {
+			fail(c, 409, "帖子已移入回收站，请恢复后继续编辑")
+			return
+		}
+	}
 	if draft != nil {
 		current, e := readDraft(tx, draftUser(c), "id=?", draft.ID)
 		if e != nil {
@@ -391,20 +402,44 @@ func (a *App) deletePost(c *gin.Context) {
 	if !valid {
 		return
 	}
-	result, err := a.db.Exec("DELETE FROM blog WHERE id=?", id)
+	tx, err := a.db.Begin()
 	if err != nil {
 		databaseError(c, err)
 		return
 	}
-	count, _ := result.RowsAffected()
+	defer tx.Rollback()
+	var count, revision int64
+	if err = tx.QueryRow("SELECT COUNT(*),COALESCE(MAX(r.revision),0) FROM blog b LEFT JOIN moment_post_revisions r ON r.post_id=b.id WHERE b.id=?", id).Scan(&count, &revision); err != nil {
+		databaseError(c, err)
+		return
+	}
 	if count == 0 {
 		fail(c, 404, "帖子不存在")
+		return
+	}
+	var trashed int
+	if err = tx.QueryRow("SELECT COUNT(*) FROM moment_trash_posts WHERE post_id=?", id).Scan(&trashed); err != nil {
+		databaseError(c, err)
+		return
+	}
+	if trashed == 0 {
+		if err = movePostToTrash(tx, id, draftUser(c), revision); err != nil {
+			databaseError(c, err)
+			return
+		}
+		if err = bumpPostRevision(tx, id); err != nil {
+			databaseError(c, err)
+			return
+		}
+	}
+	if err = tx.Commit(); err != nil {
+		databaseError(c, err)
 		return
 	}
 	ok(c, nil)
 }
 func (a *App) stats(c *gin.Context) {
-	rows, err := query(a.db, "SELECT (SELECT COUNT(*) FROM blog) AS blog,(SELECT COUNT(*) FROM blog_image) AS image,(SELECT COUNT(*) FROM category) AS category,(SELECT COUNT(*) FROM blog WHERE is_hidden=1) AS hidden")
+	rows, err := query(a.db, "SELECT (SELECT COUNT(*) FROM blog WHERE "+activePost("blog")+") AS blog,(SELECT COUNT(*) FROM blog_image i JOIN blog b ON b.id=i.blog_id WHERE "+activePost("b")+") AS image,(SELECT COUNT(*) FROM category) AS category,(SELECT COUNT(*) FROM blog WHERE is_hidden=1 AND "+activePost("blog")+") AS hidden,(SELECT COUNT(*) FROM moment_trash_posts) AS trash")
 	if err != nil {
 		databaseError(c, err)
 		return
@@ -412,7 +447,7 @@ func (a *App) stats(c *gin.Context) {
 	ok(c, rows[0])
 }
 func (a *App) locations(c *gin.Context) {
-	rows, err := query(a.db, "SELECT location,COUNT(*) AS count FROM (SELECT location FROM blog WHERE location IS NOT NULL AND location!='' UNION ALL SELECT location FROM blog_image WHERE location IS NOT NULL AND location!='') GROUP BY location ORDER BY count DESC,location")
+	rows, err := query(a.db, "SELECT location,COUNT(*) AS count FROM (SELECT b.location FROM blog b WHERE b.location IS NOT NULL AND b.location!='' AND "+activePost("b")+" UNION ALL SELECT i.location FROM blog_image i JOIN blog b ON b.id=i.blog_id WHERE i.location IS NOT NULL AND i.location!='' AND "+activePost("b")+") GROUP BY location ORDER BY count DESC,location")
 	if err != nil {
 		databaseError(c, err)
 		return

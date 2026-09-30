@@ -94,7 +94,7 @@ func TestBatchPartialFailureAndValidation(t *testing.T) {
 	w, _ = call(t, h, "POST", "/api/admin/posts/batch", in, cookie)
 	status(t, w, 400)
 	var version int
-	_ = a.db.QueryRow("SELECT COUNT(*) FROM moment_post_revisions").Scan(&version)
+	_ = a.db.QueryRow("SELECT COUNT(*) FROM moment_post_revisions WHERE post_id=?", two).Scan(&version)
 	if version != 0 {
 		t.Fatal("invalid batch changed post version")
 	}

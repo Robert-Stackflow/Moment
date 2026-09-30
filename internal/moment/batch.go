@@ -62,7 +62,7 @@ func (a *App) batchPosts(c *gin.Context) {
 	}
 	results := make([]batchResult, 0, len(in.Targets))
 	for _, target := range in.Targets {
-		message, err := a.batchPost(target, in)
+		message, err := a.batchPost(target, in, draftUser(c))
 		if err != nil {
 			log.Printf("batch post operation failed: %s", err)
 			message = "操作失败，请重试"
@@ -74,14 +74,14 @@ func (a *App) batchPosts(c *gin.Context) {
 
 // Each post has its own transaction: a rejected item cannot partly change its
 // categories, while successful items have a precise per-item result.
-func (a *App) batchPost(target batchTarget, in batchInput) (string, error) {
+func (a *App) batchPost(target batchTarget, in batchInput, user int64) (string, error) {
 	tx, err := a.db.Begin()
 	if err != nil {
 		return "", err
 	}
 	defer tx.Rollback()
 	var revision int64
-	err = tx.QueryRow("SELECT COALESCE(r.revision,0) FROM blog b LEFT JOIN moment_post_revisions r ON r.post_id=b.id WHERE b.id=?", target.ID).Scan(&revision)
+	err = tx.QueryRow("SELECT COALESCE(r.revision,0) FROM blog b LEFT JOIN moment_post_revisions r ON r.post_id=b.id WHERE b.id=? AND "+activePost("b"), target.ID).Scan(&revision)
 	if errors.Is(err, sql.ErrNoRows) {
 		return "帖子已不存在", nil
 	}
@@ -93,7 +93,7 @@ func (a *App) batchPost(target batchTarget, in batchInput) (string, error) {
 	}
 	switch in.Action {
 	case "delete":
-		_, err = tx.Exec("DELETE FROM blog WHERE id=?", target.ID)
+		err = movePostToTrash(tx, target.ID, user, revision)
 	case "visibility":
 		_, err = tx.Exec("UPDATE blog SET is_hidden=?,updated_at=? WHERE id=?", *in.Hidden, now(), target.ID)
 	case "categories":
@@ -148,10 +148,8 @@ func (a *App) batchPost(target batchTarget, in batchInput) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	if in.Action != "delete" {
-		if _, err = tx.Exec("INSERT INTO moment_post_revisions(post_id,revision) VALUES (?,1) ON CONFLICT(post_id) DO UPDATE SET revision=revision+1", target.ID); err != nil {
-			return "", err
-		}
+	if err = bumpPostRevision(tx, target.ID); err != nil {
+		return "", err
 	}
 	return "", tx.Commit()
 }

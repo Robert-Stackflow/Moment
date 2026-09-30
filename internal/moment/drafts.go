@@ -85,7 +85,7 @@ func (a *App) listDrafts(c *gin.Context) {
 	}
 	user := draftUser(c)
 	search := "%" + strings.TrimSpace(c.Query("q")) + "%"
-	where := "user_id=? AND published_at IS NULL AND (json_extract(payload,'$.title') LIKE ? OR json_extract(payload,'$.desc') LIKE ?)"
+	where := "user_id=? AND published_at IS NULL AND NOT EXISTS (SELECT 1 FROM moment_trash_posts t WHERE t.post_id=moment_drafts.post_id) AND (json_extract(payload,'$.title') LIKE ? OR json_extract(payload,'$.desc') LIKE ?)"
 	var total int
 	if err := a.db.QueryRow("SELECT COUNT(*) FROM moment_drafts WHERE "+where, user, search, search).Scan(&total); err != nil {
 		databaseError(c, err)
@@ -133,6 +133,17 @@ func (a *App) saveDraft(c *gin.Context) {
 		return
 	}
 	defer tx.Rollback()
+	if in.PostID != nil {
+		var trashed int
+		if err := tx.QueryRow("SELECT COUNT(*) FROM moment_trash_posts WHERE post_id=?", *in.PostID).Scan(&trashed); err != nil {
+			databaseError(c, err)
+			return
+		}
+		if trashed > 0 {
+			fail(c, 409, "帖子已移入回收站，请恢复后继续编辑")
+			return
+		}
+	}
 	existing, err := readDraft(tx, user, "id=?", in.ID)
 	if err != nil {
 		databaseError(c, err)

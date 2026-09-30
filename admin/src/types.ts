@@ -53,6 +53,10 @@ export type PostContent = Pick<
   | "images"
   | "category_ids"
 >;
+export interface TrashedPost extends Post {
+  deleted_at: string;
+  draft_count: number;
+}
 export interface PostDraft {
   id: string;
   post_id: number | null;

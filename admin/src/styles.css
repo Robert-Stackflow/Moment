@@ -2307,3 +2307,15 @@ input:-webkit-autofill {
 .draft-row-main:focus-visible { outline: 2px solid var(--mantine-primary-color-filled); outline-offset: 5px; }
 .draft-cover { display: grid; place-items: center; width: 76px; height: 68px; border-radius: 9px; background: var(--mantine-color-default-hover); color: var(--mantine-color-dimmed); flex-shrink: 0; overflow: hidden; }
 .draft-row-copy { min-width: 0; flex: 1; }
+.trash-selection { margin-top: 12px; }
+.trash-row { display: flex; align-items: center; gap: 16px; }
+.trash-preview-target { flex: 1; min-width: 0; padding: 0; border: 0; background: transparent; color: inherit; text-align: left; display: flex; gap: 16px; align-items: center; border-radius: 10px; cursor: pointer; }
+.trash-preview-target:focus-visible { outline: 2px solid var(--mantine-primary-color-filled); outline-offset: 5px; }
+.trash-cover { display: grid; place-items: center; width: 84px; height: 76px; flex-shrink: 0; overflow: hidden; border-radius: 10px; background: var(--mantine-color-default-hover); color: var(--mantine-color-dimmed); }
+.trash-copy { flex: 1; min-width: 0; }
+@media (max-width: 600px) {
+  .trash-row { gap: 10px; flex-wrap: wrap; }
+  .trash-preview-target { gap: 10px; }
+  .trash-cover { width: 58px; height: 66px; }
+  .trash-row-actions { flex-basis: 100%; justify-content: flex-end; padding-top: 8px; border-top: 1px solid var(--moment-border); }
+}

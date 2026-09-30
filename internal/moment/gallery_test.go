@@ -65,8 +65,16 @@ func TestImageFocusAndPublicPost(t *testing.T) {
 	status(t, w, 400)
 	w, _ = call(t, h, "DELETE", path, nil, cookie)
 	status(t, w, 200)
+	if err := a.db.QueryRow("SELECT COUNT(*) FROM moment_image_focus").Scan(&count); err != nil || count != 1 {
+		t.Fatal("moving to trash lost presentation data")
+	}
+	w, response := call(t, h, "GET", "/api/admin/trash", nil, cookie)
+	status(t, w, 200)
+	trashed := object(response["data"].([]any)[0])
+	w, _ = call(t, h, "POST", "/api/admin/trash/batch", Object{"action": "purge", "confirm": true, "targets": []Object{{"id": id, "revision": trashed["revision"]}}}, cookie)
+	status(t, w, 200)
 	if err := a.db.QueryRow("SELECT COUNT(*) FROM moment_image_focus").Scan(&count); err != nil || count != 0 {
-		t.Fatal("deleted post left orphaned presentation data")
+		t.Fatal("permanently deleted post left orphaned focus")
 	}
 }
 

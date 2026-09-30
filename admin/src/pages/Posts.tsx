@@ -105,6 +105,7 @@ export default function Posts() {
       client.invalidateQueries({ queryKey: ["locations"] }),
       client.invalidateQueries({ queryKey: ["drafts"] }),
       client.invalidateQueries({ queryKey: ["post"] }),
+      client.invalidateQueries({ queryKey: ["trash"] }),
     ]);
   }
   async function batch(
@@ -152,7 +153,7 @@ export default function Posts() {
             action === "categories"
               ? "更新分类"
               : action === "delete"
-              ? "删除"
+              ? "移入回收站"
               : hidden
               ? "隐藏"
               : "公开"
@@ -539,13 +540,13 @@ export default function Posts() {
         onClose={() => {
           if (!busy) setDeleting(null);
         }}
-        title="删除帖子"
+        title="移入回收站"
         centered
       >
         <Stack>
           <Text>
-            确定删除这 {deleting?.length}{" "}
-            篇帖子？删除后无法恢复。图片记录会一起删除，存储中的原始文件会保留。
+            将这 {deleting?.length}{" "}
+            篇帖子移入回收站？访客将无法再访问，图片、分类和未发布草稿会保留，可随时恢复。
           </Text>
           <Group justify="flex-end">
             <Button
@@ -560,7 +561,7 @@ export default function Posts() {
               loading={busy}
               onClick={() => deleting && void batch("delete", deleting)}
             >
-              确认删除
+              移入回收站
             </Button>
           </Group>
         </Stack>
