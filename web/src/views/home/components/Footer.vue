@@ -1,198 +1,329 @@
-<template>
-    <footer id="footer" class="panel">
-        <div class="inner split">
-            <div class="inner split">
-                <div>
-                    <section style="margin-bottom: 20px;">
-                        <h2>关于{{ site_name }}</h2>
-                        <p>{{ site_desc }}</p>
-                    </section>
-                    <section style="margin-bottom: 1.8rem;" v-if="entries.length > 0">
-                        <h2>联系我</h2>
-                        <ul class="footer-shortcuts">
-                            <li v-for="entry in entries" class="footer-shortcut">
-                                <a :href="entry.url" target="_blank" rel="noopener nofollow">
-                                    <TheIcon :icon="entry.icon" :size="20" />
-                                    <span class="footer-shortcut-label" style="display: none;">{{ entry.name }}</span>
-                                </a>
-                            </li>
-                        </ul>
-                    </section>
-                    <span style="color: #b5b5b5; font-size: 0.8em;">
-                        <p class="footer-icp" v-if="isValueNotEmpty(icp)">
-                            ICP备案号:
-                            <a href="http://beian.miit.gov.cn/" target="_blank" rel="noopener nofollow">{{ icp }}</a>
-                        </p>
-                    </span>
-                </div>
-            </div>
-        </div>
-        <div class="closer" @click="togglePanel">
-            <TheIcon icon="ic:round-close" :size="30" />
-        </div>
-    </footer>
-</template>
 <script setup>
+import { ref, watch, nextTick, onBeforeUnmount } from 'vue'
 import { useSettingStore } from '@/store'
-import { isValueNotEmpty, createStyle } from '@/utils'
+import { createStyle } from '@/utils'
 import TheIcon from '@/components/icon/TheIcon.vue'
-const settingStore = useSettingStore()
-const site_name = isValueNotEmpty(settingStore.metaSetting?.site_name )?settingStore.metaSetting?.site_name : import.meta.env.VITE_TITLE
-const site_desc = isValueNotEmpty(settingStore.metaSetting?.site_desc )?settingStore.metaSetting?.site_desc : import.meta.env.VITE_DESC
-const primary_color = isValueNotEmpty(settingStore.metaSetting?.primary_color )?settingStore.metaSetting?.primary_color : import.meta.env.VITE_PRIMARY_COLOR
-const entries = isValueNotEmpty(settingStore.metaSetting?.entries )?settingStore.metaSetting?.entries : []
-const bottom_icon = isValueNotEmpty(settingStore.metaSetting?.bottom_icon )?settingStore.metaSetting?.bottom_icon : import.meta.env.VITE_ICON
-const bottom_desc = isValueNotEmpty(settingStore.metaSetting?.bottom_desc )?settingStore.metaSetting?.bottom_desc : import.meta.env.VITE_DESC
-const icp = isValueNotEmpty(settingStore.metaSetting?.icp )?settingStore.metaSetting?.icp : ""
-function togglePanel() {
-    document.querySelector("#footer.panel").classList.toggle("active");
-    document.querySelector("#header-about").classList.toggle("active");
-    document.querySelector("body").classList.toggle('content-active');
+import GalleryButton from './GalleryButton.vue'
+const props = defineProps({ open: Boolean })
+const emit = defineEmits(['close'])
+const meta = useSettingStore().metaSetting
+const siteName = meta?.site_name || import.meta.env.VITE_TITLE
+const description = meta?.site_desc || import.meta.env.VITE_DESC
+const icon = meta?.bottom_icon || import.meta.env.VITE_ICON
+const entries = meta?.entries || []
+const panel = ref(null)
+let focused,
+  overflow,
+  padding,
+  locked = false,
+  background = []
+function unlock() {
+  if (!locked) return
+  locked = false
+  document.body.style.overflow = overflow
+  document.body.style.paddingRight = padding
+  for (const [element, inert] of background) element.inert = inert
+  if (focused?.isConnected) focused.focus({ preventScroll: true })
 }
-createStyle("custom_primary_color", `:root {--moment-theme:${primary_color} !important;}`)
+watch(
+  () => props.open,
+  async (open) => {
+    if (!open) {
+      unlock()
+      return
+    }
+    focused = document.activeElement
+    overflow = document.body.style.overflow
+    padding = document.body.style.paddingRight
+    const scrollbar = innerWidth - document.documentElement.clientWidth
+    document.body.style.overflow = 'hidden'
+    if (scrollbar) document.body.style.paddingRight = scrollbar + 'px'
+    background = [...document.querySelectorAll('#blog-main,#header,.gallery-sentinel')].map(
+      (element) => [element, element.inert],
+    )
+    for (const [element] of background) element.inert = true
+    locked = true
+    await nextTick()
+    requestAnimationFrame(() => requestAnimationFrame(focusPanel))
+  },
+)
+function focusPanel() {
+  if (props.open && !panel.value?.contains(document.activeElement)) {
+    panel.value?.focus({ preventScroll: true })
+  }
+}
+function keydown(event) {
+  if (event.key === 'Escape') {
+    event.preventDefault()
+    emit('close')
+  }
+  if (event.key !== 'Tab') return
+  const controls = [...panel.value.querySelectorAll('a[href],button')].filter(
+    (node) => node.getClientRects().length,
+  )
+  const first = controls[0],
+    last = controls[controls.length - 1]
+  if (
+    event.shiftKey &&
+    (document.activeElement === first || document.activeElement === panel.value)
+  ) {
+    event.preventDefault()
+    last?.focus()
+  } else if (!event.shiftKey && document.activeElement === last) {
+    event.preventDefault()
+    first?.focus()
+  }
+}
+onBeforeUnmount(unlock)
+createStyle(
+  'custom_primary_color',
+  ':root {--moment-theme:' +
+    (meta?.primary_color || import.meta.env.VITE_PRIMARY_COLOR) +
+    ' !important;}',
+)
 </script>
+<template>
+  <footer
+    id="footer"
+    ref="panel"
+    class="about-panel panel"
+    :class="{ active: open }"
+    :inert="!open"
+    :aria-hidden="!open"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="about-title"
+    tabindex="-1"
+    @keydown="keydown"
+    @transitionend.self="focusPanel"
+  >
+    <GalleryButton class="about-close" icon="close" label="关闭关于 · Esc" @click="emit('close')" />
+    <div class="about-content">
+      <section class="about-story">
+        <img class="about-logo" :src="icon" alt="" />
+        <h2 id="about-title">关于{{ siteName }}</h2>
+        <p>{{ description }}</p>
+      </section>
+      <nav v-if="entries.length" class="about-links" aria-label="联系与更多">
+        <h3>联系与更多</h3>
+        <div class="about-link-list">
+          <a
+            v-for="entry in entries"
+            :key="entry.name + entry.url"
+            :href="entry.url"
+            target="_blank"
+            rel="noopener nofollow"
+          >
+            <TheIcon :icon="entry.icon" :size="19" /><span>{{ entry.name }}</span>
+            <svg
+              class="about-link-arrow"
+              viewBox="0 0 16 16"
+              fill="none"
+              stroke="currentColor"
+              width="14"
+              height="14"
+              aria-hidden="true"
+            >
+              <path d="M4 12 12 4M4 4h8v8" />
+            </svg>
+          </a>
+        </div>
+      </nav>
+    </div>
+    <div v-if="meta?.icp" class="about-legal">
+      <a href="https://beian.miit.gov.cn/" target="_blank" rel="noopener nofollow">{{
+        meta.icp
+      }}</a>
+    </div>
+  </footer>
+</template>
 <style>
-ul.footer-shortcuts {
-    cursor: default;
-    list-style: none;
-    padding-left: 0;
-    display: flex;
+#footer.about-panel {
+  position: fixed;
+  z-index: 10001;
+  bottom: 96px;
+  left: 50%;
+  width: min(860px, calc(100% - 40px));
+  max-height: calc(100dvh - 136px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 38px;
+  border: 1px solid #ffffff1c;
+  border-radius: 20px;
+  background: #202226f5;
+  box-shadow: 0 24px 80px #0005;
+  backdrop-filter: blur(24px);
+  transform: translate(-50%, 18px);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  outline: none;
+  transition:
+    transform 0.22s cubic-bezier(0.2, 0.8, 0.2, 1),
+    opacity 0.18s,
+    visibility 0.22s;
 }
-
-ul.footer-shortcuts li.footer-shortcut {
-    margin-right: 10px;
+#footer.about-panel.active {
+  transform: translate(-50%, 0);
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
 }
-
-ul.footer-shortcuts li:last-child {
-    padding-right: 0;
+.about-content {
+  display: grid;
+  grid-template-columns: 1.15fr 1fr;
+  gap: 42px;
+  align-items: start;
 }
-
-ul.footer-shortcuts li a:before {
-    font-size: 28px;
-    line-height: 1;
-    height: 28px;
-    margin: auto;
-    display: contents;
+.about-logo {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  object-fit: contain;
+  margin-bottom: 20px;
 }
-
-ul.footer-shortcuts li a {
-    color: var(--moment-card-bg);
-    width: 40px;
-    height: 40px;
-    border-radius: 40px;
-    background: var(--moment-fontcolor);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: 0.3s;
+#footer .about-story h2 {
+  margin: 0 0 12px;
+  font-size: 23px;
+  font-weight: 500;
+  line-height: 1.4;
+  letter-spacing: 0.015em;
+  color: #f1f2f4;
 }
-
-ul.footer-shortcuts li:hover a {
-    color: var(--moment-fontcolor);
-    background: var(--moment-theme);
+.about-story p {
+  margin: 0;
+  color: #b2b6be;
+  font-size: 13px;
+  line-height: 1.85;
+  white-space: pre-line;
+  overflow-wrap: anywhere;
 }
-
-.panel {
-    padding: 4em 4em 2em 4em;
-    transform: translateY(100vh);
-    transition: transform 0.5s ease;
-    background: rgba(36, 38, 41, 0.975);
-    bottom: 80px;
-    left: 0;
-    max-height: calc(80vh - 4em);
-    overflow-y: auto;
-    position: fixed;
-    width: 100%;
-    z-index: 10001;
+#footer .about-links h3 {
+  color: #979da8;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.5;
+  margin: 7px 0 14px;
 }
-
-.panel.active {
-    transform: translateY(1px);
+.about-links {
+  padding-top: 4px;
+  margin-right: 10px;
 }
-
-.panel>.inner {
-    margin: 0 auto;
-    max-width: 100%;
-    width: 75em;
+.about-link-list {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
 }
-
-.panel>.inner.split {
-    display: -moz-flex;
-    display: -webkit-flex;
-    display: -ms-flex;
-    display: flex;
+.about-link-list a {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 12px;
+  border: 1px solid #ffffff12;
+  border-radius: 10px;
+  background: #ffffff04;
+  color: #d4d7dd;
+  min-height: 46px;
+  transition:
+    background 0.16s,
+    border-color 0.16s;
+  font-size: 12px;
 }
-
-.panel>.inner.split>div {
-    margin-left: 4em;
-    width: 50%;
+.about-link-list a span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
-
-.panel>.inner.split> :first-child {
-    margin-left: 0;
+.about-link-list svg {
+  flex-shrink: 0;
 }
-
-.panel>.closer {
-    transition: opacity 0.2s ease-in-out;
-    background-position: center;
-    background-repeat: no-repeat;
-    background-size: 3em;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    height: 5em;
-    opacity: 0.25;
-    position: absolute;
-    right: 0;
-    top: 0;
-    width: 5em;
-    z-index: 2;
+.about-link-list .about-link-arrow {
+  margin-left: auto;
+  color: #767d89;
 }
-
-.panel>.closer:hover {
-    opacity: 1.0;
+.about-link-list a:hover {
+  background: #ffffff0e;
+  border-color: #ffffff2b;
+  color: #fff;
 }
-
-@media screen and (max-width: 1280px) {
-
-    .panel>.inner.split>div {
-        margin-left: 3em;
-    }
-
-    .panel>.closer {
-        background-size: 2.5em;
-        background-position: 75% 25%;
-    }
+#footer .about-close {
+  position: absolute;
+  right: 14px;
+  top: 14px;
+  width: 34px;
+  height: 34px;
+  background: transparent;
+  border-color: transparent;
+  color: #aeb3bc;
 }
-
-@media screen and (max-width: 980px) {
-    .panel>.inner.split {
-        flex-direction: column;
-    }
-
-    .panel>.inner.split>div {
-        margin-left: 0;
-        width: 100%;
-    }
+#footer .about-close:hover {
+  background: #ffffff12;
+  color: white;
 }
-
-@media screen and (max-width: 736px) {
-    .panel {
-        transform: translateY(-100vh);
-        padding: 4em 2em 2em 2em;
-        bottom: auto;
-        top: calc(4em - 1px);
-    }
-
-    .panel.active {
-        transform: translateY(0);
-    }
+.about-legal {
+  margin-top: 28px;
+  padding-top: 16px;
+  border-top: 1px solid #ffffff0e;
+  font-size: 11px;
+  line-height: 1.5;
+  color: #848b96;
 }
-
-#footer .footer-icp {
-    color: #b5b5b5;
-    font-size: 15px;
-    margin-top: 15px;
+.about-legal a {
+  color: inherit;
+}
+.about-legal a:hover {
+  color: #ccc;
+}
+.about-panel a:focus-visible {
+  outline: 2px solid #ddd;
+  outline-offset: 3px;
+}
+@media (max-width: 736px) {
+  #footer.about-panel {
+    top: 76px;
+    bottom: auto;
+    width: calc(100% - 24px);
+    max-height: calc(100dvh - 96px);
+    border-radius: 16px;
+    padding: 28px 24px 22px;
+    transform: translate(-50%, -10px);
+  }
+  .about-content {
+    grid-template-columns: 1fr;
+    gap: 28px;
+  }
+  #footer .about-story h2 {
+    font-size: 21px;
+  }
+  .about-logo {
+    width: 36px;
+    height: 36px;
+    margin-bottom: 16px;
+  }
+  .about-links {
+    margin-right: 0;
+    padding-top: 0;
+  }
+  #footer .about-links h3 {
+    margin-top: 0;
+  }
+  #footer .about-close {
+    width: 42px;
+    height: 42px;
+    top: 8px;
+    right: 8px;
+  }
+  .about-legal {
+    margin-top: 24px;
+  }
+  .about-link-list a {
+    padding: 12px 10px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  #footer.about-panel,
+  .about-link-list a {
+    transition: none;
+  }
 }
 </style>

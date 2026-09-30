@@ -59,6 +59,7 @@ func (a *App) Router() http.Handler {
 	admin.POST("/uploads", a.upload)
 	visitor := r.Group("/api/v1/visitor")
 	visitor.GET("/blog/list", a.visitorPosts)
+	visitor.GET("/blog/:id", a.visitorPost)
 	visitor.GET("/category/list", a.listCategories)
 	visitor.GET("/category/get/alias", a.categoryByAlias)
 	visitor.GET("/order/list", func(c *gin.Context) {
@@ -97,7 +98,7 @@ func (a *App) Router() http.Handler {
 				return
 			}
 			entry = filepath.Join(a.dist, "admin", "index.html")
-		} else if path != "/" && !strings.HasPrefix(path, "/category/") && !strings.HasPrefix(path, "/location/") {
+		} else if path != "/" && !strings.HasPrefix(path, "/category/") && !strings.HasPrefix(path, "/location/") && !strings.HasPrefix(path, "/post/") {
 			fail(c, 404, "页面不存在")
 			return
 		}

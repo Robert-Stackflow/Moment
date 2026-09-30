@@ -1,34 +1,39 @@
 <template>
-  <Header />
+  <Header :about-open="aboutOpen" @about="aboutOpen = !aboutOpen" />
   <div id="wrapper">
     <Main />
-    <Footer />
+    <button v-if="aboutOpen" class="gallery-panel-backdrop" aria-label="关闭关于面板" @click="aboutOpen = false" />
+    <Footer :open="aboutOpen" @close="aboutOpen = false" />
   </div>
 </template>
 
 <script setup>
+import { ref, watch, onBeforeUnmount } from 'vue'
+import { useRoute } from 'vue-router'
 import Header from './components/Header.vue'
 import Footer from './components/Footer.vue'
 import Main from './components/Main.vue'
+const aboutOpen = ref(false)
+const route = useRoute()
+watch(aboutOpen, (open) => document.body.classList.toggle('content-active', open))
+watch(() => route.fullPath, () => { aboutOpen.value = false })
+onBeforeUnmount(() => document.body.classList.remove('content-active'))
 </script>
 <style>
+.gallery-panel-backdrop { position: fixed; inset: 0; z-index: 10000; border: 0; background: #10121660; backdrop-filter: blur(6px); cursor: default; }
 ::selection {
   background: var(--moment-fontcolor);
   color: var(--moment-background);
 }
 
-::-webkit-scrollbar {
-  width: 5px;
-}
-
-::-webkit-scrollbar-thumb {
-  background-color: #ececec;
-}
-
-::-webkit-scrollbar-track {
-  -webkit-box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.2);
-  background: #1f2224;
-}
+html { color-scheme: dark; scrollbar-color: #ffffff30 #202226; scrollbar-width: thin; }
+.gallery-category-menu,.about-panel,.viewer-thumbnails,.viewer-caption { scrollbar-width: thin; scrollbar-color: #ffffff30 transparent; }
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; margin: 10px; }
+::-webkit-scrollbar-thumb { background: #ffffff30; border-radius: 20px; }
+::-webkit-scrollbar-thumb:hover { background: #ffffff50; }
+::-webkit-scrollbar-button { display: none; width: 0; height: 0; }
+::-webkit-scrollbar-corner { background: transparent; }
 
 @-ms-viewport {
   width: device-width;

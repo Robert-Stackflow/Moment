@@ -438,6 +438,9 @@ export function PostEditor({
                         >
                           <Image
                             className="photo-cover"
+                            style={{
+                              objectPosition: `${photo.focus_x ?? 50}% ${photo.focus_y ?? 50}%`,
+                            }}
                             src={thumbnail(photo.image_url, settings)}
                             alt={photo.title || `图片 ${index + 1}`}
                             draggable={false}

@@ -1,281 +1,330 @@
-<template>
-    <header id="header">
-        <router-link :to="'/'"><img class="site-logo" :src="bottom_icon"></router-link>
-        <router-link :to="'/'"><strong style="margin-left: 8px;">{{ site_name }}</strong></router-link>
-        <span class="description">{{ bottom_desc }}</span>
-        <nav>
-            <ul>
-                <li>
-                    <a type="button" id="fullscreen" class="btn btn-default visible-lg visible-md" alt="切换全屏"
-                        style="cursor: pointer;" @click="toggleFullScreen">{{ fullScreenText }}</a>
-                </li>
-                <li class="nav-item">
-                    <a class="icon solid fa-info-circle nav-item-name" style="cursor: pointer;">分类</a>
-                    <ul class="nav-item-child">
-                        <ul>
-                            <li v-for="category in categories" class="category-level-0 category-parent">
-                                <router-link :to="'/category/' + category.alias">{{ category.name }}</router-link>
-                                <ul>
-                                    <li v-for="child in category.children"
-                                        class="category-level-1 category-child category-level-odd"><router-link
-                                            :to="'/category/' + child.alias">{{ child.name }}</router-link></li>
-                                </ul>
-                            </li>
-                        </ul>
-                        <li class="category-level-0 category-parent"><router-link :to="'/'">全部</router-link></li>
-                    </ul>
-                </li>
-                <li><a style="cursor: pointer;" @click="togglePanel" id="header-about">关于</a></li>
-            </ul>
-        </nav>
-    </header>
-</template>
 <script setup>
+import { ref, watch, onMounted, onBeforeUnmount } from 'vue'
+import { useRoute } from 'vue-router'
 import { useSettingStore } from '@/store'
+import GalleryButton from './GalleryButton.vue'
 import api from '@/api'
-import { isValueNotEmpty } from '@/utils'
-const settingStore = useSettingStore()
-var categories = ref([])
-var fullScreenText = ref("全屏")
-var a = 0;
-const site_name = isValueNotEmpty(settingStore.metaSetting?.site_name) ? settingStore.metaSetting?.site_name : import.meta.env.VITE_TITLE
-const bottom_icon = isValueNotEmpty(settingStore.metaSetting?.bottom_icon) ? settingStore.metaSetting?.bottom_icon : import.meta.env.VITE_ICON
-const bottom_desc = isValueNotEmpty(settingStore.metaSetting?.bottom_desc) ? settingStore.metaSetting?.bottom_desc : import.meta.env.VITE_DESC
-function togglePanel() {
-    document.querySelector("#footer.panel").classList.toggle("active");
-    document.querySelector("#header-about").classList.toggle("active");
-    document.querySelector("body").classList.toggle('content-active');
+defineProps({ aboutOpen: Boolean })
+const emit = defineEmits(['about'])
+const route = useRoute(),
+  settings = useSettingStore()
+const categories = ref([]),
+  categoriesOpen = ref(false),
+  categoryNav = ref(null),
+  fullscreen = ref(false),
+  categoryError = ref(false)
+const siteName = settings.metaSetting?.site_name || import.meta.env.VITE_TITLE
+const icon = settings.metaSetting?.bottom_icon || import.meta.env.VITE_ICON
+const description = settings.metaSetting?.bottom_desc || import.meta.env.VITE_DESC
+async function loadCategories() {
+  categoryError.value = false
+  try {
+    categories.value = (await api.getCategoriesVisitor()).data
+  } catch {
+    categoryError.value = true
+  }
 }
-function isFullScreen() {
-    var isFull = document.fullScreen || document.fullscreenElement !== null;
-    if (isFull === undefined) isFull = false;
-    return isFull;
+async function toggleFullScreen() {
+  try {
+    if (document.fullscreenElement) await document.exitFullscreen()
+    else await document.documentElement.requestFullscreen()
+  } catch {
+    /* Fullscreen may be disallowed by an embedding browser. */
+  }
 }
-function toggleFullScreen() {
-    if (isFullScreen()) {
-        document.exitFullscreen();
-        document.querySelector("#fullscreen").classList.remove("ctrlOn");
-        fullScreenText.value = "全屏"
-    } else {
-        document.documentElement.requestFullscreen();
-        document.querySelector("#fullscreen").classList.add("ctrlOn");
-        fullScreenText.value = "退出全屏"
-    }
+function fullScreenChange() {
+  fullscreen.value = !!document.fullscreenElement
 }
-api.getCategoriesVisitor().then((response) => {
-    if (response.code == 200) {
-        categories.value = response.data
-    }
+function outside(event) {
+  if (!categoryNav.value?.contains(event.target)) categoriesOpen.value = false
+}
+function escape(event) {
+  if (event.key === 'Escape' && categoriesOpen.value) {
+    categoriesOpen.value = false
+    categoryNav.value?.querySelector('button')?.focus()
+  }
+}
+watch(
+  () => route.fullPath,
+  () => {
+    categoriesOpen.value = false
+  },
+)
+onMounted(() => {
+  loadCategories()
+  document.addEventListener('pointerdown', outside)
+  document.addEventListener('keydown', escape)
+  document.addEventListener('fullscreenchange', fullScreenChange)
+})
+onBeforeUnmount(() => {
+  document.removeEventListener('pointerdown', outside)
+  document.removeEventListener('keydown', escape)
+  document.removeEventListener('fullscreenchange', fullScreenChange)
 })
 </script>
+<template>
+  <header id="header">
+    <router-link to="/" class="gallery-brand"
+      ><img class="site-logo" :src="icon" alt="" /><strong>{{ siteName }}</strong></router-link
+    >
+    <span class="description">{{ description }}</span>
+    <nav aria-label="相册导航">
+      <GalleryButton
+        class="gallery-fullscreen"
+        icon="expand"
+        :label="fullscreen ? '退出全屏' : '全屏浏览'"
+        :pressed="fullscreen"
+        @click="toggleFullScreen"
+      />
+      <div ref="categoryNav" class="gallery-category-nav">
+        <button
+          type="button"
+          class="gallery-nav-link"
+          :class="{ active: categoriesOpen }"
+          aria-controls="gallery-categories"
+          :aria-expanded="categoriesOpen"
+          @click="categoriesOpen = !categoriesOpen"
+        >
+          分类
+          <svg
+            viewBox="0 0 16 16"
+            width="12"
+            height="12"
+            fill="none"
+            stroke="currentColor"
+            :class="{ expanded: categoriesOpen }"
+          >
+            <path d="m4 6 4 4 4-4" />
+          </svg>
+        </button>
+        <Transition name="category-pop">
+          <div v-if="categoriesOpen" id="gallery-categories" class="gallery-category-menu">
+            <router-link class="gallery-all" to="/" @click="categoriesOpen = false"
+              >全部照片</router-link
+            >
+            <div v-for="category in categories" :key="category.id" class="gallery-category-group">
+              <router-link
+                :to="'/category/' + encodeURIComponent(category.alias)"
+                @click="categoriesOpen = false"
+                >{{ category.name }}</router-link
+              >
+              <div v-if="category.children.length" class="gallery-category-children">
+                <router-link
+                  v-for="child in category.children"
+                  :key="child.id"
+                  :to="'/category/' + encodeURIComponent(child.alias)"
+                  @click="categoriesOpen = false"
+                  >{{ child.name }}</router-link
+                >
+              </div>
+            </div>
+            <button v-if="categoryError" class="gallery-nav-link" @click="loadCategories">
+              加载失败，重试
+            </button>
+          </div>
+        </Transition>
+      </div>
+      <button
+        id="header-about"
+        type="button"
+        class="gallery-nav-link"
+        :class="{ active: aboutOpen }"
+        :aria-expanded="aboutOpen"
+        aria-controls="footer"
+        @click="emit('about')"
+      >
+        关于
+      </button>
+    </nav>
+  </header>
+</template>
 <style>
 #header {
-    background: #666;
-    padding: 40px;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 80px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 24px;
+  z-index: 10002;
+  background: #121212d4;
+  backdrop-filter: saturate(140%) blur(20px);
+  border-top: 1px solid #ffffff0b;
+  transition: transform 0.2s ease;
+  line-height: 1;
 }
-
-body.is-preload #header {
-    transform: translateY(80px);
+#header .gallery-brand {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  border: 0;
+  color: white;
+  flex-shrink: 0;
 }
-
-#header {
-    transform: translateY(0);
-    transition: transform 1s ease;
-    background: rgba(18, 18, 18, 0.8);
-    backdrop-filter: saturate(180%) blur(20px);
-    top: calc(100vh - 80px);
-    height: 80px;
-    left: 0;
-    line-height: 1;
-    padding: 0 1.5em;
-    position: fixed;
-    user-select: none;
-    width: 100%;
-    z-index: 10002;
-    display: flex;
-    align-items: center;
+#header .gallery-brand strong {
+  font-weight: 500;
+  font-size: 16px;
+  letter-spacing: 0.04em;
 }
-
-
-@media screen and (max-width: 736px) {
-    body.is-preload #header {
-        transform: translateY(-80px);
-    }
+#header .site-logo {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  object-fit: contain;
 }
-
-#header h1 {
-    color: #a0a0a1;
-    display: flex;
-    font-size: 1em;
-    line-height: 4.5em;
-    height: 4em;
-    margin: 0;
-    vertical-align: middle;
-    align-items: center;
-}
-
-#header h1 a {
-    border: 0;
-    color: inherit;
-    line-height: 1;
-}
-
-#header h1 a:hover {
-    color: inherit !important;
-}
-
-#header nav {
-    margin-left: auto;
-}
-
-#header nav>ul {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-    display: flex;
-}
-
-#header nav>ul>li {
-    display: flex;
-    padding: 0;
-    position: relative;
-    list-style-type: none;
-    justify-content: center;
-}
-
 #header .description {
-    margin-left: 8px;
+  font-size: 12px;
+  color: #999;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
-
-.nav-item .nav-item-child {
-    position: absolute;
-    bottom: 30px;
-    flex-direction: column;
-    margin-bottom: 0;
-    padding: 10px 12px;
-    align-items: center;
-    background: var(--moment-maskbg);
-    border-radius: 8px;
-    display: flex;
-    height: fit-content;
-    transition: 0.3s;
-    opacity: 0;
-    pointer-events: none;
-    backdrop-filter: blur(10px);
+#header nav {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
-
-.nav-item-child>ul {
-    padding-left: 0;
+#header .gallery-nav-link {
+  border: 0;
+  background: none;
+  color: #ddd;
+  padding: 11px 14px;
+  border-radius: 8px;
+  font: inherit;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition:
+    background 0.16s,
+    color 0.16s;
 }
-
-li.category-level-0.category-parent {
-    width: 100%;
-    text-align: center;
+#header .gallery-nav-link:hover,
+#header .gallery-nav-link.active {
+  background: #ffffff13;
+  color: white;
 }
-
-.nav-item .category-parent {
-    border-radius: 6px;
-    transition: 0.3s;
-    font-size: 14px;
+#header button:focus-visible,
+#header a:focus-visible {
+  outline: 2px solid #dedede;
+  outline-offset: 3px;
 }
-
-.nav-item ul li {
-    margin: 3px 0px;
+.gallery-category-nav {
+  position: relative;
 }
-
-.nav-item ul li:not(:has(ul)):hover {
-    background: var(--moment-theme);
-    border-radius: 8px;
+.gallery-category-menu {
+  position: absolute;
+  bottom: calc(100% + 20px);
+  right: -42px;
+  width: 278px;
+  max-width: calc(100vw - 24px);
+  max-height: min(65dvh, 560px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  padding: 10px;
+  border: 1px solid #ffffff1c;
+  border-radius: 14px;
+  background: #202227f5;
+  backdrop-filter: blur(20px);
+  box-shadow: 0 12px 48px #0005;
 }
-
-.nav-item ul li:has(ul)>a {
-    width: 100%;
+#header .gallery-category-menu a {
+  display: block;
+  padding: 10px 12px;
+  font-size: 13px;
+  line-height: 1.4;
+  color: #d2d5da;
+  border-radius: 7px;
 }
-
-.nav-item ul li:has(ul):hover>a {
-    transition: scale 0.5s;
-    scale: 1.1;
-    background: var(--moment-theme);
-    border-radius: 8px;
+#header .gallery-category-menu a:hover,
+#header .gallery-category-menu a.router-link-exact-active {
+  color: #fff;
+  background: #ffffff14;
 }
-
-.nav-item ul {
-    padding-left: 0px;
+#header .gallery-all {
+  margin-bottom: 5px;
 }
-
-.nav-item:hover .nav-item-child {
-    display: flex;
-    opacity: 1;
-    pointer-events: all;
+.gallery-category-group {
+  margin-top: 4px;
 }
-
-#header nav>ul>li a {
-    transition: all 0.5s ease;
-    border: 0;
-    color: #ffffff;
-    display: inline-block;
-    letter-spacing: 0.1em;
-    padding: 0 1.65em;
-    text-transform: uppercase;
-    padding: 8px 16px;
-    border-radius: 8px;
-    white-space: nowrap;
+.gallery-category-children {
+  margin: 2px 0 8px 22px;
+  border-left: 1px solid #ffffff20;
+  padding-left: 8px;
 }
-
-#header nav>ul>li a.icon:before {
-    color: #505051;
-    float: right;
-    margin-left: 0.75em;
+.gallery-nav-link svg {
+  transition: transform 0.16s;
 }
-
-#header nav>ul>li a:hover {
-    color: #ffffff !important;
+.gallery-nav-link svg.expanded {
+  transform: rotate(180deg);
 }
-
-#header nav>ul>li a.active {
-    background-color: var(--moment-secondbg);
+.category-pop-enter-active,
+.category-pop-leave-active {
+  transition:
+    opacity 0.16s,
+    transform 0.16s;
 }
-
-.site-logo {
-    width: 30px;
-    height: 30px;
-    border-radius: 20px;
-    margin-right: 1rem;
+.category-pop-enter-from,
+.category-pop-leave-to {
+  opacity: 0;
+  transform: translateY(4px);
 }
-
-body:has(div.lightbox) #header {
-    transform: translateY(80px);
+body.viewer-open #header {
+  transform: translateY(100%);
 }
-
-@media screen and (max-width: 736px) {
-    body {
-        padding: 4em 0 0 0 !important;
-    }
-
-    #header {
-        transform: translateY(0);
-        bottom: auto;
-        height: 60px;
-        padding: 0 1em;
-        top: 0;
-    }
-
-    body:has(div.lightbox) #header {
-        transform: translateY(-80px);
-    }
-
-    #header h1 {
-        font-size: 0.9em;
-    }
-
-    #header nav>ul>li a {
-        font-size: 0.9em;
-        padding: 8px 16px;
-        border-radius: 8px;
-    }
-
-    #header .description {
-        display: none;
-    }
+@media (max-width: 736px) {
+  #header {
+    top: 0;
+    bottom: auto;
+    height: 60px;
+    padding: 0 14px;
+    gap: 8px;
+    border-top: 0;
+    border-bottom: 1px solid #ffffff0d;
+  }
+  #header .description {
+    display: none;
+  }
+  #header nav {
+    gap: 3px;
+  }
+  #header .gallery-brand {
+    gap: 8px;
+  }
+  #header .gallery-nav-link {
+    padding: 10px;
+    font-size: 12px;
+  }
+  #header .gallery-fullscreen {
+    display: none;
+  }
+  .gallery-category-menu {
+    bottom: auto;
+    top: calc(100% + 13px);
+    right: -46px;
+    max-height: calc(100dvh - 85px);
+  }
+  .category-pop-enter-from,
+  .category-pop-leave-to {
+    transform: translateY(-4px);
+  }
+  body.viewer-open #header {
+    transform: translateY(-100%);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  #header,
+  .gallery-nav-link svg,
+  .category-pop-enter-active,
+  .category-pop-leave-active {
+    transition: none;
+  }
 }
 </style>

@@ -25,15 +25,17 @@ type PostInput struct {
 	Categories []int64      `json:"category_ids"`
 }
 type ImageInput struct {
-	ID       int64   `json:"id,omitempty"`
-	URL      string  `json:"image_url"`
-	Title    string  `json:"title"`
-	Desc     string  `json:"desc"`
-	Location string  `json:"location"`
-	Time     *string `json:"time"`
-	Hidden   bool    `json:"is_hidden"`
-	Metadata string  `json:"metadata"`
-	Order    int     `json:"order"`
+	ID       int64    `json:"id,omitempty"`
+	URL      string   `json:"image_url"`
+	Title    string   `json:"title"`
+	Desc     string   `json:"desc"`
+	Location string   `json:"location"`
+	Time     *string  `json:"time"`
+	Hidden   bool     `json:"is_hidden"`
+	Metadata string   `json:"metadata"`
+	Order    int      `json:"order"`
+	FocusX   *float64 `json:"focus_x,omitempty"`
+	FocusY   *float64 `json:"focus_y,omitempty"`
 }
 
 func validURL(value string) bool {
@@ -143,9 +145,9 @@ func (a *App) attach(blogs []Object, public bool) error {
 	}
 	visibility := ""
 	if public {
-		visibility = " AND is_hidden=0"
+		visibility = " AND i.is_hidden=0"
 	}
-	images, err := query(a.db, `SELECT * FROM blog_image WHERE blog_id IN (`+placeholders(len(args))+`)`+visibility+` ORDER BY "order",id`, args...)
+	images, err := query(a.db, `SELECT i.*,COALESCE(f.focus_x,50.0) AS focus_x,COALESCE(f.focus_y,50.0) AS focus_y FROM blog_image i LEFT JOIN moment_image_focus f ON f.image_id=i.id WHERE i.blog_id IN (`+placeholders(len(args))+`)`+visibility+` ORDER BY i."order",i.id`, args...)
 	if err != nil {
 		return err
 	}
@@ -166,11 +168,21 @@ func (a *App) attach(blogs []Object, public bool) error {
 	return nil
 }
 func (a *App) getPost(c *gin.Context) {
+	a.post(c, false)
+}
+func (a *App) visitorPost(c *gin.Context) {
+	a.post(c, true)
+}
+func (a *App) post(c *gin.Context, public bool) {
 	id, valid := routeID(c)
 	if !valid {
 		return
 	}
-	blogs, err := query(a.db, "SELECT * FROM blog WHERE id=?", id)
+	visibility := ""
+	if public {
+		visibility = " AND is_hidden=0 AND EXISTS (SELECT 1 FROM blog_image WHERE blog_id=blog.id AND is_hidden=0)"
+	}
+	blogs, err := query(a.db, "SELECT * FROM blog WHERE id=?"+visibility, id)
 	if err != nil {
 		databaseError(c, err)
 		return
@@ -179,7 +191,7 @@ func (a *App) getPost(c *gin.Context) {
 		fail(c, 404, "帖子不存在")
 		return
 	}
-	if err = a.attach(blogs, false); err != nil {
+	if err = a.attach(blogs, public); err != nil {
 		databaseError(c, err)
 		return
 	}
@@ -203,6 +215,12 @@ func (a *App) savePost(c *gin.Context) {
 	imageTimes := make([]any, len(in.Images))
 	imageIDs := map[int64]bool{}
 	for i, img := range in.Images {
+		for _, focus := range []*float64{img.FocusX, img.FocusY} {
+			if focus != nil && (*focus < 0 || *focus > 100) {
+				fail(c, 400, "封面焦点须在 0 到 100 之间")
+				return
+			}
+		}
 		if !validURL(img.URL) || utf8.RuneCountInString(img.Title) > 50 || img.ID < 0 || img.ID > 0 && imageIDs[img.ID] {
 			fail(c, 400, "图片地址、标题或 ID 无效")
 			return
@@ -276,6 +294,7 @@ func (a *App) savePost(c *gin.Context) {
 	}
 	kept := []any{id}
 	for i, img := range in.Images {
+		imageID := img.ID
 		if img.ID > 0 {
 			result, e := tx.Exec(`UPDATE blog_image SET image_url=?,title=?,desc=?,location=?,time=?,is_hidden=?,metadata=?,"order"=?,updated_at=? WHERE id=? AND blog_id=?`, img.URL, img.Title, img.Desc, img.Location, imageTimes[i], img.Hidden, img.Metadata, i, stamp, img.ID, id)
 			if e != nil {
@@ -294,8 +313,16 @@ func (a *App) savePost(c *gin.Context) {
 				databaseError(c, e)
 				return
 			}
-			imageID, _ := result.LastInsertId()
+			imageID, _ = result.LastInsertId()
 			kept = append(kept, imageID)
+		}
+		// Omitted coordinates retain existing focus, including saves by older clients.
+		if img.FocusX != nil || img.FocusY != nil {
+			_, err = tx.Exec(`INSERT INTO moment_image_focus(image_id,focus_x,focus_y) VALUES (?,COALESCE(?,50),COALESCE(?,50)) ON CONFLICT(image_id) DO UPDATE SET focus_x=COALESCE(?,focus_x),focus_y=COALESCE(?,focus_y)`, imageID, img.FocusX, img.FocusY, img.FocusX, img.FocusY)
+			if err != nil {
+				databaseError(c, err)
+				return
+			}
 		}
 	}
 	if _, err = tx.Exec("DELETE FROM blog_image WHERE blog_id=? AND id NOT IN ("+placeholders(len(kept)-1)+")", kept...); err != nil {

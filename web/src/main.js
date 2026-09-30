@@ -7,18 +7,14 @@ import { setupRouter } from '@/router'
 import { setupStore } from '@/store'
 import App from './App.vue'
 import { useResize } from '@/utils'
-import { createVfm } from 'vue-final-modal'
-import 'vue-final-modal/style.css'
 
 async function setupApp() {
   const app = createApp(App)
-  const vfm = createVfm()
 
   setupStore(app)
 
   await setupRouter(app)
   app.use(useResize)
-  app.use(vfm)
   app.mount('#app')
 }
 

@@ -31,7 +31,7 @@ import {
 import { api, json, notifyError, notifySuccess } from "../api";
 import { CategorySelect } from "../components/CategoryPicker";
 import { Empty, ErrorState, Loading, PageTitle } from "../components/Common";
-import { orders, thumbnail } from "../types";
+import { orders, thumbnail, coverPosition } from "../types";
 import type { Category, Post, Settings } from "../types";
 
 export default function Posts() {
@@ -285,6 +285,7 @@ export default function Posts() {
                 <Link to={`/posts/${post.id}`}>
                   <Image
                     className="photo-cover"
+                    style={{ objectPosition: coverPosition(post) }}
                     src={thumbnail(
                       (
                         post.images.find((photo) => !photo.is_hidden) ||
@@ -383,6 +384,7 @@ export default function Posts() {
                     <Group wrap="nowrap">
                       <Image
                         className="table-image"
+                        style={{ objectPosition: coverPosition(post) }}
                         src={thumbnail(
                           (
                             post.images.find((photo) => !photo.is_hidden) ||

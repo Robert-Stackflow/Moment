@@ -2286,3 +2286,17 @@ input:-webkit-autofill {
 .account-avatar-upload > button {
   flex-shrink: 0;
 }
+/* Focus editing uses the original image; previews show responsive cover crops. */
+.focus-picker { padding: 16px; border: 1px solid var(--mantine-color-default-border); border-radius: 14px; background: var(--mantine-color-default); }
+.focus-source-wrap { display: flex; justify-content: center; align-items: center; padding: 16px; min-height: 100px; border-radius: 9px; background: var(--mantine-color-body); overflow: hidden; }
+.focus-source { display: block; position: relative; border: 0; padding: 0; max-width: 100%; background: transparent; cursor: crosshair; touch-action: none; }
+.focus-source img { display: block; max-height: 280px; max-width: 100%; width: auto; height: auto; border-radius: 4px; user-select: none; }
+.focus-source:focus-visible { outline: 2px solid var(--mantine-primary-color-filled); outline-offset: 4px; }
+.focus-point { position: absolute; width: 24px; height: 24px; border: 2px solid white; border-radius: 50%; transform: translate(-50%,-50%); background: #5168d966; box-shadow: 0 0 0 4px #1115, 0 2px 8px #0005; pointer-events: none; }
+.focus-point::after { content: ''; position: absolute; width: 4px; height: 4px; background: white; border-radius: 50%; left: 8px; top: 8px; }
+.focus-previews { display: grid; grid-template-columns: 1.5fr 1fr; gap: 10px; align-items: end; }
+.focus-previews figure { margin: 0; min-width: 0; }
+.focus-previews img { display: block; width: 100%; aspect-ratio: 1; border-radius: 7px; object-fit: cover; }
+.focus-previews figure:first-child img { aspect-ratio: 1.5; }
+.focus-previews figcaption { margin-top: 5px; font-size: 11px; color: var(--mantine-color-dimmed); text-align: center; }
+.focus-sliders { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; padding: 4px 4px 8px; }

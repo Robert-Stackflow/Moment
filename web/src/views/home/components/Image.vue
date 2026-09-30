@@ -1,329 +1,226 @@
-<template>
-    <article class="thumb img-area">
-        <a class="thumb-a my-photo">
-            <img class="thumb-image my-photo" onerror="this.src=`/assets/loading.gif`;this.onerror=null"
-                :src="data.current_thumbnail" lazy>
-        </a>
-        <h2 class="thumb-title">{{ data.title }}</h2>
-        <p class="thumb-desc">{{ data.desc }}</p>
-        <ul class="tags">
-            <li class="tag-categories">
-                <router-link class="tag-location thumbnail-tag" v-if="thumbnail_show_location && data.location"
-                    :to="'/location/' + data.location">{{
-                        data.location }}</router-link>
-                <a class="tag-time thumbnail-tag" v-if="thumbnail_show_time && data.time">{{ data.thumbnail_time
-                    }}</a>
-                <router-link v-for="category in data.categories" :key="category.alias"
-                    :to="'/category/' + category.alias">{{ category.name }}</router-link>
-            </li>
-        </ul>
-    </article>
-</template>
-
 <script setup>
+import { computed, ref } from 'vue'
 import { useSettingStore } from '@/store'
-import { isValueNotEmpty } from '@/utils'
-const settingStore = useSettingStore()
-var thumbnail_show_location = isValueNotEmpty(settingStore.contentSetting.thumbnail_show_location) ? settingStore.contentSetting.thumbnail_show_location : true
-var thumbnail_show_time = isValueNotEmpty(settingStore.contentSetting.thumbnail_show_time) ? settingStore.contentSetting.thumbnail_show_time : false
-const props = defineProps({
-    data: {
-        type: Object,
-        required: true
-    }
-})
+import { imageURL, focusPosition, photoPath, photoDate } from './gallery'
+const props = defineProps({ data: Object, index: Number })
+const emit = defineEmits(['open'])
+const content = useSettingStore().contentSetting
+const cover = computed(() => props.data.images[0])
+const loaded = ref(false),
+  failed = ref(false),
+  attempt = ref(0)
+function open(event) {
+  if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button) return
+  event.preventDefault()
+  emit('open', props.data)
+}
+function retry() {
+  failed.value = false
+  loaded.value = false
+  attempt.value++
+}
 </script>
+<template>
+  <article class="thumb img-area" :class="{ 'is-loaded': loaded, 'is-failed': failed }">
+    <a
+      class="thumb-a my-photo"
+      :href="photoPath(data)"
+      :aria-label="`${data.title}，${data.images.length} 张照片`"
+      @click="open"
+    >
+      <img
+        v-if="!failed"
+        :key="attempt"
+        class="thumb-image my-photo"
+        :src="imageURL(cover, content, 'thumbnail')"
+        :alt="cover.title || data.title"
+        :loading="index < 3 ? 'eager' : 'lazy'"
+        :fetchpriority="index === 0 ? 'high' : 'auto'"
+        decoding="async"
+        :style="{ objectPosition: focusPosition(cover) }"
+        @load="loaded = true"
+        @error="failed = true"
+      />
+      <h2 class="thumb-title">{{ data.title }}</h2>
+      <span v-if="data.images.length > 1" class="thumb-count">{{ data.images.length }} 张</span>
+    </a>
+    <div v-if="failed" class="thumb-error">
+      <span>照片暂时无法加载</span
+      ><button
+        type="button"
+        @click="retry"
+      >
+        重试
+      </button>
+    </div>
+    <ul class="tags">
+      <li class="tag-categories">
+        <router-link
+          v-if="content.thumbnail_show_location !== false && data.location"
+          :to="'/location/' + encodeURIComponent(data.location)"
+          >{{ data.location }}</router-link
+        >
+        <span v-if="content.thumbnail_show_time && data.time">{{
+          photoDate(data.time, content.thumbnail_time_format || 'YYYY年M月D日')
+        }}</span>
+        <router-link
+          v-for="category in data.categories"
+          :key="category.id"
+          :to="'/category/' + encodeURIComponent(category.alias)"
+          >{{ category.name }}</router-link
+        >
+      </li>
+    </ul>
+  </article>
+</template>
 <style>
-.thumb .detail-tag {
-    display: none;
+#blog-main .thumb {
+  position: relative;
+  width: 25%;
+  height: calc(40vh - 2em);
+  min-height: 20em;
+  overflow: hidden;
+  background: #25282c;
 }
-
-.thumb .thumb-desc {
-    display: none;
+#blog-main .thumb-a {
+  position: absolute;
+  inset: 0;
+  display: block;
+  border: 0;
 }
-
-.lightbox-content .caption .thumb-desc {
-    padding-top: 5px;
-    display: block;
-}
-
-.lightbox-content .thumbnail-tag {
-    display: none;
-}
-
-.lightbox-content .caption ul.tags {
-    margin-bottom: 0.6em;
-}
-
-.lightbox-content .caption .breadcrumb-nav {
-    margin-bottom: 0.6em;
-}
-
 .thumb-image {
-    border: 0;
-    height: 100%;
-    left: 0;
-    position: absolute;
-    top: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  transition:
+    opacity 0.24s ease,
+    transform 0.35s ease;
+}
+.is-loaded .thumb-image {
+  opacity: 1;
+}
+.thumb-a::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(180deg, #0003 0%, transparent 30%, transparent 55%, #0007 100%);
+}
+#blog-main .thumb-title {
+  position: absolute;
+  bottom: 20px;
+  left: 20px;
+  right: 68px;
+  color: #fff;
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 1.5;
+  margin: 0;
+  z-index: 1;
+  text-shadow: 0 1px 10px #0006;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.thumb-count {
+  position: absolute;
+  right: 18px;
+  bottom: 23px;
+  color: #fffd;
+  font-size: 11px;
+  z-index: 1;
+}
+#blog-main .tags {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  right: 12px;
+  margin: 0;
+  padding: 0;
+  pointer-events: none;
+  list-style: none;
+}
+.tag-categories {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 0;
+}
+.tag-categories a,
+.tag-categories span {
+  padding: 4px 8px;
+  border-radius: 6px;
+  color: #f8f8f8;
+  background: #181b205e;
+  backdrop-filter: blur(12px);
+  font-size: 11px;
+  line-height: 1.5;
+  border: 1px solid #ffffff14;
+  pointer-events: auto;
+  transition: background 0.16s;
+}
+.tag-categories a:hover {
+  background: #181b20bd;
+}
+.thumb-a:focus-visible {
+  outline: 2px solid white;
+  outline-offset: -5px;
+  z-index: 2;
+}
+.thumb-error {
+  position: absolute;
+  top: 42%;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+.thumb-error button {
+  background: #ffffff12;
+  border: 1px solid #ffffff30;
+  border-radius: 20px;
+  padding: 5px 16px;
+  cursor: pointer;
+  color: #fff;
+}
+@media (hover: hover) {
+  .thumb-a:hover .thumb-image {
+    transform: scale(1.025);
+  }
+}
+@media (max-width: 1680px) {
+  #blog-main .thumb {
+    width: 33.333333%;
+  }
+}
+@media (max-width: 980px) {
+  #blog-main .thumb {
+    width: 50%;
+    min-height: 18em;
+    height: calc(28.57143vh - 1.33333em);
+  }
+}
+@media (max-width: 480px) {
+  #blog-main .thumb {
     width: 100%;
-    object-fit: cover;
-    cursor: pointer;
-    outline: 0px;
-}
-
-@media (max-width:768px) {
-    .thumb-image {
-        background-image: url(/assets/20200212-6dafa53ecf4e3.gif);
-        background-size: 100% 100%;
-    }
-}
-
-@media only screen and (device-width:375px) and (device-height:812px) and (-webkit-device-pixel-ratio:3) {
-    .thumb-image {
-        background-image: url(/assets/20200212-38ce26bb0bd0d.gif);
-        background-size: 100% 100%;
-    }
-}
-
-@media only screen and (device-width:375px) and (device-height:667px) {
-    .thumb-image {
-        background-image: url(/assets/20200212-e056a5f2914d6.gif);
-        background-size: 100% 100%;
-    }
-}
-
-#blog-main .thumb:after {
-    background-image: linear-gradient(to top, rgba(10, 17, 25, 0.35) 5%, rgba(10, 17, 25, 0) 35%);
-    pointer-events: none;
-    background-size: cover;
-    content: '';
-    display: block;
-    height: 100%;
-    left: 0;
-    position: absolute;
-    top: 0;
-    width: 100%;
-}
-
-#blog-main .thumb .thumb-title {
-    pointer-events: none;
-    bottom: 1.875em;
-    font-size: 0.8em;
-    left: 16px;
-    margin: 0;
-    position: absolute;
-    z-index: 1;
-}
-
-#blog-main .thumb {
-    transition: opacity 1.25s ease-in-out;
-    opacity: 1;
-    pointer-events: auto;
-    overflow: hidden;
-    position: relative;
-}
-
-body.is-preload #blog-main .thumb {
-    pointer-events: none;
-    opacity: 0;
-}
-
-#blog-main .thumb {
-    transition-delay: 2.525s;
+    min-height: 18em;
     height: calc(40vh - 2em);
-    min-height: 20em;
-    width: 25%;
+  }
+  #blog-main .thumb-title {
+    left: 18px;
+    font-size: 15px;
+  }
 }
-
-#blog-main .thumb:nth-child(1) {
-    transition-delay: 0.65s;
-}
-
-#blog-main .thumb:nth-child(2) {
-    transition-delay: 0.8s;
-}
-
-#blog-main .thumb:nth-child(3) {
-    transition-delay: 0.95s;
-}
-
-#blog-main .thumb:nth-child(4) {
-    transition-delay: 1.1s;
-}
-
-#blog-main .thumb:nth-child(5) {
-    transition-delay: 1.25s;
-}
-
-#blog-main .thumb:nth-child(6) {
-    transition-delay: 1.4s;
-}
-
-#blog-main .thumb:nth-child(7) {
-    transition-delay: 1.55s;
-}
-
-#blog-main .thumb:nth-child(8) {
-    transition-delay: 1.7s;
-}
-
-#blog-main .thumb:nth-child(9) {
-    transition-delay: 1.85s;
-}
-
-#blog-main .thumb:nth-child(10) {
-    transition-delay: 2s;
-}
-
-#blog-main .thumb:nth-child(11) {
-    transition-delay: 2.15s;
-}
-
-#blog-main .thumb:nth-child(12) {
-    transition-delay: 2.3s;
-}
-
-@media screen and (max-width: 1680px) {
-    #blog-main .thumb {
-        transition-delay: 2.075s;
-        height: calc(40vh - 2em);
-        min-height: 20em;
-        width: 33.33333%;
-    }
-
-    #blog-main .thumb:nth-child(1) {
-        transition-delay: 0.65s;
-    }
-
-    #blog-main .thumb:nth-child(2) {
-        transition-delay: 0.8s;
-    }
-
-    #blog-main .thumb:nth-child(3) {
-        transition-delay: 0.95s;
-    }
-
-    #blog-main .thumb:nth-child(4) {
-        transition-delay: 1.1s;
-    }
-
-    #blog-main .thumb:nth-child(5) {
-        transition-delay: 1.25s;
-    }
-
-    #blog-main .thumb:nth-child(6) {
-        transition-delay: 1.4s;
-    }
-
-    #blog-main .thumb:nth-child(7) {
-        transition-delay: 1.55s;
-    }
-
-    #blog-main .thumb:nth-child(8) {
-        transition-delay: 1.7s;
-    }
-
-    #blog-main .thumb:nth-child(9) {
-        transition-delay: 1.85s;
-    }
-}
-
-@media screen and (max-width: 1280px) {
-    #blog-main .thumb {
-        transition-delay: 1.625s;
-        height: calc(40vh - 2em);
-        min-height: 20em;
-        width: 50%;
-    }
-
-    #blog-main .thumb:nth-child(1) {
-        transition-delay: 0.65s;
-    }
-
-    #blog-main .thumb:nth-child(2) {
-        transition-delay: 0.8s;
-    }
-
-    #blog-main .thumb:nth-child(3) {
-        transition-delay: 0.95s;
-    }
-
-    #blog-main .thumb:nth-child(4) {
-        transition-delay: 1.1s;
-    }
-
-    #blog-main .thumb:nth-child(5) {
-        transition-delay: 1.25s;
-    }
-
-    #blog-main .thumb:nth-child(6) {
-        transition-delay: 1.4s;
-    }
-}
-
-@media screen and (max-width: 980px) {
-    #blog-main .thumb {
-        transition-delay: 2.075s;
-        height: calc(28.57143vh - 1.33333em);
-        min-height: 18em;
-        width: 50%;
-    }
-
-    #blog-main .thumb:nth-child(1) {
-        transition-delay: 0.65s;
-    }
-
-    #blog-main .thumb:nth-child(2) {
-        transition-delay: 0.8s;
-    }
-
-    #blog-main .thumb:nth-child(3) {
-        transition-delay: 0.95s;
-    }
-
-    #blog-main .thumb:nth-child(4) {
-        transition-delay: 1.1s;
-    }
-
-    #blog-main .thumb:nth-child(5) {
-        transition-delay: 1.25s;
-    }
-
-    #blog-main .thumb:nth-child(6) {
-        transition-delay: 1.4s;
-    }
-
-    #blog-main .thumb:nth-child(7) {
-        transition-delay: 1.55s;
-    }
-
-    #blog-main .thumb:nth-child(8) {
-        transition-delay: 1.7s;
-    }
-
-    #blog-main .thumb:nth-child(9) {
-        transition-delay: 1.85s;
-    }
-}
-
-@media screen and (max-width: 480px) {
-    #blog-main .thumb {
-        transition-delay: 1.175s;
-        height: calc(40vh - 2em);
-        min-height: 18em;
-        width: 100%;
-    }
-
-    #blog-main .thumb:nth-child(1) {
-        transition-delay: 0.65s;
-    }
-
-    #blog-main .thumb:nth-child(2) {
-        transition-delay: 0.8s;
-    }
-
-    #blog-main .thumb:nth-child(3) {
-        transition-delay: 0.95s;
-    }
+@media (prefers-reduced-motion: reduce) {
+  .thumb-image {
+    transition: none;
+  }
+  .thumb-a:hover .thumb-image {
+    transform: none;
+  }
 }
 </style>

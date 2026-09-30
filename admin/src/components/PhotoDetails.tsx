@@ -1,18 +1,11 @@
 import { Toggle as Switch } from "./Toggle";
 import { useState } from "react";
 import { usePendingChanges } from "./PendingChanges";
-import {
-  Button,
-  Group,
-  Image,
-  Stack,
-  Text,
-  Textarea,
-  TextInput,
-} from "@mantine/core";
+import { Button, Group, Stack, Text, Textarea, TextInput } from "@mantine/core";
 import { Check } from "lucide-react";
 import { DateTimePicker } from "./DateTimePicker";
-import { datetime, thumbnail } from "../types";
+import { FocusPicker } from "./FocusPicker";
+import { datetime } from "../types";
 import type { Photo, Settings } from "../types";
 
 export function PhotoDetails({
@@ -35,11 +28,14 @@ export function PhotoDetails({
   }
   return (
     <Stack gap="lg" className="photo-details">
-      <Image
-        src={thumbnail(photo.image_url, settings)}
-        alt={photo.title || "图片预览"}
-        className="photo-detail-preview"
-        radius="md"
+      <FocusPicker
+        key={draft.image_url}
+        src={draft.image_url}
+        x={draft.focus_x}
+        y={draft.focus_y}
+        onChange={(focus_x, focus_y) =>
+          setDraft((current) => ({ ...current, focus_x, focus_y }))
+        }
       />
       <Text size="xs" c="dimmed">
         单张图片的文字、地点和时间留空时，沿用帖子信息。

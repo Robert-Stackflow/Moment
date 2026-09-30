@@ -26,6 +26,8 @@ export interface Photo {
   is_hidden: boolean;
   order: number;
   _key?: string;
+  focus_x?: number;
+  focus_y?: number;
 }
 export interface Post {
   id: number;
@@ -64,6 +66,10 @@ export function thumbnail(url: string, settings?: Settings): string {
   return /^https?:/.test(url)
     ? url + String(settings?.content.thumbnail_suffix || "")
     : url;
+}
+export function coverPosition(post: Post): string {
+  const photo = post.images.find((image) => !image.is_hidden) || post.images[0];
+  return `${photo?.focus_x ?? 50}% ${photo?.focus_y ?? 50}%`;
 }
 export function datetime(value: string | null): string {
   return value ? value.slice(0, 19).replace(" ", "T") : "";

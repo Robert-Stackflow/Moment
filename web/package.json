@@ -21,7 +21,6 @@
     "dayjs": "^1.11.9",
     "dotenv": "^16.3.1",
     "eslint": "^8.46.0",
-    "lodash-es": "^4.17.21",
     "pinia": "^2.1.6",
     "rollup-plugin-visualizer": "^5.9.2",
     "sass": "^1.65.1",
@@ -34,7 +33,6 @@
     "vite-plugin-html": "^3.2.0",
     "vite-plugin-svg-icons": "^2.0.1",
     "vue": "^3.3.4",
-    "vue-final-modal": "^4.5.5",
     "vue-router": "^4.2.4"
   },
   "devDependencies": {
