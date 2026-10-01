@@ -4,6 +4,7 @@ import { useRoute } from 'vue-router'
 import { useSettingStore } from '@/store'
 import GalleryButton from './GalleryButton.vue'
 import api from '@/api'
+import { versionedBrandIcon } from '@/utils/common/brand'
 defineProps({ aboutOpen: Boolean })
 const emit = defineEmits(['about'])
 const route = useRoute(),
@@ -14,7 +15,7 @@ const categories = ref([]),
   fullscreen = ref(false),
   categoryError = ref(false)
 const siteName = settings.metaSetting?.site_name || import.meta.env.VITE_TITLE
-const icon = settings.metaSetting?.bottom_icon || import.meta.env.VITE_ICON
+const icon = versionedBrandIcon(settings.metaSetting?.bottom_icon || import.meta.env.VITE_ICON)
 const description = settings.metaSetting?.bottom_desc || import.meta.env.VITE_DESC
 async function loadCategories() {
   categoryError.value = false

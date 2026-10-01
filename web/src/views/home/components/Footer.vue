@@ -4,12 +4,13 @@ import { useSettingStore } from '@/store'
 import { createStyle } from '@/utils'
 import TheIcon from '@/components/icon/TheIcon.vue'
 import GalleryButton from './GalleryButton.vue'
+import { versionedBrandIcon } from '@/utils/common/brand'
 const props = defineProps({ open: Boolean })
 const emit = defineEmits(['close'])
 const meta = useSettingStore().metaSetting
 const siteName = meta?.site_name || import.meta.env.VITE_TITLE
 const description = meta?.site_desc || import.meta.env.VITE_DESC
-const icon = meta?.bottom_icon || import.meta.env.VITE_ICON
+const icon = versionedBrandIcon(meta?.bottom_icon || import.meta.env.VITE_ICON)
 const entries = meta?.entries || []
 const panel = ref(null)
 let focused,

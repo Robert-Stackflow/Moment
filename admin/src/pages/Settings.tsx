@@ -36,7 +36,7 @@ import {
 import { api, json, notifyError, notifySuccess } from "../api";
 import { ErrorState, Loading, PageTitle } from "../components/Common";
 import { UnsavedChanges } from "../components/UnsavedChanges";
-import { Brand } from "../components/Brand";
+import { Brand, brandIcon, brandAppleIcon } from "../components/Brand";
 import { orders } from "../types";
 import type { Section, Settings } from "../types";
 
@@ -491,9 +491,9 @@ function SettingsForm({
                   onClick={() => {
                     setValues((current) => ({
                       ...current,
-                      site_icon: "/assets/moment-mark.svg",
-                      site_apple_icon: "/assets/moment-mark.png",
-                      bottom_icon: "/assets/moment-mark.svg",
+                      site_icon: brandIcon,
+                      site_apple_icon: brandAppleIcon,
+                      bottom_icon: brandIcon,
                     }));
                     setDirty(true);
                   }}

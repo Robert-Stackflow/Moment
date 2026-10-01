@@ -1,10 +1,15 @@
 import { useSettingStore } from '@/store'
 import { isValueNotEmpty } from './common'
+import { versionedBrandIcon } from './brand'
 export function createLink(rel, href) {
-  var link = document.querySelector(`link[rel*='${rel}']`) || document.createElement('link')
-  link.type = 'image/x-icon'
-  link.rel = `shortcut ${rel}`
-  link.href = href
+  var link = document.querySelector(`link[rel~='${rel}']`) || document.createElement('link')
+  const icon = versionedBrandIcon(href)
+  const extension = new URL(icon, window.location.href).pathname.split('.').pop()?.toLowerCase()
+  const type = { svg: 'image/svg+xml', png: 'image/png', ico: 'image/x-icon' }[extension]
+  if (type) link.type = type
+  else link.removeAttribute('type')
+  link.rel = rel
+  link.href = icon
   document.getElementsByTagName('head')[0].appendChild(link)
 }
 export function createMeta(name, content) {
@@ -44,7 +49,7 @@ export function updateMeta() {
   const site_icon = isValueNotEmpty(settingStore.metaSetting?.site_icon)?settingStore.metaSetting?.site_icon:import.meta.env.VITE_ICON
   const site_name = isValueNotEmpty(settingStore.metaSetting?.site_name)?settingStore.metaSetting?.site_name:import.meta.env.VITE_TITLE
   const site_desc = isValueNotEmpty(settingStore.metaSetting?.site_desc)?settingStore.metaSetting?.site_desc:import.meta.env.VITE_DESC
-  const apple_icon = isValueNotEmpty(settingStore.metaSetting?.site_apple_icon)?settingStore.metaSetting?.site_apple_icon:import.meta.env.VITE_ICON
+  const apple_icon = isValueNotEmpty(settingStore.metaSetting?.site_apple_icon)?settingStore.metaSetting?.site_apple_icon:'/assets/moment-mark.png'
   const custom_css = isValueNotEmpty(settingStore.generalSetting?.custom_css)?settingStore.generalSetting?.custom_css:import.meta.env.CUSTOM_CSS
   const custom_js = isValueNotEmpty(settingStore.generalSetting?.custom_js)?settingStore.generalSetting?.custom_js:import.meta.env.CUSTOM_JS
   const site_keywords = isValueNotEmpty(settingStore.metaSetting?.site_keywords)?settingStore.metaSetting?.site_keywords:import.meta.env.VITE_KEYWORDS
