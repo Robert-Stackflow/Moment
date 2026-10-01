@@ -20,11 +20,14 @@ import {
   Title,
 } from "@mantine/core";
 import {
+  ArrowUpRight,
+  CheckCircle2,
   Copy,
   EyeOff,
   History,
   Inbox,
   Info,
+  ImageOff,
   Pause,
   Play,
   RefreshCw,
@@ -34,6 +37,7 @@ import { Link } from "react-router-dom";
 import { api, ApiError, json, notifyError, notifySuccess } from "../api";
 import { Empty, ErrorState, Loading, PageTitle } from "../components/Common";
 import { PhotoHistory } from "../components/PhotoHistory";
+import { RecordDialog, RecordEmpty } from "../components/RecordDialog";
 import { OrganizeTabs } from "../components/OrganizeTabs";
 import { photoQueries } from "../lib/photo-actions";
 import { Toggle } from "../components/Toggle";
@@ -911,49 +915,70 @@ function ScanIssues({ scan, onClose }: { scan: string; onClose: () => void }) {
     staleTime: 0,
   });
   return (
-    <Modal opened onClose={onClose} title="读取说明" size="lg" centered>
+    <RecordDialog
+      onClose={onClose}
+      title="读取说明"
+      icon={Info}
+      total={issues.data?.total}
+      page={page}
+      pageSize={15}
+      onPageChange={setPage}
+    >
       {issues.isPending ? (
         <Loading />
       ) : issues.error ? (
         <ErrorState error={issues.error} retry={() => issues.refetch()} />
       ) : (
-        <Stack gap="md">
-          <Text size="sm" c="dimmed">
-            以下图片未能进行完整的画面比较；相同链接或已读取的文件内容仍会参与比较。修正地址或启用远程读取后可重新扫描。
-          </Text>
+        <Stack gap="sm">
+          {!!issues.data?.data.length && (
+            <Text size="sm" c="dimmed" className="record-dialog-note">
+              以下图片未能进行完整的画面比较；相同链接或已读取的文件内容仍会参与比较。修正地址或启用远程读取后可重新扫描。
+            </Text>
+          )}
           {issues.data?.data.length ? (
             issues.data.data.map((item) => (
-              <Paper key={item.image_id} withBorder p="md">
-                <Text size="sm" fw={600}>
-                  {item.post_title} · #{item.image_id}
-                </Text>
-                <Text size="sm" c="dimmed" mt={5}>
-                  {item.reason}
-                </Text>
-                <Button
-                  component={Link}
-                  to={`/posts/${item.post_id}`}
-                  size="xs"
-                  variant="subtle"
-                  px={0}
-                  mt={4}
-                >
-                  查看帖子
-                </Button>
-              </Paper>
+              <article key={item.image_id} className="photo-record-row">
+                <span className="photo-record-icon" aria-hidden="true">
+                  <ImageOff size={18} />
+                </span>
+                <div className="photo-record-copy">
+                  <Text size="sm" fw={600}>
+                    {item.post_title}
+                  </Text>
+                  <Text size="xs" c="dimmed" mt={5}>
+                    照片 #{item.image_id}
+                  </Text>
+                  <Text
+                    size="sm"
+                    c="dimmed"
+                    mt="sm"
+                    className="photo-record-detail"
+                  >
+                    {item.reason}
+                  </Text>
+                </div>
+                <div className="photo-record-action">
+                  <Button
+                    component={Link}
+                    to={`/posts/${item.post_id}`}
+                    size="xs"
+                    variant="default"
+                    rightSection={<ArrowUpRight size={14} />}
+                  >
+                    查看帖子
+                  </Button>
+                </div>
+              </article>
             ))
           ) : (
-            <Text size="sm">没有需要说明的图片。</Text>
-          )}
-          {(issues.data?.total || 0) > 15 && (
-            <Pagination
-              value={page}
-              onChange={setPage}
-              total={Math.ceil(issues.data!.total! / 15)}
+            <RecordEmpty
+              icon={CheckCircle2}
+              title="没有需要说明的图片"
+              description="如有照片未能完整比较，会列在这里。"
             />
           )}
         </Stack>
       )}
-    </Modal>
+    </RecordDialog>
   );
 }

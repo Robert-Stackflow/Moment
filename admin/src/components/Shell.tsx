@@ -93,7 +93,7 @@ function Sidebar({
           </ActionIcon>
         )}
       </div>
-      <ScrollArea className="sidebar-navigation" scrollbarSize={3}>
+      <ScrollArea className="sidebar-navigation">
         <Stack gap={5}>
           {items.map(({ label, path, icon: Icon }) => (
             <NavLink

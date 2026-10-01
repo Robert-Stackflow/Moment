@@ -104,6 +104,7 @@ const theme = createTheme({
     Button: { defaultProps: { radius: 10 } },
     Paper: { defaultProps: { radius: 16 } },
     Input: { defaultProps: { radius: 10 } },
+    ScrollArea: { defaultProps: { scrollbarSize: 8 } },
     Menu: {
       defaultProps: {
         transitionProps: {

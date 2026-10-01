@@ -1,20 +1,11 @@
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import {
-  Alert,
-  Badge,
-  Button,
-  Group,
-  Modal,
-  Pagination,
-  Paper,
-  Stack,
-  Text,
-} from "@mantine/core";
-import { Check, Undo2 } from "lucide-react";
+import { Alert, Badge, Button, Group, Modal, Stack, Text } from "@mantine/core";
+import { Check, EyeOff, History, Tags, Undo2 } from "lucide-react";
 import { api, json, notifySuccess } from "../api";
 import { ErrorState, Loading } from "./Common";
 import { photoQueries } from "../lib/photo-actions";
+import { RecordDialog, RecordEmpty } from "./RecordDialog";
 function errorText(error: unknown) {
   return error instanceof Error ? error.message : "操作未完成，请重试";
 }
@@ -64,33 +55,62 @@ export function PhotoHistory({ onClose }: { onClose: () => void }) {
   }
   return (
     <>
-      <Modal
-        opened
-        onClose={() => !busy && onClose()}
+      <RecordDialog
+        onClose={onClose}
         title="处理记录"
-        size="lg"
-        centered
+        icon={History}
+        total={actions.data?.total}
+        page={page}
+        pageSize={10}
+        onPageChange={setPage}
+        busy={busy}
       >
         {actions.isPending ? (
           <Loading />
         ) : actions.error ? (
           <ErrorState error={actions.error} retry={() => actions.refetch()} />
         ) : (
-          <Stack gap="md">
+          <Stack gap="sm">
             {actions.data?.data.length ? (
               actions.data.data.map((item) => (
-                <Paper withBorder p="md" key={item.id}>
-                  <Group justify="space-between" align="flex-start">
-                    <div>
-                      <Text fw={600} size="sm">
-                        {item.kind === "tags_add"
-                          ? `为 ${item.changes.length} 张照片添加标签`
-                          : `隐藏 ${item.changes.length} 张重复候选照片`}
+                <article className="photo-record-row" key={item.id}>
+                  <span className="photo-record-icon" aria-hidden="true">
+                    {item.kind === "tags_add" ? (
+                      <Tags size={18} />
+                    ) : (
+                      <EyeOff size={18} />
+                    )}
+                  </span>
+                  <div className="photo-record-copy">
+                    <Text fw={600} size="sm">
+                      {item.kind === "tags_add"
+                        ? `为 ${item.changes.length} 张照片添加标签`
+                        : `隐藏 ${item.changes.length} 张重复候选照片`}
+                    </Text>
+                    <Text size="xs" c="dimmed" mt={5}>
+                      {item.created_at}
+                    </Text>
+                    <Text
+                      size="sm"
+                      c="dimmed"
+                      mt="sm"
+                      className="photo-record-detail"
+                    >
+                      {[
+                        ...new Set(
+                          item.changes.map((photo) => photo.post_title),
+                        ),
+                      ]
+                        .slice(0, 3)
+                        .join("、")}
+                    </Text>
+                    {item.undone_at && (
+                      <Text size="xs" c="dimmed" mt={6}>
+                        撤销于 {item.undone_at}
                       </Text>
-                      <Text size="xs" c="dimmed" mt={5}>
-                        {item.created_at}
-                      </Text>
-                    </div>
+                    )}
+                  </div>
+                  <div className="photo-record-action">
                     {item.status === "undone" ? (
                       <Badge color="gray" leftSection={<Check size={12} />}>
                         已撤销
@@ -98,7 +118,8 @@ export function PhotoHistory({ onClose }: { onClose: () => void }) {
                     ) : (
                       <Button
                         size="xs"
-                        variant="light"
+                        variant="default"
+                        disabled={busy}
                         leftSection={<Undo2 size={14} />}
                         onClick={() => {
                           setUndo(item);
@@ -108,34 +129,19 @@ export function PhotoHistory({ onClose }: { onClose: () => void }) {
                         撤销
                       </Button>
                     )}
-                  </Group>
-                  <Text
-                    size="sm"
-                    c="dimmed"
-                    mt="sm"
-                    style={{ overflowWrap: "anywhere" }}
-                  >
-                    {[...new Set(item.changes.map((photo) => photo.post_title))]
-                      .slice(0, 3)
-                      .join("、")}
-                  </Text>
-                </Paper>
+                  </div>
+                </article>
               ))
             ) : (
-              <Text size="sm" c="dimmed">
-                还没有处理记录。
-              </Text>
-            )}
-            {(actions.data?.total || 0) > 10 && (
-              <Pagination
-                value={page}
-                onChange={setPage}
-                total={Math.ceil(actions.data!.total! / 10)}
+              <RecordEmpty
+                icon={History}
+                title="暂无处理记录"
+                description="隐藏照片或保存标签后，可在这里查看与撤销。"
               />
             )}
           </Stack>
         )}
-      </Modal>
+      </RecordDialog>
       <Modal
         opened={!!undo}
         onClose={() => !busy && setUndo(null)}
