@@ -114,7 +114,12 @@ export function DateTimePicker({
     );
   }
   return (
-    <Input.Wrapper label={label} description={description} id={id}>
+    <Input.Wrapper
+      label={label}
+      description={description}
+      id={id}
+      className="date-field"
+    >
       <Popover
         opened={opened}
         onChange={setOpened}

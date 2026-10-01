@@ -334,7 +334,7 @@ function ShareForm({
                   onChange={(e) => setLimited(e.currentTarget.checked)}
                 />
                 {limited && (
-                  <>
+                  <Stack gap="sm" className="share-expiry">
                     <DateTimePicker
                       label="到期时间"
                       description="北京时间（UTC+8）"
@@ -346,8 +346,8 @@ function ShareForm({
                       {[1, 7, 30].map((days) => (
                         <Button
                           key={days}
-                          size="compact-xs"
-                          variant="light"
+                          size="xs"
+                          variant="default"
                           onClick={() =>
                             setDeadline(
                               shanghaiDate(Date.now() + days * 86400000),
@@ -358,9 +358,9 @@ function ShareForm({
                         </Button>
                       ))}
                     </Group>
-                  </>
+                  </Stack>
                 )}
-                <Text size="xs" c="dimmed">
+                <Text size="xs" c="dimmed" className="share-access-note">
                   仅选中的帖子可通过此链接访问；隐藏照片和回收站内容不展示。帖子更新会同步到相册。分享限制不改变原图在原存储服务中的公开状态。
                 </Text>
               </Stack>

@@ -928,6 +928,10 @@ input:-webkit-autofill {
 }
 
 /* A composed calendar, with one explicit apply action and local time semantics. */
+.date-field .mantine-InputWrapper-description {
+  margin-bottom:10px;
+  line-height:1.6;
+}
 .date-trigger {
   display: flex;
   align-items: center;
@@ -2329,10 +2333,11 @@ input:-webkit-autofill {
 .duplicate-view-switch .mantine-SegmentedControl-label { display:flex;align-items:center;justify-content:center;min-height:34px;padding:0 16px;border-radius:8px;color:var(--moment-muted);font-size:13px;font-weight:500; }
 .duplicate-view-switch .mantine-SegmentedControl-label[data-active] { color:var(--moment-accent); }
 .duplicate-view-switch .mantine-SegmentedControl-label:not([data-active]):hover { color:var(--moment-text); }
+.duplicate-view-switch .mantine-SegmentedControl-innerLabel { display:flex;align-items:center;justify-content:center; }
 .duplicate-view-switch .mantine-SegmentedControl-indicator { border:1px solid color-mix(in srgb,var(--moment-accent) 16%,var(--moment-border));border-radius:8px;background:var(--moment-soft);box-shadow:0 1px 3px #14213d08; }
 .duplicate-view-switch .mantine-SegmentedControl-indicator[data-initialized] { transition-duration:190ms !important;transition-timing-function:var(--moment-ease); }
 .duplicate-view-switch .mantine-SegmentedControl-input:focus-visible + .mantine-SegmentedControl-label { --segmented-control-outline:2px solid var(--moment-accent);outline-offset:-2px; }
-.duplicate-view-option { display:inline-flex;align-items:center;justify-content:center;gap:7px; }
+.duplicate-view-option { display:flex;align-items:center;justify-content:center;gap:7px; }
 .duplicate-type-filter { width:180px; }
 @media (max-width:600px) {
   .duplicate-filters { gap:12px; }
@@ -2453,6 +2458,8 @@ input:-webkit-autofill {
 .share-card-title:hover { color: var(--mantine-primary-color-light-color); }
 .share-card-actions { border-top: 1px solid var(--moment-border); padding-top: 16px; margin-top: auto; }
 .share-editor-grid { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 24px; align-items: start; }
+.share-expiry .mantine-Button-root { min-height:32px;padding-inline:14px; }
+.share-access-note { border-top:1px solid var(--moment-border);padding-top:18px;line-height:1.7; }
 .share-picker { min-width: 0; }
 .share-pick-row { display: flex; align-items: center; gap: 12px; padding: 10px; border: 1px solid transparent; border-radius: 12px; cursor: pointer; transition: background 150ms,border-color 150ms; }
 .share-pick-row:hover { background: var(--moment-hover); }
