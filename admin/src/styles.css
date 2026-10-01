@@ -2290,6 +2290,31 @@ input:-webkit-autofill {
 .account-avatar-upload > button {
   flex-shrink: 0;
 }
+.account-content { min-width: 0; }
+.account-panel { overflow: hidden; }
+.account-panel-heading { padding: 28px; border-bottom: 1px solid var(--moment-border); }
+.account-password-fields { padding: 28px; max-width: 620px; }
+.account-panel-body { padding: 24px; }
+.account-session-note { padding: 20px 28px; border-top: 1px solid var(--moment-border); }
+.session-row { display: flex; align-items: flex-start; gap: 16px; padding: 24px 28px; }
+.session-row + .session-row { border-top: 1px solid var(--moment-border); }
+.session-row.is-current { background: color-mix(in srgb, var(--moment-soft) 40%, transparent); }
+.session-device-icon { flex-shrink: 0; display: grid; place-items: center; width: 44px; height: 44px; border-radius: 12px; background: var(--moment-soft); color: var(--moment-accent); }
+.session-copy { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.session-times { display: flex; flex-wrap: wrap; gap: 12px 28px; margin: 16px 0 0; font-size: 12px; line-height: 1.6; }
+.session-times dt { color: var(--moment-muted); }
+.session-times dd { margin: 3px 0 0; color: var(--moment-text); font-variant-numeric: tabular-nums; }
+.session-exit { flex-shrink: 0; }
+@media (max-width: 760px) {
+  .account-navigation { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); }
+  .account-navigation .mantine-NavLink-root { width: 100%; }
+  .account-panel-heading, .account-password-fields, .account-panel-body { padding: 20px; }
+  .session-row { padding: 20px; display: grid; grid-template-columns: 36px minmax(0,1fr); gap: 12px; }
+  .session-device-icon { width: 36px; height: 36px; }
+  .session-exit { grid-column: 2; justify-self: end; }
+  .session-times { gap: 10px 18px; }
+  .account-session-note { padding: 16px 20px; }
+}
 
 .passkey-row { display: flex; align-items: center; gap: 16px; padding: 18px; border: 1px solid var(--moment-border); border-radius: 12px; background: var(--moment-input); }
 .passkey-row-icon { box-sizing: content-box; padding: 12px; border-radius: 12px; background: var(--moment-soft); color: var(--moment-accent); flex-shrink: 0; }

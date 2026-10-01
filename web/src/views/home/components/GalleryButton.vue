@@ -21,6 +21,7 @@ function hide() {
 }
 function show(event) {
   if (props.disabled || event.pointerType === 'touch') return
+  if (event.type === 'focus' && !button.value?.matches(':focus-visible')) return
   clearTimeout(timer)
   timer = setTimeout(async () => {
     visible.value = true
@@ -62,6 +63,7 @@ onBeforeUnmount(() => {
     @focus="show"
     @blur="hide"
     @pointerdown="hide"
+    @click="hide"
     @keydown.esc="hide"
   >
     <GalleryIcon v-if="icon" :name="icon" /><slot />

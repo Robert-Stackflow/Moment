@@ -1,6 +1,7 @@
 <script setup>
 defineProps({ name: String })
 const paths = {
+  categories: 'M3 3h7v7H3zM14 3h7v7h-7zM3 14h7v7H3zM14 14h7v7h-7z',
   map: 'm3 6 6-3 6 3 6-3v15l-6 3-6-3-6 3zM9 3v15M15 6v15',
   timeline: 'M8 4h13M8 12h13M8 20h13M3 4h.01M3 12h.01M3 20h.01M3 4v16',
   close: 'M6 6l12 12M6 18L18 6',

@@ -343,12 +343,14 @@ onBeforeUnmount(() => {
 }
 .explore-heading h1 {
   font-size: 26px;
+  line-height: 1.3;
   letter-spacing: 0.01em;
   font-weight: 500;
   margin: 0;
 }
 .explore-heading span {
   font-size: 12px;
+  line-height: 1.5;
   color: #97a0ab;
 }
 .explore-heading > a {
@@ -359,9 +361,13 @@ onBeforeUnmount(() => {
   padding: 0 40px 22px;
   display: flex;
   gap: 8px;
-  overflow: auto;
-  scrollbar-width: thin;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+  scroll-padding-inline: 20px;
 }
+.explore-years::-webkit-scrollbar { display: none; }
+.explore-years button:focus-visible { outline: 2px solid #dbeaff; outline-offset: -3px; }
 .explore-years button {
   flex-shrink: 0;
   border: 1px solid #ffffff0d;
@@ -547,11 +553,14 @@ onBeforeUnmount(() => {
     gap: 12px;
   }
   .explore-heading > div {
-    display: block;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 7px;
   }
   .explore-heading h1 {
     font-size: 22px;
-    margin-bottom: 3px;
+    margin-bottom: 0;
   }
   .explore-heading > a {
     font-size: 12px;

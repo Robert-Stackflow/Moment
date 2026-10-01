@@ -37,6 +37,9 @@ const Categories = lazy(() => import("./pages/Categories"));
 const SettingsPage = lazy(() => import("./pages/Settings"));
 const Account = lazy(() => import("./pages/Account"));
 const Security = lazy(() => import("./pages/Security"));
+const AccountLayout = lazy(() => import("./components/AccountLayout"));
+const Password = lazy(() => import("./pages/Password"));
+const Sessions = lazy(() => import("./pages/Sessions"));
 const Duplicates = lazy(() => import("./pages/Duplicates"));
 const SmartTags = lazy(() => import("./pages/SmartTags"));
 const queryClient = new QueryClient({
@@ -202,8 +205,12 @@ const router = createBrowserRouter(
           <Route path="drafts/:draftID" element={<Editor />} />
           <Route path="categories" element={<Categories />} />
           <Route path="settings/:section" element={<SettingsPage />} />
-          <Route path="account" element={<Account />} />
-          <Route path="account/security" element={<Security />} />
+          <Route path="account" element={<AccountLayout />}>
+            <Route index element={<Account />} />
+            <Route path="security" element={<Security />} />
+            <Route path="password" element={<Password />} />
+            <Route path="sessions" element={<Sessions />} />
+          </Route>
           <Route
             path="content/blog"
             element={<Navigate to="/posts" replace />}

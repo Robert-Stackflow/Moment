@@ -299,6 +299,9 @@ func TestPasskeyConcurrentLoginOnlyOnce(t *testing.T) {
 	if err := a.db.QueryRow("SELECT COUNT(*) FROM moment_sessions").Scan(&count); err != nil || count != 2 {
 		t.Fatalf("unexpected sessions: %d, %v", count, err)
 	}
+	if err := a.db.QueryRow("SELECT COUNT(*) FROM moment_session_details WHERE method='passkey' AND created_at>0").Scan(&count); err != nil || count != 1 {
+		t.Fatal("passkey login details missing", err)
+	}
 }
 
 func TestPasskeyChallengeReplacementPasswordAndLimit(t *testing.T) {

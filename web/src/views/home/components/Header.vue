@@ -77,26 +77,15 @@ onBeforeUnmount(() => {
         @click="toggleFullScreen"
       />
       <div ref="categoryNav" class="gallery-category-nav">
-        <button
-          type="button"
-          class="gallery-nav-link"
-          :class="{ active: categoriesOpen }"
+        <GalleryButton
+          icon="categories"
+          label="分类"
+          class="gallery-explore-link"
+          :pressed="categoriesOpen || route.path.startsWith('/category/')"
           aria-controls="gallery-categories"
           :aria-expanded="categoriesOpen"
           @click="categoriesOpen = !categoriesOpen"
-        >
-          分类
-          <svg
-            viewBox="0 0 16 16"
-            width="12"
-            height="12"
-            fill="none"
-            stroke="currentColor"
-            :class="{ expanded: categoriesOpen }"
-          >
-            <path d="m4 6 4 4 4-4" />
-          </svg>
-        </button>
+        />
         <Transition name="category-pop">
           <div v-if="categoriesOpen" id="gallery-categories" class="gallery-category-menu">
             <router-link class="gallery-all" to="/" @click="categoriesOpen = false"
@@ -310,9 +299,11 @@ body.viewer-open #header {
     display: none;
   }
   .gallery-category-menu {
+    position: fixed;
     bottom: auto;
-    top: calc(100% + 13px);
-    right: -46px;
+    top: 68px;
+    right: 14px;
+    width: min(278px, calc(100vw - 28px));
     max-height: calc(100dvh - 85px);
   }
   .category-pop-enter-from,

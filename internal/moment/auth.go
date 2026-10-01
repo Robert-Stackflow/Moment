@@ -74,7 +74,7 @@ func (a *App) authenticate(c *gin.Context) {
 		c.Abort()
 		return
 	}
-	users, err := query(a.db, `SELECT u.id,u.username,u.alias,u.email,u.avatar,u.created_at,u.updated_at,u.last_login FROM user u JOIN moment_sessions s ON s.user_id=u.id WHERE s.token_hash=? AND s.expires_at>?`, tokenDigest(token), time.Now().Unix())
+	users, err := query(a.db, `SELECT u.id,u.username,u.alias,u.email,u.avatar,u.created_at,u.updated_at,u.last_login,COALESCE(d.last_seen_at,0) AS session_seen FROM user u JOIN moment_sessions s ON s.user_id=u.id LEFT JOIN moment_session_details d ON d.token_hash=s.token_hash WHERE s.token_hash=? AND s.expires_at>?`, tokenDigest(token), time.Now().Unix())
 	if err != nil {
 		fail(c, 500, "无法验证会话")
 		c.Abort()
@@ -86,6 +86,14 @@ func (a *App) authenticate(c *gin.Context) {
 		c.Abort()
 		return
 	}
+	if stamp := time.Now().Unix(); integer(users[0]["session_seen"]) <= stamp-60 {
+		if err := a.touchSession(c, tokenDigest(token), stamp); err != nil {
+			databaseError(c, err)
+			c.Abort()
+			return
+		}
+	}
+	delete(users[0], "session_seen")
 	c.Set("user", users[0])
 	c.Next()
 }
@@ -143,6 +151,9 @@ func (a *App) login(c *gin.Context) {
 	}
 	defer tx.Rollback()
 	value, err := createLoginSession(tx, id)
+	if err == nil {
+		err = addSessionDetails(tx, value, c, "password")
+	}
 	if err == nil {
 		err = tx.Commit()
 	}

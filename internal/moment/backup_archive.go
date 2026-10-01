@@ -51,7 +51,7 @@ func (a *App) exportBackup(ctx context.Context, source string) (info backupInfo,
 	if err != nil {
 		return
 	}
-	if _, err = snapshot.ExecContext(ctx, "DELETE FROM moment_sessions; DELETE FROM moment_share_sessions; DELETE FROM moment_passkey_challenges"); err == nil {
+	if _, err = snapshot.ExecContext(ctx, "DELETE FROM moment_session_details; DELETE FROM moment_sessions; DELETE FROM moment_share_sessions; DELETE FROM moment_passkey_challenges"); err == nil {
 		info, err = backupCounts(ctx, snapshot)
 	}
 	closeErr := snapshot.Close()

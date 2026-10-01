@@ -16,6 +16,9 @@ import (
 
 func dropPhotoTagSchema(t *testing.T, a *App) {
 	t.Helper()
+	if _, err := a.db.Exec("DROP TABLE moment_session_details; DELETE FROM moment_schema_migrations WHERE version='012_session_details.sql'"); err != nil {
+		t.Fatal(err)
+	}
 	if _, err := a.db.Exec("DROP TABLE moment_image_tags"); err != nil {
 		t.Fatal(err)
 	}

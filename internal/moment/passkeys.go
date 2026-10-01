@@ -574,6 +574,9 @@ func (a *App) finishPasskeyLogin(c *gin.Context) {
 		token, err = createLoginSession(tx, id)
 	}
 	if err == nil {
+		err = addSessionDetails(tx, token, c, "passkey")
+	}
+	if err == nil {
 		err = tx.Commit()
 	}
 	if err != nil {

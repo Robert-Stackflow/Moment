@@ -16,7 +16,6 @@ import {
   Title,
 } from "@mantine/core";
 import {
-  ArrowLeft,
   Fingerprint,
   KeyRound,
   Pencil,
@@ -35,7 +34,7 @@ import {
   type PasskeyConfig,
 } from "../passkeys";
 import { useAuth } from "../session";
-import { ErrorState, Loading, PageTitle } from "../components/Common";
+import { ErrorState, Loading } from "../components/Common";
 import { Toggle } from "../components/Toggle";
 import { UnsavedChanges } from "../components/UnsavedChanges";
 
@@ -194,17 +193,6 @@ export default function Security() {
         dirty={dirty || busy}
         message="登录与安全设置尚未保存，离开将中断当前操作。"
       />
-      <PageTitle title="登录与安全">
-        <Button
-          component={Link}
-          to="/account"
-          variant="subtle"
-          color="gray"
-          leftSection={<ArrowLeft size={16} />}
-        >
-          我的账户
-        </Button>
-      </PageTitle>
       {config.isPending || keys.isPending ? (
         <Loading />
       ) : config.error || keys.error ? (
@@ -218,6 +206,9 @@ export default function Security() {
       ) : (
         <Stack gap="xl">
           <Paper withBorder p="xl">
+            <Title order={3} mb="lg">
+              登录安全
+            </Title>
             <Group justify="space-between" align="flex-start" gap="lg">
               <div>
                 <Group gap="sm">
@@ -350,7 +341,7 @@ export default function Security() {
             </Text>
             <Button
               component={Link}
-              to="/account"
+              to="/account/password"
               variant="subtle"
               mt="sm"
               px={0}

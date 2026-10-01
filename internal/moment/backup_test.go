@@ -108,8 +108,10 @@ func TestBackupRoundTripAndRestoreSafety(t *testing.T) {
 	}
 	var sessions int
 	copy.db.QueryRow("SELECT COUNT(*) FROM moment_sessions").Scan(&sessions)
+	var sessionDetails int
+	copy.db.QueryRow("SELECT COUNT(*) FROM moment_session_details").Scan(&sessionDetails)
 	copy.Close()
-	if sessions != 0 {
+	if sessions != 0 || sessionDetails != 0 {
 		t.Fatal("sessions included in export")
 	}
 	w, imported := backupUpload(t, h, cookie, archive)
