@@ -23,9 +23,11 @@ import {
 import {
   Check,
   History,
+  Maximize2,
   RefreshCw,
   Search,
   Sparkles,
+  Tags,
   Trash2,
   X,
 } from "lucide-react";
@@ -93,6 +95,8 @@ export default function SmartTags() {
   const [reviews, setReviews] = useState<Review[]>([]);
   const [reviewOpen, setReviewOpen] = useState(false);
   const [reviewPage, setReviewPage] = useState(1);
+  const [preview, setPreview] = useState<TagPhoto | null>(null);
+  const reviewScroll = useRef<HTMLDivElement>(null);
   const [consent, setConsent] = useState(false);
   const [source, setSource] = useState<"remote" | "local">("remote");
   const [remote, setRemote] = useState(false);
@@ -736,13 +740,25 @@ export default function SmartTags() {
       <Modal
         opened={reviewOpen}
         onClose={() => !saving && setReviewOpen(false)}
-        title="核对照片标签"
-        size="xl"
+        title={
+          <Group gap="sm">
+            <Text fw={600}>核对照片标签</Text>
+            <Badge variant="light" size="sm">
+              {reviews.length} 张
+            </Badge>
+          </Group>
+        }
+        size={920}
+        padding={0}
         centered
-        classNames={{ content: "tag-review" }}
+        classNames={{
+          content: "tag-review",
+          header: "tag-review-header",
+          body: "tag-review-body",
+        }}
       >
-        <Stack gap="md">
-          <Text size="sm" c="dimmed">
+        <div className="tag-review-scroll" ref={reviewScroll}>
+          <Text size="sm" c="dimmed" className="tag-review-hint">
             点选需要的候选，或输入自己的标签。已有标签会保留，没有选择的候选不会保存。
           </Text>
           {progressView}
@@ -769,7 +785,13 @@ export default function SmartTags() {
               key={item.photo.id}
               className="tag-review-row"
             >
-              <div className="tag-review-image">
+              <button
+                type="button"
+                className="tag-review-image"
+                aria-label={`查看照片 ${item.photo.id} 原图`}
+                data-tooltip="查看完整照片"
+                onClick={() => setPreview(item.photo)}
+              >
                 <Image
                   src={thumbnail(
                     item.photo.image_url,
@@ -777,17 +799,29 @@ export default function SmartTags() {
                     320,
                   )}
                   alt={item.photo.post_title}
-                  fit="contain"
+                  fit="cover"
+                  loading="lazy"
                 />
-              </div>
+                <span className="tag-review-image-expand" aria-hidden="true">
+                  <Maximize2 size={14} />
+                </span>
+              </button>
               <Stack gap="xs" className="tag-review-copy">
                 <Group justify="space-between" wrap="nowrap">
-                  <Text fw={600} size="sm" lineClamp={1}>
+                  <Text
+                    fw={600}
+                    size="sm"
+                    lineClamp={2}
+                    className="tag-review-title"
+                  >
                     {item.photo.post_title}
                   </Text>
                   <ActionIcon
                     variant="subtle"
+                    color="gray"
+                    size="sm"
                     aria-label={`移除照片 ${item.photo.id}`}
+                    data-tooltip="从本次核对中移除"
                     disabled={locked}
                     onClick={() => {
                       setReviews((current) =>
@@ -862,6 +896,7 @@ export default function SmartTags() {
                         </Text>
                       )}
                     <TagsInput
+                      className="tag-review-input"
                       label="待保存标签"
                       aria-label={`照片 ${item.photo.id} 的待保存标签`}
                       placeholder="输入后按回车添加"
@@ -891,39 +926,74 @@ export default function SmartTags() {
               </Stack>
             </Paper>
           ))}
+          {reviews.length === 0 && (
+            <Empty
+              title="没有待核对的照片"
+              description="关闭窗口后重新选择照片。"
+            />
+          )}
+        </div>
+        <div className="tag-review-actions">
+          <div className="tag-review-summary" role="status">
+            <span className="tag-review-summary-icon" aria-hidden="true">
+              <Tags size={18} />
+            </span>
+            <Text size="sm">
+              <strong>{targets.length}</strong> 张照片待保存
+            </Text>
+          </div>
           {reviews.length > 6 && (
             <Pagination
+              className="tag-review-pagination"
+              size="sm"
+              siblings={0}
               value={reviewPage}
-              onChange={setReviewPage}
+              onChange={(value) => {
+                setReviewPage(value);
+                reviewScroll.current?.scrollTo({ top: 0 });
+              }}
               total={Math.ceil(reviews.length / 6)}
             />
           )}
-          <Group justify="space-between" className="tag-review-actions">
-            <Text size="sm" c="dimmed">
-              {targets.length} 张照片待保存
-            </Text>
-            <Group gap="xs">
-              {!!pending.length && (
-                <Button
-                  variant="default"
-                  disabled={locked}
-                  onClick={() => setConsent(true)}
-                >
-                  {reviews.some((r) => r.state === "done")
-                    ? "继续识别剩余照片"
-                    : "识别候选标签"}
-                </Button>
-              )}
+          <Group gap="xs" className="tag-review-buttons">
+            {!!pending.length && (
               <Button
-                loading={saving}
-                disabled={locked || !targets.length || badTags}
-                onClick={() => setConfirm(true)}
+                variant="default"
+                leftSection={<Sparkles size={16} />}
+                disabled={locked}
+                onClick={() => setConsent(true)}
               >
-                保存标签
+                {reviews.some((r) => r.state === "done")
+                  ? "继续识别剩余照片"
+                  : "识别候选标签"}
               </Button>
-            </Group>
+            )}
+            <Button
+              leftSection={<Check size={16} />}
+              loading={saving}
+              disabled={locked || !targets.length || badTags}
+              onClick={() => setConfirm(true)}
+            >
+              保存标签
+            </Button>
           </Group>
-        </Stack>
+        </div>
+      </Modal>
+      <Modal
+        opened={!!preview}
+        onClose={() => setPreview(null)}
+        title={preview?.post_title || "查看完整照片"}
+        size="xl"
+        centered
+      >
+        {preview && (
+          <Image
+            src={preview.image_url}
+            alt={preview.post_title}
+            fit="contain"
+            mah="70dvh"
+          />
+        )}
       </Modal>
       <Modal
         opened={confirm}

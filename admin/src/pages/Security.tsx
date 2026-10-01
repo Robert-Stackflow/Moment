@@ -342,9 +342,8 @@ export default function Security() {
             <Button
               component={Link}
               to="/account/password"
-              variant="subtle"
-              mt="sm"
-              px={0}
+              variant="default"
+              mt="md"
             >
               管理账户密码
             </Button>

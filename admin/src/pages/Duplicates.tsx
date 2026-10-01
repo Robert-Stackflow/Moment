@@ -248,20 +248,10 @@ export default function Duplicates() {
           >
             处理记录
           </Button>
-          <Button
-            leftSection={<ScanSearch size={17} />}
-            disabled={running || scan?.status === "scanning"}
-            onClick={() => {
-              setError("");
-              setStartDialog(true);
-            }}
-          >
-            开始扫描
-          </Button>
         </Group>
       </PageTitle>
       <OrganizeTabs />
-      <Paper withBorder p="lg" mb="xl">
+      <Paper withBorder p="lg" mb="xl" className="duplicate-scan-card">
         <Group justify="space-between" align="flex-start">
           <div>
             <Text fw={600}>
@@ -345,18 +335,31 @@ export default function Duplicates() {
             {scan.message}
           </Text>
         )}
-        {scan && scan.done > 0 && (
-          <Button
-            variant="subtle"
-            size="xs"
-            mt="sm"
-            px={0}
-            leftSection={<Info size={14} />}
-            onClick={() => setIssues(true)}
-          >
-            查看读取说明与未完成的图片
-          </Button>
-        )}
+        <div className="duplicate-scan-actions">
+          {scan && scan.done > 0 && (
+            <Button
+              variant="default"
+              size="sm"
+              leftSection={<Info size={16} />}
+              onClick={() => setIssues(true)}
+            >
+              读取说明与未完成图片
+            </Button>
+          )}
+          {scan?.status !== "scanning" && (
+            <Button
+              className="duplicate-scan-start"
+              leftSection={<ScanSearch size={17} />}
+              disabled={running || latest.isPending}
+              onClick={() => {
+                setError("");
+                setStartDialog(true);
+              }}
+            >
+              {scan ? "重新扫描" : "开始扫描"}
+            </Button>
+          )}
+        </div>
         {error && !startDialog && (
           <Alert color="red" mt="md">
             {error}
