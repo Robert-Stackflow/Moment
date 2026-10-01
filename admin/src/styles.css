@@ -2325,6 +2325,22 @@ input:-webkit-autofill {
 .duplicate-scan-actions { display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-top:20px;padding-top:18px;border-top:1px solid var(--moment-border); }
 .duplicate-scan-actions:empty { display:none; }
 .duplicate-scan-start { margin-left:auto; }
+.duplicate-view-switch { height:44px;padding:4px;border:1px solid var(--moment-border);border-radius:12px;background:var(--moment-input); }
+.duplicate-view-switch .mantine-SegmentedControl-label { display:flex;align-items:center;justify-content:center;min-height:34px;padding:0 16px;border-radius:8px;color:var(--moment-muted);font-size:13px;font-weight:500; }
+.duplicate-view-switch .mantine-SegmentedControl-label[data-active] { color:var(--moment-accent); }
+.duplicate-view-switch .mantine-SegmentedControl-label:not([data-active]):hover { color:var(--moment-text); }
+.duplicate-view-switch .mantine-SegmentedControl-indicator { border:1px solid color-mix(in srgb,var(--moment-accent) 16%,var(--moment-border));border-radius:8px;background:var(--moment-soft);box-shadow:0 1px 3px #14213d08; }
+.duplicate-view-switch .mantine-SegmentedControl-indicator[data-initialized] { transition-duration:190ms !important;transition-timing-function:var(--moment-ease); }
+.duplicate-view-switch .mantine-SegmentedControl-input:focus-visible + .mantine-SegmentedControl-label { --segmented-control-outline:2px solid var(--moment-accent);outline-offset:-2px; }
+.duplicate-view-option { display:inline-flex;align-items:center;justify-content:center;gap:7px; }
+.duplicate-type-filter { width:180px; }
+@media (max-width:600px) {
+  .duplicate-filters { gap:12px; }
+  .duplicate-view-switch, .duplicate-type-filter { width:100%; }
+}
+@media (prefers-reduced-motion:reduce) {
+  .duplicate-view-switch .mantine-SegmentedControl-indicator[data-initialized] { transition-duration:0ms !important; }
+}
 .duplicate-comparison .mantine-Modal-header { height:60px;min-height:60px; }
 .duplicate-selection { padding:12px 0;position:sticky;top:60px;z-index:2;background:var(--moment-surface);border-bottom:1px solid var(--moment-border);scroll-margin-top:72px; }
 .duplicate-photo { border:1px solid var(--moment-border);border-radius:12px;overflow:hidden;min-width:0;transition:border-color 150ms,background 150ms;background:var(--moment-input); }

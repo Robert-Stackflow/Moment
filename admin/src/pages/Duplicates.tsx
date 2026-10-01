@@ -23,6 +23,7 @@ import {
   Copy,
   EyeOff,
   History,
+  Inbox,
   Info,
   Pause,
   Play,
@@ -372,19 +373,39 @@ export default function Duplicates() {
         <ErrorState error={latest.error} retry={() => latest.refetch()} />
       ) : scan?.status === "ready" ? (
         <>
-          <Group justify="space-between" mb="lg">
+          <Group justify="space-between" mb="lg" className="duplicate-filters">
             <SegmentedControl
+              className="duplicate-view-switch"
+              aria-label="重复分组状态"
+              withItemsBorders={false}
               value={view}
               onChange={(value) => {
                 setView(value);
                 setPage(1);
               }}
               data={[
-                { value: "pending", label: "待处理" },
-                { value: "ignored", label: "已忽略" },
+                {
+                  value: "pending",
+                  label: (
+                    <span className="duplicate-view-option">
+                      <Inbox size={15} aria-hidden="true" />
+                      待处理
+                    </span>
+                  ),
+                },
+                {
+                  value: "ignored",
+                  label: (
+                    <span className="duplicate-view-option">
+                      <EyeOff size={15} aria-hidden="true" />
+                      已忽略
+                    </span>
+                  ),
+                },
               ]}
             />
             <Select
+              className="duplicate-type-filter"
               aria-label="重复类型"
               placeholder="全部类型"
               clearable
@@ -397,7 +418,6 @@ export default function Duplicates() {
                 value,
                 label,
               }))}
-              w={180}
             />
           </Group>
           {groups.isPending ? (
