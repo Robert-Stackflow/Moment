@@ -76,7 +76,7 @@ export function Empty({
   children,
 }: {
   title?: string;
-  description: string;
+  description?: string;
   children?: ReactNode;
 }) {
   return (
@@ -88,9 +88,11 @@ export function Empty({
           color="var(--mantine-color-dimmed)"
         />
         <Title order={4}>{title}</Title>
-        <Text c="dimmed" size="sm" ta="center">
-          {description}
-        </Text>
+        {description && (
+          <Text c="dimmed" size="sm" ta="center">
+            {description}
+          </Text>
+        )}
         {children}
       </Stack>
     </Center>

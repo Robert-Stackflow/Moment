@@ -481,9 +481,6 @@ function SettingsForm({
                   <Text fw={600} size="sm">
                     Moment 新图标
                   </Text>
-                  <Text size="xs" c="dimmed" mt={3}>
-                    用于浏览器标签页和相册标识
-                  </Text>
                 </div>
                 <Button
                   variant="light"

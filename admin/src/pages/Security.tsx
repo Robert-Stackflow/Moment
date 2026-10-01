@@ -4,7 +4,6 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   ActionIcon,
   Alert,
-  Badge,
   Button,
   Group,
   Modal,
@@ -21,7 +20,6 @@ import {
   Pencil,
   Plus,
   RefreshCw,
-  Settings2,
   Trash2,
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
@@ -38,10 +36,7 @@ import { ErrorState, Loading } from "../components/Common";
 import { Toggle } from "../components/Toggle";
 import { UnsavedChanges } from "../components/UnsavedChanges";
 
-type Dialog =
-  | { kind: "create" }
-  | { kind: "config"; config: PasskeyConfig }
-  | { kind: "rename" | "delete"; key: Passkey };
+type Dialog = { kind: "create" } | { kind: "rename" | "delete"; key: Passkey };
 export default function Security() {
   const client = useQueryClient();
   const auth = useAuth();
@@ -59,8 +54,8 @@ export default function Security() {
   const [dialog, setDialog] = useState<Dialog | null>(null);
   const [name, setName] = useState("");
   const [password, setPassword] = useState("");
-  const [enabled, setEnabled] = useState(false);
-  const [origin, setOrigin] = useState("");
+  const [savingEnabled, setSavingEnabled] = useState<boolean | null>(null);
+  const [configError, setConfigError] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [finishing, setFinishing] = useState(false);
@@ -71,10 +66,7 @@ export default function Security() {
   const dirty =
     !!dialog &&
     (!!password ||
-      (dialog.kind === "config"
-        ? enabled !== dialog.config.enabled ||
-          origin !== (dialog.config.origin || location.origin)
-        : dialog.kind === "rename"
+      (dialog.kind === "rename"
         ? name !== dialog.key.name
         : dialog.kind === "create" && !!name));
   function open(value: Dialog) {
@@ -83,16 +75,33 @@ export default function Security() {
     setPassword("");
     setError("");
     setConflict(false);
-    if (value.kind === "config") {
-      setEnabled(value.config.enabled);
-      setOrigin(value.config.origin || location.origin);
-    }
   }
   function close() {
     if (!busy) {
       setDialog(null);
       setPassword("");
       setError("");
+    }
+  }
+  async function changeEnabled(enabled: boolean) {
+    if (savingEnabled !== null || busy || !config.data) return;
+    setSavingEnabled(enabled);
+    setConfigError("");
+    try {
+      const result = await api<PasskeyConfig>(
+        "/passkeys/config",
+        json("PUT", {
+          enabled,
+          revision: config.data.data.revision,
+        }),
+      );
+      client.setQueryData(["passkeyConfig"], result);
+      notifySuccess(enabled ? "通行密钥登录已启用" : "通行密钥登录已关闭");
+    } catch (cause) {
+      setConfigError(passkeyError(cause));
+      await config.refetch();
+    } finally {
+      setSavingEnabled(null);
     }
   }
   async function submit() {
@@ -104,19 +113,8 @@ export default function Security() {
     controller.current = new AbortController();
     try {
       switch (dialog.kind) {
-        case "config":
-          await api(
-            "/passkeys/config",
-            json("PUT", {
-              enabled,
-              origin,
-              revision: dialog.config.revision,
-              password,
-            }),
-          );
-          break;
         case "create":
-          await registerPasskey(name, password, controller.current.signal, () =>
+          await registerPasskey(name, controller.current.signal, () =>
             setFinishing(true),
           );
           break;
@@ -162,10 +160,7 @@ export default function Security() {
     setReloadPrompt(false);
     setBusy(true);
     try {
-      if (dialog?.kind === "config") {
-        const latest = await config.refetch({ throwOnError: true });
-        if (latest.data) open({ kind: "config", config: latest.data.data });
-      } else if (dialog && "key" in dialog) {
+      if (dialog && "key" in dialog) {
         const latest = await keys.refetch({ throwOnError: true });
         const key = latest.data?.data.find((key) => key.id === dialog.key.id);
         if (key) open({ kind: dialog.kind, key });
@@ -190,7 +185,7 @@ export default function Security() {
   return (
     <>
       <UnsavedChanges
-        dirty={dirty || busy}
+        dirty={dirty || busy || savingEnabled !== null}
         message="登录与安全设置尚未保存，离开将中断当前操作。"
       />
       {config.isPending || keys.isPending ? (
@@ -209,46 +204,42 @@ export default function Security() {
             <Title order={3} mb="lg">
               登录安全
             </Title>
-            <Group justify="space-between" align="flex-start" gap="lg">
-              <div>
+            <Group
+              justify="space-between"
+              align="center"
+              gap="lg"
+              wrap="nowrap"
+            >
+              <div style={{ minWidth: 0 }}>
                 <Group gap="sm">
                   <Fingerprint size={23} />
                   <Title order={4}>通行密钥</Title>
-                  <Badge
-                    color={settings?.enabled ? "teal" : "gray"}
-                    variant="light"
-                  >
-                    {settings?.enabled ? "已启用" : "未启用"}
-                  </Badge>
                 </Group>
                 <Text c="dimmed" size="sm" mt="sm">
                   使用设备的指纹、面容、PIN
                   或安全密钥验证身份，无需输入账户密码。
                 </Text>
               </div>
-              <Button
-                variant="default"
-                size="sm"
-                leftSection={<Settings2 size={16} />}
-                onClick={() =>
-                  settings && open({ kind: "config", config: settings })
+              <Toggle
+                aria-label="启用通行密钥登录"
+                aria-busy={savingEnabled !== null}
+                checked={savingEnabled ?? settings?.enabled ?? false}
+                disabled={
+                  savingEnabled !== null ||
+                  busy ||
+                  (!settings?.enabled && (!canUsePasskeys() || !correctOrigin))
                 }
-              >
-                登录配置
-              </Button>
+                onChange={(event) =>
+                  void changeEnabled(event.currentTarget.checked)
+                }
+              />
             </Group>
-            {settings?.origin && (
-              <Text size="sm" mt="lg" style={{ overflowWrap: "anywhere" }}>
-                登录网址：{settings.origin}
-              </Text>
-            )}
-            {settings?.enabled && !correctOrigin && (
-              <Alert color="orange" mt="md">
-                当前网址与通行密钥配置不同，请从 {settings.origin}{" "}
-                登录，或在「登录配置」中更新网址。密码登录仍可使用。
+            {configError && (
+              <Alert color="red" mt="md" role="alert">
+                {configError}
               </Alert>
             )}
-            {!canUsePasskeys() && (
+            {(!canUsePasskeys() || !correctOrigin) && (
               <Alert color="orange" mt="md">
                 当前浏览器或网址不支持通行密钥。请使用支持通行密钥的浏览器和
                 HTTPS；本地预览请用 localhost。
@@ -275,6 +266,7 @@ export default function Security() {
                   leftSection={<Plus size={16} />}
                   disabled={
                     !settings?.enabled ||
+                    savingEnabled !== null ||
                     !correctOrigin ||
                     !canUsePasskeys() ||
                     (keys.data?.data.length || 0) >= 20
@@ -354,9 +346,7 @@ export default function Security() {
         opened={!!dialog}
         onClose={close}
         title={
-          dialog?.kind === "config"
-            ? "通行密钥登录配置"
-            : dialog?.kind === "create"
+          dialog?.kind === "create"
             ? "添加通行密钥"
             : dialog?.kind === "rename"
             ? "重命名通行密钥"
@@ -374,36 +364,6 @@ export default function Security() {
             }}
           >
             <Stack gap="lg">
-              {dialog.kind === "config" && (
-                <>
-                  <Toggle
-                    label="启用通行密钥登录"
-                    checked={enabled}
-                    onChange={(e) => setEnabled(e.currentTarget.checked)}
-                    disabled={busy}
-                  />
-                  <TextInput
-                    label="登录网址"
-                    placeholder="https://photos.example.com"
-                    value={origin}
-                    onChange={(e) => setOrigin(e.currentTarget.value)}
-                    disabled={busy}
-                    required={enabled}
-                  />
-                  <Button
-                    size="xs"
-                    variant="subtle"
-                    disabled={busy}
-                    onClick={() => setOrigin(location.origin)}
-                  >
-                    使用当前网址
-                  </Button>
-                  <Text size="sm" c="dimmed">
-                    需使用 HTTPS，本地 localhost
-                    除外。请在此网址打开后台后启用。更换域名后旧密钥仍保留，但不能登录新域名；关闭此功能会停止所有通行密钥登录。
-                  </Text>
-                </>
-              )}
               {(dialog.kind === "create" || dialog.kind === "rename") && (
                 <TextInput
                   label="密钥名称"
@@ -418,7 +378,7 @@ export default function Security() {
               )}
               {dialog.kind === "create" && (
                 <Text size="sm" c="dimmed">
-                  确认密码后，浏览器会请你选择保存位置并验证身份。私钥由设备或密码管理器保存。
+                  浏览器会请你选择保存位置并验证身份。
                 </Text>
               )}
               {dialog.kind === "delete" && (
@@ -427,7 +387,7 @@ export default function Security() {
                   」后，它将无法登录。所有设备（包括本机）的登录会话都会退出，请确认还记得账户密码。
                 </Alert>
               )}
-              {dialog.kind !== "rename" && (
+              {dialog.kind === "delete" && (
                 <PasswordInput
                   label="当前密码"
                   value={password}

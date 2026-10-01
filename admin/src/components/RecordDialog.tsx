@@ -77,7 +77,7 @@ export function RecordEmpty({
 }: {
   icon: LucideIcon;
   title: string;
-  description: string;
+  description?: string;
 }) {
   return (
     <div className="record-empty" role="status">
@@ -87,9 +87,11 @@ export function RecordEmpty({
       <Text fw={600} size="md">
         {title}
       </Text>
-      <Text size="sm" c="dimmed">
-        {description}
-      </Text>
+      {description && (
+        <Text size="sm" c="dimmed">
+          {description}
+        </Text>
+      )}
     </div>
   );
 }

@@ -97,12 +97,11 @@ export function passkeyError(cause: unknown) {
 }
 export async function registerPasskey(
   name: string,
-  password: string,
   signal: AbortSignal,
   onVerified: () => void,
 ) {
   const result = await api<{ publicKey: CreateOptions }>("/me/passkeys/begin", {
-    ...json("POST", { name, password }),
+    ...json("POST", { name }),
     signal,
   });
   const options = result.data.publicKey;

@@ -93,9 +93,6 @@ export function Login() {
         <Stack align="center" gap={12}>
           <Brand size={58} />
           <Title order={1}>Moment</Title>
-          <Text c="dimmed" size="sm">
-            让值得记住的时刻，有处安放。
-          </Text>
         </Stack>
         <Paper withBorder p={30}>
           <form onSubmit={submit}>

@@ -55,7 +55,7 @@ func passkeyResponseCookie(t *testing.T, w *httptest.ResponseRecorder, name stri
 
 func enableTestPasskeys(t *testing.T, h http.Handler, auth *http.Cookie) {
 	t.Helper()
-	status(t, passkeyCall(t, h, "PUT", "/passkeys/config", Object{"enabled": true, "origin": passkeyTestOrigin, "revision": 0, "password": testPassword}, auth), 200)
+	status(t, passkeyCall(t, h, "PUT", "/passkeys/config", Object{"enabled": true, "revision": 0}, auth), 200)
 }
 
 func passkeyOptions(t *testing.T, w *httptest.ResponseRecorder) map[string]any {
@@ -150,7 +150,7 @@ func (d *passkeyTestDevice) assertion(t *testing.T, options map[string]any, flag
 func addTestPasskey(t *testing.T, h http.Handler, auth *http.Cookie) *passkeyTestDevice {
 	t.Helper()
 	d := newPasskeyTestDevice(t)
-	w := passkeyCall(t, h, "POST", "/me/passkeys/begin", Object{"name": "测试设备", "password": testPassword}, auth)
+	w := passkeyCall(t, h, "POST", "/me/passkeys/begin", Object{"name": "测试设备"}, auth)
 	body := d.registration(t, passkeyOptions(t, w))
 	challenge := passkeyResponseCookie(t, w, "moment_passkey")
 	if !challenge.HttpOnly || challenge.SameSite != http.SameSiteStrictMode || challenge.Path != "/api/admin" {
@@ -179,7 +179,7 @@ func TestPasskeyHTTPSAndCrossSite(t *testing.T) {
 	a, h, auth := testApp(t)
 	for _, secure := range []bool{false, true} {
 		a.secure = secure
-		body := passkeyTestJSON(t, Object{"enabled": true, "origin": "https://photos.example.com", "revision": 0, "password": testPassword})
+		body := passkeyTestJSON(t, Object{"enabled": true, "revision": 0})
 		r := httptest.NewRequest("PUT", "https://photos.example.com/api/admin/passkeys/config", bytes.NewReader(body))
 		r.Header.Set("Content-Type", "application/json")
 		r.Header.Set("Origin", "https://photos.example.com")
@@ -379,15 +379,16 @@ func TestPasskeyConfigurationAndDefaultOff(t *testing.T) {
 	a, h, auth := testApp(t)
 	status(t, passkeyCall(t, h, "POST", "/passkeys/login/begin", Object{}), 409)
 	status(t, passkeyCall(t, h, "GET", "/me/passkeys", nil), 401)
-	body := Object{"enabled": true, "origin": passkeyTestOrigin, "revision": 0, "password": "wrong"}
-	status(t, passkeyCall(t, h, "PUT", "/passkeys/config", body, auth), 400)
-	body["password"] = testPassword
-	body["origin"] = "https://other.example.com"
-	status(t, passkeyCall(t, h, "PUT", "/passkeys/config", body, auth), 400)
+	status(t, passkeyCall(t, h, "PUT", "/passkeys/config", Object{"enabled": true, "revision": 0}), 401)
+	status(t, passkeyCall(t, h, "POST", "/me/passkeys/begin", Object{"name": "设备"}), 401)
 	enableTestPasskeys(t, h, auth)
-	status(t, passkeyCall(t, h, "PUT", "/passkeys/config", Object{"enabled": false, "revision": 0, "password": testPassword}, auth), 409)
+	config, err := readPasskeyConfig(a.db)
+	if err != nil || config.Origin != passkeyTestOrigin || config.RPID != "localhost" {
+		t.Fatalf("site was not detected: %+v, %v", config, err)
+	}
+	status(t, passkeyCall(t, h, "PUT", "/passkeys/config", Object{"enabled": false, "revision": 0}, auth), 409)
 	status(t, passkeyCall(t, h, "POST", "/passkeys/login/begin", Object{}), 200)
-	status(t, passkeyCall(t, h, "PUT", "/passkeys/config", Object{"enabled": false, "revision": 1, "password": testPassword}, auth), 200)
+	status(t, passkeyCall(t, h, "PUT", "/passkeys/config", Object{"enabled": false, "revision": 1}, auth), 200)
 	var count int
 	if err := a.db.QueryRow("SELECT COUNT(*) FROM moment_passkey_challenges").Scan(&count); err != nil || count != 0 {
 		t.Fatalf("challenges survived disable: %d, %v", count, err)
@@ -424,6 +425,77 @@ func TestPasskeySignedLoginAndRemoval(t *testing.T) {
 	status(t, passkeyCall(t, h, "GET", "/me", nil, auth), 401)
 	status(t, passkeyCall(t, h, "GET", "/me", nil, session), 401)
 	status(t, passkeyCall(t, h, "POST", "/login", Object{"username": "tester", "password": testPassword}), 200)
+}
+
+func TestPasskeyAutomaticSiteAndRequestGuards(t *testing.T) {
+	a, h, auth := testApp(t)
+	for _, origin := range []string{"", "null", "https://other.example.com"} {
+		r := httptest.NewRequest("PUT", passkeyTestOrigin+"/api/admin/passkeys/config", strings.NewReader(`{"enabled":true,"revision":0}`))
+		r.Header.Set("Content-Type", "application/json")
+		r.Header.Set("Origin", origin)
+		r.AddCookie(auth)
+		w := httptest.NewRecorder()
+		h.ServeHTTP(w, r)
+		status(t, w, 403)
+	}
+	// Older clients may send these fields; they cannot select a different site.
+	status(t, passkeyCall(t, h, "PUT", "/passkeys/config", Object{"enabled": true, "revision": 0, "origin": "https://other.example.com", "password": "unused"}, auth), 200)
+	device := addTestPasskey(t, h, auth)
+	if _, err := a.db.Exec("UPDATE moment_passkey_config SET origin='https://old.example.com'"); err != nil {
+		t.Fatal(err)
+	}
+	// Old stored settings do not override the current site or invalidate its keys.
+	w := passkeyCall(t, h, "POST", "/passkeys/login/begin", Object{})
+	body := device.assertion(t, passkeyOptions(t, w), 0x05, 1, passkeyTestOrigin, "localhost")
+	status(t, passkeyCall(t, h, "POST", "/passkeys/login/finish", body, passkeyResponseCookie(t, w, "moment_passkey")), 200)
+	for _, test := range []struct {
+		name, address, origin, rp string
+		secure                    bool
+	}{
+		{"localhost", passkeyTestOrigin, passkeyTestOrigin, "localhost", false},
+		{"https proxy", "http://photos.example.com", "https://photos.example.com", "photos.example.com", true},
+		{"another domain", "http://album.example.com:8443", "https://album.example.com:8443", "album.example.com", true},
+		{"IP password fallback", "http://127.0.0.1:9995", "", "", false},
+		{"insecure password fallback", "http://photos.example.com", "", "", false},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			a.secure = test.secure
+			r := httptest.NewRequest("GET", test.address+"/api/admin/passkeys/config", nil)
+			r.Header.Set("X-Forwarded-Host", "evil.example.com")
+			r.Header.Set("X-Forwarded-Proto", "https")
+			w := httptest.NewRecorder()
+			h.ServeHTTP(w, r)
+			status(t, w, 200)
+			var response struct{ Data passkeyConfig }
+			if err := json.Unmarshal(w.Body.Bytes(), &response); err != nil {
+				t.Fatal(err)
+			}
+			if response.Data.Origin != test.origin || response.Data.RPID != test.rp || !response.Data.Enabled {
+				t.Fatalf("unexpected site: %+v", response.Data)
+			}
+		})
+	}
+}
+
+func TestPasskeyRegistrationStillRequiresDeviceVerification(t *testing.T) {
+	_, h, auth := testApp(t)
+	enableTestPasskeys(t, h, auth)
+	w := passkeyCall(t, h, "POST", "/me/passkeys/begin", Object{"name": "设备"}, auth)
+	device := newPasskeyTestDevice(t)
+	body := device.registration(t, passkeyOptions(t, w))
+	response := body["response"].(Object)
+	encoded, err := base64.RawURLEncoding.DecodeString(response["attestationObject"].(string))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var attestation map[string]any
+	if err = cbor.Unmarshal(encoded, &attestation); err != nil {
+		t.Fatal(err)
+	}
+	authData := attestation["authData"].([]byte)
+	authData[32] &^= 0x04 // User present, but not verified by the authenticator.
+	response["attestationObject"] = base64.RawURLEncoding.EncodeToString(passkeyTestCBOR(t, attestation))
+	status(t, passkeyCall(t, h, "POST", "/me/passkeys/finish", body, auth, passkeyResponseCookie(t, w, "moment_passkey")), 400)
 }
 
 func TestPasskeyRejectsInvalidAssertions(t *testing.T) {

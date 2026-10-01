@@ -94,10 +94,7 @@ export default function Drafts() {
       ) : drafts.error ? (
         <ErrorState error={drafts.error} retry={drafts.refetch} />
       ) : !drafts.data.data.length ? (
-        <Empty
-          title={q ? "没有匹配的草稿" : "还没有草稿"}
-          description="编辑内容会自动保存到这里，发布后从草稿中移出。"
-        />
+        <Empty title={q ? "没有匹配的草稿" : "还没有草稿"} />
       ) : (
         <Stack gap="sm">
           {drafts.data.data.map((draft) => (

@@ -507,12 +507,7 @@ export default function Duplicates() {
           )}
         </>
       ) : (
-        !scan && (
-          <Empty
-            title="还没有扫描结果"
-            description="识别相同文件、重复链接和画面相似的候选照片。结果仅在后台可见。"
-          />
-        )
+        !scan && <Empty title="还没有扫描结果" />
       )}
       <Modal
         opened={startDialog}

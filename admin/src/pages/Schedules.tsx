@@ -174,10 +174,7 @@ export default function Schedules() {
       ) : plans.error ? (
         <ErrorState error={plans.error} retry={plans.refetch} />
       ) : !plans.data.data.length ? (
-        <Empty
-          title="没有发布计划"
-          description="在帖子编辑页选择「定时发布」，安排照片公开的时间。"
-        />
+        <Empty title="没有发布计划" />
       ) : (
         <Stack gap="sm">
           {plans.data.data.map((plan) => (

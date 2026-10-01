@@ -85,8 +85,8 @@ func passkeyOrigin(value string) (string, error) {
 	return u.Scheme + "://" + host, nil
 }
 
-// Run inside the write transaction: a password change or key removal may have
-// revoked this session while the password was being verified outside it.
+// Recheck inside the write transaction: a password change or key removal may
+// have revoked this session since the request was authenticated.
 func currentPasskeyAccountSession(c *gin.Context, q querier) bool {
 	token, _ := c.Cookie("moment_session")
 	rows, err := query(q, "SELECT user_id FROM moment_sessions WHERE token_hash=? AND user_id=? AND expires_at>?", tokenDigest(token), draftUser(c), time.Now().Unix())
@@ -111,7 +111,29 @@ func (a *App) passkeyStatus(c *gin.Context) {
 		databaseError(c, err)
 		return
 	}
+	// An unsupported address must not break the regular password login page.
+	_ = a.passkeySite(c, &config)
 	ok(c, config)
+}
+
+// Derive the relying party from this site's Host, never a caller-supplied URL
+// or untrusted forwarded headers. The Origin must still match for ceremonies.
+func (a *App) passkeySite(c *gin.Context, config *passkeyConfig) error {
+	config.Origin, config.RPID = "", ""
+	scheme := "http"
+	if a.secure || c.Request.TLS != nil {
+		scheme = "https"
+	}
+	if scheme == "https" && !a.secure {
+		return errors.New("请先在服务器开启 MOMENT_COOKIE_SECURE，再启用 HTTPS 通行密钥登录")
+	}
+	origin, err := passkeyOrigin(scheme + "://" + c.Request.Host)
+	if err != nil {
+		return err
+	}
+	u, _ := url.Parse(origin)
+	config.Origin, config.RPID = origin, u.Hostname()
+	return nil
 }
 
 func (a *App) confirmAccountPassword(c *gin.Context, password string) bool {
@@ -133,29 +155,24 @@ func (a *App) confirmAccountPassword(c *gin.Context, password string) bool {
 
 func (a *App) configurePasskeys(c *gin.Context) {
 	var in struct {
-		Enabled  bool   `json:"enabled"`
-		Origin   string `json:"origin"`
-		Revision int64  `json:"revision"`
-		Password string `json:"password"`
+		Enabled  bool  `json:"enabled"`
+		Revision int64 `json:"revision"`
 	}
-	if !bind(c, &in) || !a.confirmAccountPassword(c, in.Password) {
+	if !bind(c, &in) {
 		return
 	}
-	origin := ""
-	if in.Enabled || strings.TrimSpace(in.Origin) != "" {
-		var err error
-		origin, err = passkeyOrigin(in.Origin)
-		if err != nil {
+	if c.GetHeader("Origin") == "" {
+		fail(c, 403, "请从当前网站的后台修改通行密钥设置")
+		return
+	}
+	site := passkeyConfig{}
+	if in.Enabled {
+		if err := a.passkeySite(c, &site); err != nil {
 			fail(c, 400, err.Error())
 			return
 		}
-		u, _ := url.Parse(origin)
-		if in.Enabled && (c.GetHeader("Origin") != origin || c.Request.Host != u.Host) {
-			fail(c, 400, "请在要启用通行密钥的网站地址下打开后台，再保存配置")
-			return
-		}
-		if in.Enabled && u.Scheme == "https" && !a.secure {
-			fail(c, 400, "请先在服务器开启 MOMENT_COOKIE_SECURE，再启用 HTTPS 通行密钥登录")
+		if c.GetHeader("Origin") != site.Origin {
+			fail(c, 403, "请从当前网站的后台修改通行密钥设置")
 			return
 		}
 	}
@@ -165,7 +182,7 @@ func (a *App) configurePasskeys(c *gin.Context) {
 		return
 	}
 	defer tx.Rollback()
-	result, err := tx.Exec("UPDATE moment_passkey_config SET enabled=?,origin=?,revision=revision+1 WHERE id=1 AND revision=?", in.Enabled, origin, in.Revision)
+	result, err := tx.Exec("UPDATE moment_passkey_config SET enabled=?,origin=?,revision=revision+1 WHERE id=1 AND revision=?", in.Enabled, site.Origin, in.Revision)
 	if err != nil {
 		databaseError(c, err)
 		return
@@ -185,11 +202,10 @@ func (a *App) configurePasskeys(c *gin.Context) {
 		databaseError(c, err)
 		return
 	}
-	a.limiter.reset(c.ClientIP())
 	a.passkeyStatus(c)
 }
 
-func activePasskeyRP(c *gin.Context, q querier) (passkeyConfig, *webauthn.WebAuthn, bool) {
+func (a *App) activePasskeyRP(c *gin.Context, q querier) (passkeyConfig, *webauthn.WebAuthn, bool) {
 	config, err := readPasskeyConfig(q)
 	if err != nil {
 		databaseError(c, err)
@@ -199,8 +215,12 @@ func activePasskeyRP(c *gin.Context, q querier) (passkeyConfig, *webauthn.WebAut
 		fail(c, 409, "通行密钥登录尚未启用，请使用密码登录")
 		return config, nil, false
 	}
+	if err := a.passkeySite(c, &config); err != nil {
+		fail(c, 400, err.Error())
+		return config, nil, false
+	}
 	if c.GetHeader("Origin") != config.Origin {
-		fail(c, 403, "请从配置的登录网址使用通行密钥")
+		fail(c, 403, "请从当前网站使用通行密钥")
 		return config, nil, false
 	}
 	rp, err := passkeyRP(config)
@@ -345,8 +365,7 @@ func (a *App) consumePasskeyChallenge(c *gin.Context, kind string) (*passkeyChal
 
 func (a *App) beginPasskeyRegistration(c *gin.Context) {
 	var in struct {
-		Name     string `json:"name"`
-		Password string `json:"password"`
+		Name string `json:"name"`
 	}
 	if !bind(c, &in) {
 		return
@@ -356,10 +375,7 @@ func (a *App) beginPasskeyRegistration(c *gin.Context) {
 		fail(c, 400, "请为通行密钥填写不超过 60 字的名称")
 		return
 	}
-	if !a.confirmAccountPassword(c, in.Password) {
-		return
-	}
-	config, rp, valid := activePasskeyRP(c, a.db)
+	config, rp, valid := a.activePasskeyRP(c, a.db)
 	if !valid {
 		return
 	}
@@ -398,7 +414,7 @@ func (a *App) beginPasskeyRegistration(c *gin.Context) {
 }
 
 func (a *App) finishPasskeyRegistration(c *gin.Context) {
-	config, rp, valid := activePasskeyRP(c, a.db)
+	config, rp, valid := a.activePasskeyRP(c, a.db)
 	if !valid {
 		return
 	}
@@ -494,7 +510,7 @@ func (a *App) beginPasskeyLogin(c *gin.Context) {
 		fail(c, 429, "登录尝试过多，请稍后重试或使用密码登录")
 		return
 	}
-	config, rp, valid := activePasskeyRP(c, a.db)
+	config, rp, valid := a.activePasskeyRP(c, a.db)
 	if !valid {
 		return
 	}
@@ -513,7 +529,7 @@ func (a *App) finishPasskeyLogin(c *gin.Context) {
 		fail(c, 429, "登录尝试过多，请稍后重试或使用密码登录")
 		return
 	}
-	config, rp, valid := activePasskeyRP(c, a.db)
+	config, rp, valid := a.activePasskeyRP(c, a.db)
 	if !valid {
 		return
 	}

@@ -133,9 +133,6 @@ export default function Trash() {
           返回帖子
         </Button>
       </PageTitle>
-      <Text size="sm" c="dimmed" mb="lg">
-        内容会保留在这里，直到你恢复或永久删除。恢复后沿用原来的公开或隐藏状态。
-      </Text>
       <TextInput
         aria-label="搜索回收站"
         placeholder="搜索已删除帖子的标题或描述"
@@ -224,11 +221,7 @@ export default function Trash() {
         <Paper withBorder>
           <Empty
             title={q ? "没有匹配的内容" : "回收站是空的"}
-            description={
-              q
-                ? "试试其他关键词。"
-                : "删除的帖子会先移到这里，图片和未发布草稿也会一并保留。"
-            }
+            description={q ? "试试其他关键词。" : undefined}
           />
         </Paper>
       ) : (

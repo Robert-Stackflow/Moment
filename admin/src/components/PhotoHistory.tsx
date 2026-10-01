@@ -133,11 +133,7 @@ export function PhotoHistory({ onClose }: { onClose: () => void }) {
                 </article>
               ))
             ) : (
-              <RecordEmpty
-                icon={History}
-                title="暂无处理记录"
-                description="隐藏照片或保存标签后，可在这里查看与撤销。"
-              />
+              <RecordEmpty icon={History} title="暂无处理记录" />
             )}
           </Stack>
         )}

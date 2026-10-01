@@ -135,11 +135,7 @@ export default function Shares() {
       ) : !list.data?.data.length ? (
         <Empty
           title="还没有分享相册"
-          description={
-            q
-              ? "没有找到匹配的相册。"
-              : "选择照片，设置密码和有效期，再把链接分享给朋友。"
-          }
+          description={q ? "没有找到匹配的相册。" : undefined}
         />
       ) : (
         <>
