@@ -1,28 +1,21 @@
-import { lazy, Suspense, useState } from "react";
 import {
   Button,
-  Collapse,
-  Group,
-  Modal,
-  NumberInput,
+  Dialog,
+  FormField,
+  Input,
   Select,
-  Stack,
-  Text,
-} from "@mantine/core";
+} from "@robert-stackflow/oneui";
 import { ChevronDown, MapPin } from "lucide-react";
+import { lazy, Suspense, useState } from "react";
 import type { Discovery } from "../types";
+import { selectOptions } from "../ui-data";
 const MapPicker = lazy(() => import("./MapPicker"));
-const dropdown = {
-  floatingStrategy: "fixed" as const,
-  transitionProps: { transition: "fade-down" as const, duration: 160 },
-};
 export const defaultDiscovery = (image: boolean): Discovery => ({
   latitude: null,
   longitude: null,
   precision: image ? "inherit" : "private",
   timeline: image ? "inherit" : "show",
 });
-
 export function DiscoveryEditor({
   value,
   onChange,
@@ -41,8 +34,8 @@ export function DiscoveryEditor({
   const inherit = image ? [{ value: "inherit", label: "沿用帖子" }] : [];
   return (
     <div className="discovery-editor">
-      <button
-        type="button"
+      <Button
+        variant="ghost"
         className="discovery-heading"
         aria-expanded={open}
         onClick={() => setOpen(!open)}
@@ -51,106 +44,169 @@ export function DiscoveryEditor({
         <span>地图与时间线</span>
         <ChevronDown
           size={16}
-          style={{ transform: open ? "rotate(180deg)" : undefined }}
+          style={{
+            ...{ transform: open ? "rotate(180deg)" : undefined },
+          }}
         />
-      </button>
-      <Collapse in={open}>
-        <Stack gap="md" pt="md">
-          <Select
-            label="地图位置"
-            comboboxProps={dropdown}
-            value={data.precision}
-            onChange={(v) => field("precision", v as Discovery["precision"])}
-            data={[
-              ...inherit,
-              { value: "private", label: "不公开" },
-              { value: "approximate", label: "模糊位置" },
-              { value: "exact", label: "精确位置" },
-            ]}
-            allowDeselect={false}
-          />
+      </Button>
+      <div hidden={!open}>
+        <div
+          className="ui-stack"
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: 16,
+            paddingTop: 16,
+          }}
+        >
+          <FormField label={"地图位置"}>
+            <Select
+              label="地图位置"
+              onChange={(v) => field("precision", v as Discovery["precision"])}
+              options={selectOptions([
+                ...inherit,
+                { value: "private", label: "不公开" },
+                { value: "approximate", label: "模糊位置" },
+                { value: "exact", label: "精确位置" },
+              ])}
+              value={data.precision ?? ""}
+            />
+          </FormField>
           {data.precision !== "inherit" && (
             <>
-              <Group grow align="start" gap="xs">
-                <NumberInput
-                  label="纬度"
-                  value={data.latitude ?? ""}
-                  min={-90}
-                  max={90}
-                  decimalScale={6}
-                  hideControls
-                  onChange={(v) =>
-                    field("latitude", typeof v === "number" ? v : null)
-                  }
-                  placeholder="−90 至 90"
-                />
-                <NumberInput
-                  label="经度"
-                  value={data.longitude ?? ""}
-                  min={-180}
-                  max={180}
-                  decimalScale={6}
-                  hideControls
-                  onChange={(v) =>
-                    field("longitude", typeof v === "number" ? v : null)
-                  }
-                  placeholder="−180 至 180"
-                />
-              </Group>
-              <Group gap="xs">
+              <div
+                className="ui-row"
+                style={{
+                  display: "flex",
+                  alignItems: "start",
+                  flexWrap: "wrap",
+                  gap: 6,
+                }}
+              >
+                <FormField label={"纬度"}>
+                  <Input
+                    label="纬度"
+                    type="number"
+                    inputMode="decimal"
+                    step="any"
+                    min={-90}
+                    max={90}
+                    onChange={(event) =>
+                      field(
+                        "latitude",
+                        event.currentTarget.value === ""
+                          ? null
+                          : Number(event.currentTarget.value),
+                      )
+                    }
+                    value={data.latitude ?? ""}
+                  />
+                </FormField>
+                <FormField label={"经度"}>
+                  <Input
+                    label="经度"
+                    type="number"
+                    inputMode="decimal"
+                    step="any"
+                    min={-180}
+                    max={180}
+                    onChange={(event) =>
+                      field(
+                        "longitude",
+                        event.currentTarget.value === ""
+                          ? null
+                          : Number(event.currentTarget.value),
+                      )
+                    }
+                    value={data.longitude ?? ""}
+                  />
+                </FormField>
+              </div>
+              <div
+                className="ui-row"
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  flexWrap: "wrap",
+                  gap: 6,
+                }}
+              >
                 <Button
-                  size="xs"
-                  variant="light"
-                  leftSection={<MapPin size={14} />}
+                  size="small"
                   onClick={() => setMapOpen(true)}
+                  variant="secondary"
                 >
+                  {<MapPin size={14} />}
                   在地图上选点
                 </Button>
                 <Button
-                  size="xs"
-                  variant="subtle"
+                  size="small"
                   disabled={data.latitude === null && data.longitude === null}
                   onClick={() =>
                     onChange({ ...data, latitude: null, longitude: null })
                   }
+                  variant="ghost"
                 >
                   清空坐标
                 </Button>
-              </Group>
-              <Text size="xs" c="dimmed">
+              </div>
+              <p
+                className="ui-text"
+                style={{
+                  fontSize: 12,
+                  color: "var(--muted)",
+                }}
+              >
                 {data.precision === "private"
                   ? "坐标仅保存在后台，不会出现在公开地图。"
                   : data.precision === "approximate"
-                  ? "公开坐标四舍五入至 0.1°，纬度约 11 公里一格，不代表精确拍摄点。"
-                  : "访客能够查看精确坐标。"}{" "}
+                    ? "公开坐标四舍五入至 0.1°，纬度约 11 公里一格，不代表精确拍摄点。"
+                    : "访客能够查看精确坐标。"}{" "}
                 使用 WGS84 坐标；文字地点与原始照片中的 EXIF 不会被此设置删除。
-              </Text>
+              </p>
             </>
           )}
-          <Select
-            label="时间线"
-            comboboxProps={dropdown}
-            value={data.timeline}
-            onChange={(v) => field("timeline", v as Discovery["timeline"])}
-            data={[
-              ...inherit,
-              { value: "show", label: "在时间线中显示" },
-              { value: "hide", label: "从时间线排除" },
-            ]}
-            allowDeselect={false}
-          />
-          <Text size="xs" c="dimmed">
+          <FormField label={"时间线"}>
+            <Select
+              label="时间线"
+              onChange={(v) => field("timeline", v as Discovery["timeline"])}
+              options={selectOptions([
+                ...inherit,
+                { value: "show", label: "在时间线中显示" },
+                { value: "hide", label: "从时间线排除" },
+              ])}
+              value={data.timeline ?? ""}
+            />
+          </FormField>
+          <p
+            className="ui-text"
+            style={{
+              fontSize: 12,
+              color: "var(--muted)",
+            }}
+          >
             仅影响浏览入口；照片墙与大图仍按原有设置显示拍摄时间。没有时间的照片归入「日期未记录」。
-          </Text>
-        </Stack>
-      </Collapse>
-      <Modal
-        opened={mapOpen}
+          </p>
+        </div>
+      </div>
+      <Dialog
+        open={mapOpen}
         onClose={() => setMapOpen(false)}
         title="选择拍摄位置"
-        size="xl"
+        size="large"
       >
-        <Suspense fallback={<Text size="sm">正在打开地图…</Text>}>
+        <Suspense
+          fallback={
+            <p
+              className="ui-text"
+              style={{
+                fontSize: 13,
+              }}
+            >
+              正在打开地图…
+            </p>
+          }
+        >
           <MapPicker
             latitude={data.latitude}
             longitude={data.longitude}
@@ -160,7 +216,7 @@ export function DiscoveryEditor({
             }}
           />
         </Suspense>
-      </Modal>
+      </Dialog>
     </div>
   );
 }

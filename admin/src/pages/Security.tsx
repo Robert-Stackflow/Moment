@@ -1,19 +1,14 @@
-import { useEffect, useRef, useState } from "react";
-import { flushSync } from "react-dom";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-  ActionIcon,
   Alert,
   Button,
-  Group,
-  Modal,
-  Paper,
-  PasswordInput,
-  Stack,
-  Text,
-  TextInput,
-  Title,
-} from "@mantine/core";
+  Card,
+  Dialog,
+  Form,
+  IconButton,
+  Input,
+  PasswordField,
+} from "@robert-stackflow/oneui";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Fingerprint,
   KeyRound,
@@ -22,8 +17,14 @@ import {
   RefreshCw,
   Trash2,
 } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
+import { useEffect, useRef, useState } from "react";
+import { flushSync } from "react-dom";
+import { useNavigate } from "react-router-dom";
 import { api, ApiError, json, notifySuccess } from "../api";
+import { ErrorState, Loading } from "../components/Common";
+import { Toggle } from "../components/Toggle";
+import { UnsavedChanges } from "../components/UnsavedChanges";
+import { useModelForm } from "../components/useModelForm";
 import {
   canUsePasskeys,
   passkeyError,
@@ -32,11 +33,15 @@ import {
   type PasskeyConfig,
 } from "../passkeys";
 import { useAuth } from "../session";
-import { ErrorState, Loading } from "../components/Common";
-import { Toggle } from "../components/Toggle";
-import { UnsavedChanges } from "../components/UnsavedChanges";
-
-type Dialog = { kind: "create" } | { kind: "rename" | "delete"; key: Passkey };
+import { adminHref, tone } from "../ui-data";
+type Dialog =
+  | {
+      kind: "create";
+    }
+  | {
+      kind: "rename" | "delete";
+      key: Passkey;
+    };
 export default function Security() {
   const client = useQueryClient();
   const auth = useAuth();
@@ -54,6 +59,22 @@ export default function Security() {
   const [dialog, setDialog] = useState<Dialog | null>(null);
   const [name, setName] = useState("");
   const [password, setPassword] = useState("");
+  const sharedForm = useModelForm(
+    { name, password },
+    {
+      name: {
+        label: "密钥名称",
+        required: dialog?.kind !== "delete",
+        disabled: dialog?.kind === "delete",
+        maxLength: 60,
+      },
+      password: {
+        label: "当前密码",
+        required: dialog?.kind === "delete",
+        disabled: dialog?.kind !== "delete",
+      },
+    },
+  );
   const [savingEnabled, setSavingEnabled] = useState<boolean | null>(null);
   const [configError, setConfigError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -71,6 +92,10 @@ export default function Security() {
         : dialog.kind === "create" && !!name));
   function open(value: Dialog) {
     setDialog(value);
+    sharedForm.reset({
+      name: "key" in value ? value.key.name : "",
+      password: "",
+    });
     setName("key" in value ? value.key.name : "");
     setPassword("");
     setError("");
@@ -199,26 +224,61 @@ export default function Security() {
           }}
         />
       ) : (
-        <Stack gap="xl">
-          <Paper withBorder p="xl">
-            <Title order={3} mb="lg">
-              登录安全
-            </Title>
-            <Group
-              justify="space-between"
-              align="center"
-              gap="lg"
-              wrap="nowrap"
+        <div
+          className="ui-stack"
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: 32,
+          }}
+        >
+          <Card className="moment-panel">
+            <h3
+              className="ui-title"
+              style={{
+                marginBottom: 24,
+              }}
             >
-              <div style={{ minWidth: 0 }}>
-                <Group gap="sm">
+              登录安全
+            </h3>
+            <div
+              className="ui-row"
+              style={{
+                display: "flex",
+                alignItems: "center",
+                flexWrap: "nowrap",
+                gap: 24,
+                justifyContent: "space-between",
+              }}
+            >
+              <div
+                style={{
+                  ...{ minWidth: 0 },
+                }}
+              >
+                <div
+                  className="ui-row"
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    flexWrap: "wrap",
+                    gap: 10,
+                  }}
+                >
                   <Fingerprint size={23} />
-                  <Title order={4}>通行密钥</Title>
-                </Group>
-                <Text c="dimmed" size="sm" mt="sm">
+                  <h4 className="ui-title">通行密钥</h4>
+                </div>
+                <p
+                  className="ui-text"
+                  style={{
+                    color: "var(--muted)",
+                    fontSize: 13,
+                    marginTop: 10,
+                  }}
+                >
                   使用设备的指纹、面容、PIN
                   或安全密钥验证身份，无需输入账户密码。
-                </Text>
+                </p>
               </div>
               <Toggle
                 aria-label="启用通行密钥登录"
@@ -229,41 +289,66 @@ export default function Security() {
                   busy ||
                   (!settings?.enabled && (!canUsePasskeys() || !correctOrigin))
                 }
-                onChange={(event) =>
-                  void changeEnabled(event.currentTarget.checked)
-                }
+                onChange={(event) => void changeEnabled(event)}
               />
-            </Group>
+            </div>
             {configError && (
-              <Alert color="red" mt="md" role="alert">
-                {configError}
-              </Alert>
+              <div
+                style={{
+                  marginTop: 16,
+                }}
+              >
+                <Alert tone={tone("red")}>{configError}</Alert>
+              </div>
             )}
             {(!canUsePasskeys() || !correctOrigin) && (
-              <Alert color="orange" mt="md">
-                当前浏览器或网址不支持通行密钥。请使用支持通行密钥的浏览器和
-                HTTPS；本地预览请用 localhost。
-              </Alert>
+              <div
+                style={{
+                  marginTop: 16,
+                }}
+              >
+                <Alert tone={tone("orange")}>
+                  当前浏览器或网址不支持通行密钥。请使用支持通行密钥的浏览器和
+                  HTTPS；本地预览请用 localhost。
+                </Alert>
+              </div>
             )}
-          </Paper>
-          <Paper withBorder p="xl">
-            <Group justify="space-between" mb="lg">
-              <Title order={4}>我的通行密钥</Title>
-              <Group gap="xs">
-                <ActionIcon
-                  variant="subtle"
-                  aria-label="刷新通行密钥"
+          </Card>
+          <Card className="moment-panel">
+            <div
+              className="ui-row"
+              style={{
+                display: "flex",
+                alignItems: "center",
+                flexWrap: "wrap",
+                gap: 10,
+                justifyContent: "space-between",
+                marginBottom: 24,
+              }}
+            >
+              <h4 className="ui-title">我的通行密钥</h4>
+              <div
+                className="ui-row"
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  flexWrap: "wrap",
+                  gap: 6,
+                }}
+              >
+                <IconButton
+                  label={"刷新通行密钥"}
                   loading={config.isFetching || keys.isFetching}
                   onClick={() => {
                     void config.refetch();
                     void keys.refetch();
                   }}
+                  variant="ghost"
                 >
                   <RefreshCw size={17} />
-                </ActionIcon>
+                </IconButton>
                 <Button
-                  size="sm"
-                  leftSection={<Plus size={16} />}
+                  size="small"
                   disabled={
                     !settings?.enabled ||
                     savingEnabled !== null ||
@@ -272,100 +357,158 @@ export default function Security() {
                     (keys.data?.data.length || 0) >= 20
                   }
                   onClick={() => open({ kind: "create" })}
+                  variant="primary"
                 >
+                  {<Plus size={16} />}
                   添加通行密钥
                 </Button>
-              </Group>
-            </Group>
+              </div>
+            </div>
             {!keys.data?.data.length ? (
-              <Text c="dimmed" size="sm">
+              <p
+                className="ui-text"
+                style={{
+                  color: "var(--muted)",
+                  fontSize: 13,
+                }}
+              >
                 还没有通行密钥。建议添加常用设备，再保留另一台设备作为备用。
-              </Text>
+              </p>
             ) : (
-              <Stack gap="sm">
+              <div
+                className="ui-stack"
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 10,
+                }}
+              >
                 {keys.data.data.map((key) => (
                   <div key={key.id} className="passkey-row">
                     <KeyRound size={21} className="passkey-row-icon" />
                     <div className="passkey-row-copy">
-                      <Text fw={600} style={{ overflowWrap: "anywhere" }}>
+                      <p
+                        className="ui-text"
+                        style={{
+                          fontWeight: 600,
+                          ...{ overflowWrap: "anywhere" },
+                        }}
+                      >
                         {key.name}
-                      </Text>
-                      <Text size="xs" c="dimmed" mt={4}>
+                      </p>
+                      <p
+                        className="ui-text"
+                        style={{
+                          fontSize: 12,
+                          color: "var(--muted)",
+                          marginTop: 4,
+                        }}
+                      >
                         添加于 {key.created_at}
-                      </Text>
-                      <Text size="xs" c="dimmed" mt={3}>
+                      </p>
+                      <p
+                        className="ui-text"
+                        style={{
+                          fontSize: 12,
+                          color: "var(--muted)",
+                          marginTop: 3,
+                        }}
+                      >
                         {key.last_used_at
                           ? `最近使用 ${key.last_used_at}`
                           : "尚未用于登录"}
-                      </Text>
+                      </p>
                       {key.rp_id !== settings?.rp_id && (
-                        <Text size="xs" c="orange" mt={4}>
+                        <p
+                          className="ui-text"
+                          style={{
+                            fontSize: 12,
+                            color: "orange",
+                            marginTop: 4,
+                          }}
+                        >
                           属于其他登录域名：{key.rp_id}
-                        </Text>
+                        </p>
                       )}
                     </div>
-                    <Group gap={4} wrap="nowrap">
-                      <ActionIcon
-                        variant="subtle"
-                        aria-label={`重命名 ${key.name}`}
+                    <div
+                      className="ui-row"
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        flexWrap: "nowrap",
+                        gap: 4,
+                      }}
+                    >
+                      <IconButton
+                        label={`重命名 ${key.name}`}
                         onClick={() => open({ kind: "rename", key })}
+                        variant="ghost"
                       >
                         <Pencil size={17} />
-                      </ActionIcon>
-                      <ActionIcon
-                        variant="subtle"
-                        color="red"
-                        aria-label={`移除 ${key.name}`}
+                      </IconButton>
+                      <IconButton
+                        label={`移除 ${key.name}`}
                         onClick={() => open({ kind: "delete", key })}
+                        variant="danger"
                       >
                         <Trash2 size={17} />
-                      </ActionIcon>
-                    </Group>
+                      </IconButton>
+                    </div>
                   </div>
                 ))}
-              </Stack>
+              </div>
             )}
-          </Paper>
-          <Paper withBorder p="xl">
-            <Title order={4}>设备丢失或无法验证？</Title>
-            <Text size="sm" c="dimmed" mt="sm">
+          </Card>
+          <Card className="moment-panel">
+            <h4 className="ui-title">设备丢失或无法验证？</h4>
+            <p
+              className="ui-text"
+              style={{
+                fontSize: 13,
+                color: "var(--muted)",
+                marginTop: 10,
+              }}
+            >
               使用原来的用户名和密码登录，再移除丢失设备的通行密钥。移除会退出此账户的所有登录会话。密码登录始终保留；更换网站域名后，需要为新域名重新添加密钥。
-            </Text>
+            </p>
             <Button
-              component={Link}
-              to="/account/password"
-              variant="default"
-              mt="md"
+              href={adminHref("/account/password")}
+              variant="secondary"
+              style={{
+                marginTop: 16,
+              }}
             >
               管理账户密码
             </Button>
-          </Paper>
-        </Stack>
+          </Card>
+        </div>
       )}
-      <Modal
-        opened={!!dialog}
+      <Dialog
+        open={!!dialog}
         onClose={close}
         title={
           dialog?.kind === "create"
             ? "添加通行密钥"
             : dialog?.kind === "rename"
-            ? "重命名通行密钥"
-            : "移除通行密钥？"
+              ? "重命名通行密钥"
+              : "移除通行密钥？"
         }
-        centered
-        closeOnClickOutside={false}
-        closeOnEscape={!busy}
+        busy={busy}
       >
         {dialog && (
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              void submit();
-            }}
-          >
-            <Stack gap="lg">
+          <Form controller={sharedForm} onSubmit={submit}>
+            <div
+              className="ui-stack"
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: 24,
+              }}
+            >
               {(dialog.kind === "create" || dialog.kind === "rename") && (
-                <TextInput
+                <Input
+                  {...sharedForm.field("name")}
                   label="密钥名称"
                   placeholder="例如：我的笔记本"
                   value={name}
@@ -377,88 +520,120 @@ export default function Security() {
                 />
               )}
               {dialog.kind === "create" && (
-                <Text size="sm" c="dimmed">
+                <p
+                  className="ui-text"
+                  style={{
+                    fontSize: 13,
+                    color: "var(--muted)",
+                  }}
+                >
                   浏览器会请你选择保存位置并验证身份。
-                </Text>
+                </p>
               )}
               {dialog.kind === "delete" && (
-                <Alert color="orange">
+                <Alert tone={tone("orange")}>
                   移除「{dialog.key.name}
                   」后，它将无法登录。所有设备（包括本机）的登录会话都会退出，请确认还记得账户密码。
                 </Alert>
               )}
               {dialog.kind === "delete" && (
-                <PasswordInput
+                <PasswordField
+                  {...sharedForm.field("password")}
+                  onChange={(value) => setPassword(value)}
                   label="当前密码"
                   value={password}
-                  onChange={(e) => setPassword(e.currentTarget.value)}
                   autoComplete="current-password"
                   required
                   disabled={busy}
                 />
               )}
               {busy && dialog.kind === "create" && (
-                <Text size="sm" c="dimmed" role="status">
+                <p
+                  role="status"
+                  className="ui-text"
+                  style={{
+                    fontSize: 13,
+                    color: "var(--muted)",
+                  }}
+                >
                   {finishing ? "验证成功，正在保存…" : "正在等待设备验证…"}
-                </Text>
+                </p>
               )}
               {error && (
-                <Alert color="red" role="alert">
+                <Alert tone={tone("red")}>
                   {error}
                   {conflict && (
                     <Button
-                      variant="subtle"
-                      color="red"
-                      size="xs"
+                      size="small"
                       onClick={() => setReloadPrompt(true)}
+                      variant="danger"
                     >
                       重新加载
                     </Button>
                   )}
                 </Alert>
               )}
-              <Group justify="flex-end">
+              <div
+                className="ui-row"
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  flexWrap: "wrap",
+                  gap: 10,
+                  justifyContent: "flex-end",
+                }}
+              >
                 <Button
-                  variant="default"
                   disabled={busy && (dialog.kind !== "create" || finishing)}
                   onClick={() => (busy ? controller.current?.abort() : close())}
+                  variant="secondary"
                 >
                   {busy ? "取消验证" : "取消"}
                 </Button>
-                <Button
-                  type="submit"
-                  color={dialog.kind === "delete" ? "red" : undefined}
-                  loading={busy}
-                >
+                <Button type="submit" loading={busy} variant="primary">
                   {dialog.kind === "create"
                     ? "验证并添加"
                     : dialog.kind === "delete"
-                    ? "确认移除"
-                    : "保存"}
+                      ? "确认移除"
+                      : "保存"}
                 </Button>
-              </Group>
-            </Stack>
-          </form>
+              </div>
+            </div>
+          </Form>
         )}
-      </Modal>
-      <Modal
-        opened={reloadPrompt}
+      </Dialog>
+      <Dialog
+        open={reloadPrompt}
         onClose={() => setReloadPrompt(false)}
         title="放弃当前修改并重新加载？"
-        centered
       >
-        <Text size="sm">
+        <p
+          className="ui-text"
+          style={{
+            fontSize: 13,
+          }}
+        >
           另一处修改已保存。重新加载后，此窗口尚未保存的内容会被替换。
-        </Text>
-        <Group justify="flex-end" mt="lg">
-          <Button variant="default" onClick={() => setReloadPrompt(false)}>
+        </p>
+        <div
+          className="ui-row"
+          style={{
+            display: "flex",
+            alignItems: "center",
+            flexWrap: "wrap",
+            gap: 10,
+            justifyContent: "flex-end",
+            marginTop: 24,
+          }}
+        >
+          <Button onClick={() => setReloadPrompt(false)} variant="secondary">
             继续编辑
           </Button>
-          <Button onClick={() => void reloadLatest()}>
+          <Button onClick={() => void reloadLatest()} variant="primary">
             放弃修改并重新加载
           </Button>
-        </Group>
-      </Modal>
+        </div>
+      </Dialog>
     </>
   );
 }

@@ -5,10 +5,10 @@ import {
   env,
   type Tensor,
 } from "@huggingface/transformers";
-import wasmUrl from "onnxruntime-web/ort-wasm-simd-threaded.jsep.wasm?url";
 import wasmModule from "onnxruntime-web/ort-wasm-simd-threaded.jsep.mjs?url";
-import vocabulary from "./tag-vocabulary.json";
+import wasmUrl from "onnxruntime-web/ort-wasm-simd-threaded.jsep.wasm?url";
 import vocabularyHash from "../../public/tag-model/vocabulary-v1.sha256?raw";
+import vocabulary from "./tag-vocabulary.json";
 
 env.allowLocalModels = true;
 env.cacheKey = "moment-tag-model-v1";

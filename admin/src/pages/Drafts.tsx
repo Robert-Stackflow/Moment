@@ -1,27 +1,23 @@
-import { useState } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useDebouncedValue } from "@mantine/hooks";
 import {
-  ActionIcon,
   Badge,
   Button,
-  Group,
-  Image,
-  Modal,
+  Card,
+  Dialog,
+  IconButton,
+  Input,
   Pagination,
-  Paper,
-  Stack,
-  Text,
-  TextInput,
-} from "@mantine/core";
+} from "@robert-stackflow/oneui";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { FilePenLine, Plus, Search, Trash2 } from "lucide-react";
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { api, json, notifyError, notifySuccess } from "../api";
 import { Empty, ErrorState, Loading, PageTitle } from "../components/Common";
-import { thumbnail } from "../types";
-import type { DraftSummary, Settings } from "../types";
 import { scheduleTime } from "../components/ScheduleDialog";
-
+import { useDebouncedValue } from "../hooks";
+import type { DraftSummary, Settings } from "../types";
+import { thumbnail } from "../types";
+import { adminHref, badgeTone } from "../ui-data";
 export default function Drafts() {
   const client = useQueryClient();
   const [search, setSearch] = useState("");
@@ -70,23 +66,22 @@ export default function Drafts() {
   return (
     <>
       <PageTitle title="草稿">
-        <Button
-          component={Link}
-          to="/posts/new"
-          leftSection={<Plus size={17} />}
-        >
+        <Button href={adminHref("/posts/new")} variant="primary">
+          {<Plus size={17} />}
           新建帖子
         </Button>
       </PageTitle>
-      <TextInput
-        mb="lg"
+      <Input
         aria-label="搜索草稿"
         placeholder="搜索草稿标题或描述"
-        leftSection={<Search size={17} />}
+        leading={<Search size={17} />}
         value={search}
         onChange={(e) => {
           setSearch(e.currentTarget.value);
           setPage(1);
+        }}
+        style={{
+          marginBottom: 24,
         }}
       />
       {drafts.isPending ? (
@@ -96,9 +91,16 @@ export default function Drafts() {
       ) : !drafts.data.data.length ? (
         <Empty title={q ? "没有匹配的草稿" : "还没有草稿"} />
       ) : (
-        <Stack gap="sm">
+        <div
+          className="ui-stack"
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: 10,
+          }}
+        >
           {drafts.data.data.map((draft) => (
-            <Paper withBorder p="md" key={draft.id} className="draft-row">
+            <Card key={draft.id} className={"moment-panel " + "draft-row"}>
               <Link
                 to={
                   draft.post_id
@@ -109,97 +111,149 @@ export default function Drafts() {
               >
                 <div className="draft-cover">
                   {draft.cover ? (
-                    <Image
+                    <img
                       src={thumbnail(draft.cover, settings.data?.data, 320)}
                       alt=""
-                      w={76}
-                      h={68}
-                      radius={9}
+                      style={{
+                        width: 76,
+                        height: 68,
+                      }}
                     />
                   ) : (
                     <FilePenLine size={23} />
                   )}
                 </div>
                 <div className="draft-row-copy">
-                  <Group gap={8}>
-                    <Text fw={600} truncate>
-                      {draft.title || "未命名草稿"}
-                    </Text>
-                    <Badge
-                      size="xs"
-                      variant="light"
-                      color={draft.post_id ? "blue" : "gray"}
+                  <div
+                    className="ui-row"
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      flexWrap: "wrap",
+                      gap: 8,
+                    }}
+                  >
+                    <p
+                      className="ui-text"
+                      style={{
+                        fontWeight: 600,
+                      }}
                     >
+                      {draft.title || "未命名草稿"}
+                    </p>
+                    <Badge tone={badgeTone(draft.post_id ? "blue" : "gray")}>
                       {draft.post_id ? "待发布更新" : "新帖子"}
                     </Badge>
                     {draft.schedule_status === "pending" && (
-                      <Badge size="xs" color="blue">
-                        定时发布
-                      </Badge>
+                      <Badge tone={badgeTone("blue")}>定时发布</Badge>
                     )}
                     {draft.schedule_status === "failed" && (
-                      <Badge size="xs" color="red">
-                        发布失败
-                      </Badge>
+                      <Badge tone={badgeTone("red")}>发布失败</Badge>
                     )}
-                  </Group>
-                  <Text size="sm" c="dimmed" truncate mt={4}>
+                  </div>
+                  <p
+                    className="ui-text"
+                    style={{
+                      fontSize: 13,
+                      color: "var(--muted)",
+                      marginTop: 4,
+                    }}
+                  >
                     {draft.description || "尚未添加描述"}
-                  </Text>
+                  </p>
                   {draft.schedule_status === "pending" && draft.publish_at && (
-                    <Text size="xs" c="dimmed" mt={4}>
+                    <p
+                      className="ui-text"
+                      style={{
+                        fontSize: 12,
+                        color: "var(--muted)",
+                        marginTop: 4,
+                      }}
+                    >
                       {scheduleTime(draft.publish_at)} · 北京时间
-                    </Text>
+                    </p>
                   )}
-                  <Text size="xs" c="dimmed" mt={6}>
+                  <p
+                    className="ui-text"
+                    style={{
+                      fontSize: 12,
+                      color: "var(--muted)",
+                      marginTop: 6,
+                    }}
+                  >
                     {draft.image_count} 张照片 · {draft.updated_at}
-                  </Text>
+                  </p>
                 </div>
               </Link>
-              <ActionIcon
-                variant="subtle"
+              <IconButton
                 disabled={draft.schedule_status === "pending"}
-                color="red"
-                aria-label={`删除草稿 ${draft.title || "未命名草稿"}`}
+                label={`删除草稿 ${draft.title || "未命名草稿"}`}
                 onClick={() => setDeleting(draft)}
+                variant="danger"
               >
                 <Trash2 size={17} />
-              </ActionIcon>
-            </Paper>
+              </IconButton>
+            </Card>
           ))}
           {(drafts.data.total || 0) > 20 && (
-            <Group justify="center" mt="md">
+            <div
+              className="ui-row"
+              style={{
+                display: "flex",
+                alignItems: "center",
+                flexWrap: "wrap",
+                gap: 10,
+                justifyContent: "center",
+                marginTop: 16,
+              }}
+            >
               <Pagination
-                value={page}
-                onChange={setPage}
+                page={page}
+                onPageChange={setPage}
                 total={Math.ceil((drafts.data.total || 0) / 20)}
+                pageSize={1}
+                summary={null}
               />
-            </Group>
+            </div>
           )}
-        </Stack>
+        </div>
       )}
-      <Modal
-        opened={!!deleting}
+      <Dialog
+        open={!!deleting}
         onClose={() => !busy && setDeleting(null)}
         title="删除这份草稿？"
-        centered
       >
-        <Text size="sm">
+        <p
+          className="ui-text"
+          style={{
+            fontSize: 13,
+          }}
+        >
           草稿中的未发布修改将被删除，已发布的帖子和原始图片不受影响。
-        </Text>
-        <Group justify="flex-end" mt="xl">
+        </p>
+        <div
+          className="ui-row"
+          style={{
+            display: "flex",
+            alignItems: "center",
+            flexWrap: "wrap",
+            gap: 10,
+            justifyContent: "flex-end",
+            marginTop: 32,
+          }}
+        >
           <Button
-            variant="default"
             disabled={busy}
             onClick={() => setDeleting(null)}
+            variant="secondary"
           >
             取消
           </Button>
-          <Button color="red" loading={busy} onClick={() => void remove()}>
+          <Button loading={busy} onClick={() => void remove()} variant="danger">
             删除草稿
           </Button>
-        </Group>
-      </Modal>
+        </div>
+      </Dialog>
     </>
   );
 }

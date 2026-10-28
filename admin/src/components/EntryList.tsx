@@ -1,15 +1,16 @@
-import { useState } from "react";
-import { ActionIcon, Button, Group, TextInput, Title } from "@mantine/core";
+import { Button, IconButton, Input } from "@robert-stackflow/oneui";
 import { ArrowDown, ArrowUp, GripVertical, Plus, Trash2 } from "lucide-react";
+import { useState } from "react";
 import { IconPicker } from "./IconPicker";
-
 export interface Entry {
   name: string;
   icon: string;
   url: string;
   [key: string]: unknown;
 }
-export type EditableEntry = Entry & { _key: string };
+export type EditableEntry = Entry & {
+  _key: string;
+};
 export function EntryList({
   entries,
   onChange,
@@ -39,12 +40,20 @@ export function EntryList({
   }
   return (
     <section className="entry-list-section">
-      <Group justify="space-between" mb={20}>
-        <Title order={5}>菜单与联系入口</Title>
+      <div
+        className="ui-row"
+        style={{
+          display: "flex",
+          alignItems: "center",
+          flexWrap: "wrap",
+          gap: 10,
+          justifyContent: "space-between",
+          marginBottom: 20,
+        }}
+      >
+        <h5 className="ui-title">菜单与联系入口</h5>
         <Button
-          size="xs"
-          variant="light"
-          leftSection={<Plus size={14} />}
+          size="small"
           onClick={() =>
             onChange([
               ...entries,
@@ -56,16 +65,16 @@ export function EntryList({
               },
             ])
           }
+          variant="secondary"
         >
+          {<Plus size={14} />}
           添加入口
         </Button>
-      </Group>
+      </div>
       {removed && (
         <div className="photo-undo">
           <span>已移除 {removed.entry.name || "入口"}</span>
           <Button
-            size="compact-xs"
-            variant="subtle"
             onClick={() => {
               const next = [...entries];
               next.splice(
@@ -76,6 +85,7 @@ export function EntryList({
               onChange(next);
               setRemoved(null);
             }}
+            variant="ghost"
           >
             撤销
           </Button>
@@ -111,8 +121,9 @@ export function EntryList({
               setTarget(null);
             }}
           >
-            <button
-              type="button"
+            <IconButton
+              label={`拖动排序 ${entry.name || index + 1}`}
+              variant="ghost"
               className="entry-drag"
               draggable
               aria-label={`拖动排序 ${entry.name || index + 1}`}
@@ -127,20 +138,20 @@ export function EntryList({
               }}
             >
               <GripVertical size={16} />
-            </button>
+            </IconButton>
             <IconPicker
               value={entry.icon}
               name={entry.name || String(index + 1)}
               onChange={(icon) => edit(index, { icon })}
             />
-            <TextInput
+            <Input
               className="entry-name"
               aria-label={`入口名称 ${index + 1}`}
               placeholder="名称"
               value={entry.name}
               onChange={(e) => edit(index, { name: e.currentTarget.value })}
             />
-            <TextInput
+            <Input
               className="entry-url"
               aria-label={`入口地址 ${index + 1}`}
               placeholder="https://… 或 mailto:…"
@@ -149,38 +160,33 @@ export function EntryList({
             />
             <div className="entry-actions">
               <div className="entry-reorder">
-                <ActionIcon
-                  size={22}
-                  variant="subtle"
-                  color="gray"
-                  aria-label={`上移入口 ${entry.name || index + 1}`}
+                <IconButton
+                  label={`上移入口 ${entry.name || index + 1}`}
                   disabled={index === 0}
                   onClick={() => move(index, index - 1)}
+                  variant="ghost"
                 >
                   <ArrowUp size={13} />
-                </ActionIcon>
-                <ActionIcon
-                  size={22}
-                  variant="subtle"
-                  color="gray"
-                  aria-label={`下移入口 ${entry.name || index + 1}`}
+                </IconButton>
+                <IconButton
+                  label={`下移入口 ${entry.name || index + 1}`}
                   disabled={index === entries.length - 1}
                   onClick={() => move(index, index + 1)}
+                  variant="ghost"
                 >
                   <ArrowDown size={13} />
-                </ActionIcon>
+                </IconButton>
               </div>
-              <ActionIcon
-                variant="subtle"
-                color="red"
-                aria-label={`移除入口 ${entry.name || index + 1}`}
+              <IconButton
+                label={`移除入口 ${entry.name || index + 1}`}
                 onClick={() => {
                   setRemoved({ entry, index });
                   onChange(entries.filter((_, i) => i !== index));
                 }}
+                variant="danger"
               >
                 <Trash2 size={16} />
-              </ActionIcon>
+              </IconButton>
             </div>
           </div>
         ))}

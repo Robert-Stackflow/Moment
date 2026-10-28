@@ -1,17 +1,12 @@
-import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
 import {
-  ActionIcon,
   Alert,
   Badge,
   Button,
-  Group,
-  Modal,
-  Paper,
-  Stack,
-  Text,
-  Title,
-} from "@mantine/core";
+  Card,
+  Dialog,
+  IconButton,
+} from "@robert-stackflow/oneui";
+import { useQuery } from "@tanstack/react-query";
 import {
   Globe,
   LogOut,
@@ -20,11 +15,12 @@ import {
   Smartphone,
   Tablet,
 } from "lucide-react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api, ApiError, json, notifyError, notifySuccess } from "../api";
 import { ErrorState, Loading } from "../components/Common";
 import { useAuth } from "../session";
-
+import { badgeTone, tone } from "../ui-data";
 type LoginSession = {
   id: string;
   current: boolean;
@@ -52,7 +48,6 @@ const methods = {
   passkey: "通行密钥",
   unknown: "较早的登录",
 };
-
 export default function Sessions() {
   const auth = useAuth();
   const navigate = useNavigate();
@@ -60,7 +55,7 @@ export default function Sessions() {
     queryKey: ["loginSessions"],
     queryFn: () => api<LoginSession[]>("/me/sessions"),
     staleTime: 0,
-    refetchInterval: 60_000,
+    refetchInterval: 60000,
     refetchOnWindowFocus: true,
   });
   const [target, setTarget] = useState<LoginSession | "others" | null>(null);
@@ -77,7 +72,9 @@ export default function Sessions() {
     setBusy(true);
     setError("");
     try {
-      const result = await api<{ current?: boolean }>(
+      const result = await api<{
+        current?: boolean;
+      }>(
         `/me/sessions/${target === "others" ? "others" : target.id}`,
         json("DELETE", {}),
       );
@@ -102,33 +99,57 @@ export default function Sessions() {
   }
   return (
     <>
-      <Paper withBorder className="account-panel">
+      <Card className={"moment-panel " + "account-panel"}>
         <div className="account-panel-heading">
-          <Group justify="space-between" gap="md">
-            <Title order={3}>登录会话</Title>
-            <Group gap="xs">
-              <ActionIcon
-                variant="subtle"
-                aria-label="刷新登录会话"
+          <div
+            className="ui-row"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              flexWrap: "wrap",
+              gap: 16,
+              justifyContent: "space-between",
+            }}
+          >
+            <h3 className="ui-title">登录会话</h3>
+            <div
+              className="ui-row"
+              style={{
+                display: "flex",
+                alignItems: "center",
+                flexWrap: "wrap",
+                gap: 6,
+              }}
+            >
+              <IconButton
+                label={"刷新登录会话"}
                 loading={sessions.isFetching}
                 onClick={() => void sessions.refetch()}
+                variant="ghost"
               >
                 <RefreshCw size={18} />
-              </ActionIcon>
+              </IconButton>
               <Button
-                variant="default"
-                size="sm"
-                leftSection={<LogOut size={16} />}
+                size="small"
                 disabled={!others || busy}
                 onClick={() => confirm("others")}
+                variant="secondary"
               >
+                {<LogOut size={16} />}
                 退出其他会话
               </Button>
-            </Group>
-          </Group>
-          <Text c="dimmed" size="sm" mt="sm">
+            </div>
+          </div>
+          <p
+            className="ui-text"
+            style={{
+              color: "var(--muted)",
+              fontSize: 13,
+              marginTop: 10,
+            }}
+          >
             查看当前有效的登录，退出不再使用的浏览器或设备。
-          </Text>
+          </p>
         </div>
         {sessions.isPending ? (
           <Loading />
@@ -143,34 +164,51 @@ export default function Sessions() {
                 session.device_type === "mobile"
                   ? Smartphone
                   : session.device_type === "tablet"
-                  ? Tablet
-                  : session.device_type === "unknown"
-                  ? Globe
-                  : Monitor;
+                    ? Tablet
+                    : session.device_type === "unknown"
+                      ? Globe
+                      : Monitor;
               return (
                 <div
                   key={session.id}
-                  className={`session-row${
-                    session.current ? " is-current" : ""
-                  }`}
+                  className={`session-row${session.current ? " is-current" : ""}`}
                 >
                   <div className="session-device-icon">
                     <Icon size={22} strokeWidth={1.7} />
                   </div>
                   <div className="session-copy">
-                    <Group gap="sm">
-                      <Text fw={600} size="sm">
+                    <div
+                      className="ui-row"
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        flexWrap: "wrap",
+                        gap: 10,
+                      }}
+                    >
+                      <p
+                        className="ui-text"
+                        style={{
+                          fontWeight: 600,
+                          fontSize: 13,
+                        }}
+                      >
                         {session.device}
-                      </Text>
+                      </p>
                       {session.current && (
-                        <Badge variant="light" color="teal" size="sm">
-                          当前会话
-                        </Badge>
+                        <Badge tone={badgeTone("teal")}>当前会话</Badge>
                       )}
-                    </Group>
-                    <Text c="dimmed" size="xs" mt={7}>
+                    </div>
+                    <p
+                      className="ui-text"
+                      style={{
+                        color: "var(--muted)",
+                        fontSize: 12,
+                        marginTop: 7,
+                      }}
+                    >
                       {methods[session.method]} · IP {session.ip || "未记录"}
-                    </Text>
+                    </p>
                     <dl className="session-times">
                       <div>
                         <dt>登录时间</dt>
@@ -188,14 +226,11 @@ export default function Sessions() {
                   </div>
                   <Button
                     className="session-exit"
-                    color={session.current ? "gray" : "red"}
-                    variant="subtle"
-                    size="xs"
+                    size="small"
                     disabled={busy}
                     onClick={() => confirm(session)}
-                    aria-label={`退出${
-                      session.current ? "当前会话" : session.device + " 会话"
-                    }`}
+                    aria-label={`退出${session.current ? "当前会话" : session.device + " 会话"}`}
+                    variant="ghost"
                   >
                     {session.current ? "退出当前会话" : "退出会话"}
                   </Button>
@@ -205,53 +240,77 @@ export default function Sessions() {
           </div>
         )}
         <div className="account-session-note">
-          <Text size="xs" c="dimmed">
+          <p
+            className="ui-text"
+            style={{
+              fontSize: 12,
+              color: "var(--muted)",
+            }}
+          >
             时间按北京时间显示，活动记录约每分钟更新。设备信息由浏览器提供；旧会话可能缺少登录详情。
-          </Text>
+          </p>
         </div>
-      </Paper>
-      <Modal
-        opened={!!target}
+      </Card>
+      <Dialog
+        open={!!target}
         onClose={() => !busy && setTarget(null)}
         title={
           target === "others"
             ? "退出其他会话？"
             : target?.current
-            ? "退出当前会话？"
-            : "退出此会话？"
+              ? "退出当前会话？"
+              : "退出此会话？"
         }
-        centered
-        closeOnEscape={!busy}
-        closeOnClickOutside={!busy}
-        withCloseButton={!busy}
+        busy={busy}
       >
-        <Stack gap="lg">
-          <Text size="sm">
+        <div
+          className="ui-stack"
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: 24,
+          }}
+        >
+          <p
+            className="ui-text"
+            style={{
+              fontSize: 13,
+            }}
+          >
             {target === "others"
               ? "其他浏览器或设备需要重新登录，当前会话会保留。"
               : target?.current
-              ? "你将返回登录页面，需要再次验证身份。"
-              : `${target?.device || "该设备"} 需要重新登录才能继续操作。`}
-          </Text>
-          {error && (
-            <Alert color="red" role="alert">
-              {error}
-            </Alert>
-          )}
-          <Group justify="flex-end">
+                ? "你将返回登录页面，需要再次验证身份。"
+                : `${target?.device || "该设备"} 需要重新登录才能继续操作。`}
+          </p>
+          {error && <Alert tone={tone("red")}>{error}</Alert>}
+          <div
+            className="ui-row"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              flexWrap: "wrap",
+              gap: 10,
+              justifyContent: "flex-end",
+            }}
+          >
             <Button
-              variant="default"
               disabled={busy}
               onClick={() => setTarget(null)}
+              variant="secondary"
             >
               取消
             </Button>
-            <Button color="red" loading={busy} onClick={() => void revoke()}>
+            <Button
+              loading={busy}
+              onClick={() => void revoke()}
+              variant="danger"
+            >
               确认退出
             </Button>
-          </Group>
-        </Stack>
-      </Modal>
+          </div>
+        </div>
+      </Dialog>
     </>
   );
 }

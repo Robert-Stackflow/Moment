@@ -1,25 +1,20 @@
-import { useEffect, useState } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useDebouncedValue } from "@mantine/hooks";
 import {
-  ActionIcon,
   Alert,
   Badge,
   Button,
+  Card,
   Checkbox,
-  Group,
-  Image,
-  Modal,
+  Combobox,
+  Dialog,
+  IconButton,
+  Input,
   Pagination,
-  Paper,
+  Segmented,
   Select,
-  SegmentedControl,
-  Stack,
   Table,
-  Text,
-  TextInput,
-} from "@mantine/core";
-import { Link } from "react-router-dom";
+  Segmented as ViewSelector,
+} from "@robert-stackflow/oneui";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Eye,
   EyeOff,
@@ -31,15 +26,24 @@ import {
   Tags,
   Trash2,
 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { api, json, notifyError, notifySuccess } from "../api";
 import {
-  CategorySelect,
   CategoryMultiSelect,
+  CategorySelect,
 } from "../components/CategoryPicker";
 import { Empty, ErrorState, Loading, PageTitle } from "../components/Common";
-import { orders, thumbnail, coverPosition } from "../types";
+import { useDebouncedValue } from "../hooks";
 import type { Category, Post, Settings } from "../types";
-
+import { coverPosition, orders, thumbnail } from "../types";
+import {
+  adminHref,
+  badgeTone,
+  segmentOptions,
+  selectOptions,
+  tone,
+} from "../ui-data";
 export default function Posts() {
   const client = useQueryClient();
   const [search, setSearch] = useState("");
@@ -56,7 +60,11 @@ export default function Posts() {
   const [categoryMode, setCategoryMode] = useState("add");
   const [batchCategories, setBatchCategories] = useState<string[]>([]);
   const [failures, setFailures] = useState<
-    { id: number; title: string; error: string }[]
+    {
+      id: number;
+      title: string;
+      error: string;
+    }[]
   >([]);
   const params = new URLSearchParams({
     page: String(page),
@@ -76,7 +84,13 @@ export default function Posts() {
   });
   const locations = useQuery({
     queryKey: ["locations"],
-    queryFn: () => api<{ location: string; count: number }[]>("/locations"),
+    queryFn: () =>
+      api<
+        {
+          location: string;
+          count: number;
+        }[]
+      >("/locations"),
   });
   const settings = useQuery({
     queryKey: ["settings"],
@@ -117,7 +131,13 @@ export default function Posts() {
     setBusy(true);
     setFailures([]);
     try {
-      const response = await api<{ id: number; ok: boolean; error?: string }[]>(
+      const response = await api<
+        {
+          id: number;
+          ok: boolean;
+          error?: string;
+        }[]
+      >(
         "/posts/batch",
         json("POST", {
           action,
@@ -153,10 +173,10 @@ export default function Posts() {
             action === "categories"
               ? "更新分类"
               : action === "delete"
-              ? "移入回收站"
-              : hidden
-              ? "隐藏"
-              : "公开"
+                ? "移入回收站"
+                : hidden
+                  ? "隐藏"
+                  : "公开"
           }`,
         );
     } catch (error) {
@@ -168,125 +188,122 @@ export default function Posts() {
   return (
     <>
       <PageTitle title="帖子与图片">
-        <Button
-          component={Link}
-          to="/posts/new"
-          leftSection={<Plus size={18} />}
-        >
+        <Button href={adminHref("/posts/new")} variant="primary">
+          {<Plus size={18} />}
           新建帖子
         </Button>
       </PageTitle>
       <div className="toolbar">
-        <TextInput
-          className="toolbar-search"
-          aria-label="搜索帖子"
-          placeholder="搜索标题、描述或图片标签"
-          leftSection={<Search size={17} />}
-          value={search}
-          onChange={(e) => {
-            setSearch(e.currentTarget.value);
-            reset();
-          }}
-        />
-        <CategorySelect
-          categories={categories.data?.data || []}
-          value={category}
-          onChange={(value) => {
-            setCategory(value);
-            reset();
-          }}
-        />
-        <Select
-          aria-label="按地点筛选"
-          placeholder="全部地点"
-          clearable
-          searchable
-          value={location}
-          data={(locations.data?.data || []).map((item) => item.location)}
-          onChange={(value) => {
-            setLocation(value);
-            reset();
-          }}
-        />
-        <Select
-          aria-label="排序"
-          data={orders}
-          value={order}
-          onChange={(value) => {
-            setOrder(value || "created_at_desc");
-            reset();
-          }}
-        />
-        <div className="view-switch" role="group" aria-label="显示方式">
-          <span
-            className={`view-switch-indicator ${
-              view === "list" ? "is-list" : ""
-            }`}
-            aria-hidden="true"
+        <div className="toolbar-search">
+          <Input
+            className="toolbar-search"
+            aria-label="搜索帖子"
+            placeholder="搜索标题、描述或图片标签"
+            leading={<Search size={17} />}
+            value={search}
+            onChange={(e) => {
+              setSearch(e.currentTarget.value);
+              reset();
+            }}
           />
-          <button
-            type="button"
-            aria-label="图片网格"
-            aria-pressed={view === "grid"}
-            title="图片网格"
-            onClick={() => setView("grid")}
-          >
-            <Grid2X2 size={18} strokeWidth={1.8} />
-          </button>
-          <button
-            type="button"
-            aria-label="紧凑列表"
-            aria-pressed={view === "list"}
-            title="紧凑列表"
-            onClick={() => setView("list")}
-          >
-            <List size={19} strokeWidth={1.8} />
-          </button>
+        </div>
+        <div className="toolbar-category">
+          <CategorySelect
+            categories={categories.data?.data || []}
+            value={category}
+            onChange={(value) => {
+              setCategory(value);
+              reset();
+            }}
+          />
+        </div>
+        <div className="toolbar-location">
+          <Combobox
+            aria-label="按地点筛选"
+            mode="input"
+            placeholder="全部地点"
+            options={[
+              { value: "", label: "全部地点" },
+              ...selectOptions(
+                (locations.data?.data || []).map((item) => item.location),
+              ),
+            ]}
+            onChange={(value) => {
+              setLocation(value);
+              reset();
+            }}
+            label={"按地点筛选"}
+            value={location ?? ""}
+          />
+        </div>
+        <div className="toolbar-sort">
+          <Select
+            aria-label="排序"
+            options={selectOptions(orders)}
+            onChange={(value) => {
+              setOrder(value || "created_at_desc");
+              reset();
+            }}
+            label={"排序"}
+            value={order ?? ""}
+          />
+        </div>
+        <div className="toolbar-view">
+          <ViewSelector
+            label="显示方式"
+            value={view}
+            onChange={setView}
+            options={[
+              {
+                value: "grid",
+                label: <Grid2X2 aria-label="图片网格" size={18} />,
+              },
+              {
+                value: "list",
+                label: <List aria-label="紧凑列表" size={18} />,
+              },
+            ]}
+          />
         </div>
       </div>
-      <Group justify="space-between" className="selection-bar" wrap="nowrap">
+      <div className={"ui-row " + "selection-bar"}>
         <Checkbox
+          onChange={(checked) =>
+            setSelected(checked ? rows.map((row) => row.id) : [])
+          }
           label={selected.length ? `已选 ${selected.length} 项` : "选择本页"}
           checked={rows.length > 0 && selected.length === rows.length}
           indeterminate={selected.length > 0 && selected.length < rows.length}
           disabled={!rows.length || busy}
-          onChange={(e) =>
-            setSelected(
-              e.currentTarget.checked ? rows.map((row) => row.id) : [],
-            )
-          }
         />
-        <Group
-          gap="xs"
-          className={`selection-actions ${selected.length ? "is-visible" : ""}`}
+        <div
           aria-hidden={!selected.length}
-          wrap="nowrap"
+          className={
+            "ui-row " +
+            `selection-actions ${selected.length ? "is-visible" : ""}`
+          }
         >
           <Button
-            size="xs"
-            variant="light"
-            leftSection={<Eye size={14} />}
+            size="small"
             loading={busy}
             disabled={!selected.length}
             onClick={() => void batch("visibility", selected, false)}
+            variant="secondary"
           >
+            {<Eye size={14} />}
             公开
           </Button>
           <Button
-            size="xs"
-            variant="light"
-            color="gray"
-            leftSection={<EyeOff size={14} />}
+            size="small"
             disabled={busy || !selected.length}
             onClick={() => void batch("visibility", selected, true)}
+            variant="secondary"
           >
+            {<EyeOff size={14} />}
             隐藏
           </Button>
           <Button
-            size="xs"
-            variant="light"
-            color="gray"
-            leftSection={<Tags size={14} />}
+            size="small"
             disabled={
               busy ||
               !selected.length ||
@@ -298,56 +315,74 @@ export default function Posts() {
               setCategoryMode("add");
               setBatchCategories([]);
             }}
+            variant="secondary"
           >
+            {<Tags size={14} />}
             分类
           </Button>
           <Button
-            size="xs"
-            color="red"
-            variant="light"
-            leftSection={<Trash2 size={14} />}
+            size="small"
             disabled={busy || !selected.length}
             onClick={() => setDeleting(selected)}
+            variant="danger"
           >
+            {<Trash2 size={14} />}
             删除
           </Button>
-        </Group>
-      </Group>
+        </div>
+      </div>
       {!!failures.length && (
-        <Alert
-          color="orange"
-          title={`${failures.length} 篇帖子未完成操作`}
-          withCloseButton
-          onClose={() => setFailures([])}
-          mb="lg"
+        <div
+          style={{
+            marginBottom: 24,
+          }}
         >
-          <Stack gap={5}>
-            {failures.map((item) => (
-              <Text size="sm" key={item.id}>
-                <Text
-                  component={Link}
-                  to={`/posts/${item.id}`}
-                  inherit
-                  span
-                  td="underline"
+          <Alert
+            tone={tone("orange")}
+            title={`${failures.length} 篇帖子未完成操作`}
+            onClose={() => setFailures([])}
+          >
+            <div
+              className="ui-stack"
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: 5,
+              }}
+            >
+              {failures.map((item) => (
+                <p
+                  key={item.id}
+                  className="ui-text"
+                  style={{
+                    fontSize: 13,
+                  }}
                 >
-                  {item.title}
-                </Text>
-                ：{item.error}
-              </Text>
-            ))}
-          </Stack>
-          <Text size="xs" mt="sm">
-            已刷新列表，失败项目保留选择。检查最新内容后可重新操作。
-          </Text>
-        </Alert>
+                  <Link to={`/posts/${item.id}`} className="ui-text">
+                    {item.title}
+                  </Link>
+                  ：{item.error}
+                </p>
+              ))}
+            </div>
+            <p
+              className="ui-text"
+              style={{
+                fontSize: 12,
+                marginTop: 10,
+              }}
+            >
+              已刷新列表，失败项目保留选择。检查最新内容后可重新操作。
+            </p>
+          </Alert>
+        </div>
       )}
       {posts.isPending ? (
         <Loading />
       ) : posts.error ? (
         <ErrorState error={posts.error} retry={posts.refetch} />
       ) : rows.length === 0 ? (
-        <Paper withBorder>
+        <Card className="moment-panel">
           <Empty
             title={
               q || category || location ? "没有匹配的帖子" : "开始记录你的时刻"
@@ -358,22 +393,27 @@ export default function Posts() {
                 : "上传照片，添加地点与文字。"
             }
           />
-        </Paper>
+        </Card>
       ) : view === "grid" ? (
         <div className="post-grid view-enter">
           {rows.map((post) => (
-            <Paper withBorder p={12} key={post.id} className="post-card">
+            <Card key={post.id} className={"moment-panel " + "post-card"}>
               <div className="post-cover">
                 <Checkbox
-                  aria-label={`选择 ${post.title}`}
+                  onChange={(checked) => choose(post.id, checked)}
+                  label={`选择 ${post.title}`}
                   checked={selected.includes(post.id)}
                   disabled={busy}
-                  onChange={(e) => choose(post.id, e.currentTarget.checked)}
                 />
                 <Link to={`/posts/${post.id}`}>
-                  <Image
+                  <img
+                    onError={(event) => {
+                      if (
+                        !event.currentTarget.src.endsWith("/assets/loading.gif")
+                      )
+                        event.currentTarget.src = "/assets/loading.gif";
+                    }}
                     className="photo-cover"
-                    style={{ objectPosition: coverPosition(post) }}
                     src={thumbnail(
                       (
                         post.images.find((photo) => !photo.is_hidden) ||
@@ -382,98 +422,157 @@ export default function Posts() {
                       settings.data?.data,
                     )}
                     alt={post.title}
-                    fallbackSrc="/assets/loading.gif"
                     loading="lazy"
+                    style={{
+                      ...{ objectPosition: coverPosition(post) },
+                    }}
                   />
                 </Link>
               </div>
-              <Stack gap={8} p={8} pt={14}>
-                <Group justify="space-between" wrap="nowrap">
-                  <Text
-                    component={Link}
+              <div
+                className="ui-stack"
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 8,
+                  padding: 8,
+                  paddingTop: 14,
+                }}
+              >
+                <div
+                  className="ui-row"
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    flexWrap: "nowrap",
+                    gap: 10,
+                    justifyContent: "space-between",
+                  }}
+                >
+                  <Link
                     to={`/posts/${post.id}`}
-                    fw={600}
-                    lineClamp={1}
+                    className="ui-text"
+                    style={{
+                      fontWeight: 600,
+                      display: "-webkit-box",
+                      WebkitLineClamp: 1,
+                      WebkitBoxOrient: "vertical",
+                      overflow: "hidden",
+                    }}
                   >
                     {post.title}
-                  </Text>
-                  <Badge
-                    color={post.is_hidden ? "gray" : "victoria"}
-                    variant="light"
-                  >
+                  </Link>
+                  <Badge tone={badgeTone(post.is_hidden ? "gray" : "victoria")}>
                     {post.is_hidden ? "隐藏" : "公开"}
                   </Badge>
-                </Group>
-                <Text size="xs" c="dimmed" lineClamp={1}>
+                </div>
+                <p
+                  className="ui-text"
+                  style={{
+                    fontSize: 12,
+                    color: "var(--muted)",
+                    display: "-webkit-box",
+                    WebkitLineClamp: 1,
+                    WebkitBoxOrient: "vertical",
+                    overflow: "hidden",
+                  }}
+                >
                   {post.location || "未设置地点"} · {post.images.length} 张 ·{" "}
                   {post.time?.slice(0, 10) || "未设置时间"}
-                </Text>
-                <Group justify="space-between" mt={4}>
-                  <Group gap={5}>
+                </p>
+                <div
+                  className="ui-row"
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    flexWrap: "wrap",
+                    gap: 10,
+                    justifyContent: "space-between",
+                    marginTop: 4,
+                  }}
+                >
+                  <div
+                    className="ui-row"
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      flexWrap: "wrap",
+                      gap: 5,
+                    }}
+                  >
                     {post.categories.slice(0, 2).map((cat) => (
-                      <Badge
-                        key={cat.id}
-                        variant="outline"
-                        color="gray"
-                        size="xs"
-                      >
+                      <Badge key={cat.id} tone={badgeTone("gray")}>
                         {cat.name}
                       </Badge>
                     ))}
-                  </Group>
-                  <Group gap={4}>
-                    <ActionIcon
-                      component={Link}
-                      to={`/posts/${post.id}`}
-                      variant="subtle"
+                  </div>
+                  <div
+                    className="ui-row"
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      flexWrap: "wrap",
+                      gap: 4,
+                    }}
+                  >
+                    <Button
+                      href={adminHref(`/posts/${post.id}`)}
                       aria-label={`编辑 ${post.title}`}
+                      variant="ghost"
                     >
                       <Pencil size={16} />
-                    </ActionIcon>
-                    <ActionIcon
-                      variant="subtle"
-                      color="red"
-                      aria-label={`删除 ${post.title}`}
+                    </Button>
+                    <IconButton
+                      label={`删除 ${post.title}`}
                       disabled={busy}
                       onClick={() => setDeleting([post.id])}
+                      variant="danger"
                     >
                       <Trash2 size={16} />
-                    </ActionIcon>
-                  </Group>
-                </Group>
-              </Stack>
-            </Paper>
+                    </IconButton>
+                  </div>
+                </div>
+              </div>
+            </Card>
           ))}
         </div>
       ) : (
-        <Paper withBorder p="md" className="desktop-table view-enter">
-          <Table verticalSpacing="md" miw={600}>
-            <Table.Thead>
-              <Table.Tr>
-                <Table.Th>选择</Table.Th>
-                <Table.Th>帖子</Table.Th>
-                <Table.Th>地点</Table.Th>
-                <Table.Th>拍摄日期</Table.Th>
-                <Table.Th>状态</Table.Th>
-                <Table.Th>操作</Table.Th>
-              </Table.Tr>
-            </Table.Thead>
-            <Table.Tbody>
-              {rows.map((post) => (
-                <Table.Tr key={post.id}>
-                  <Table.Td>
+        <Card className={"moment-panel " + "desktop-table view-enter"}>
+          <Table
+            label={"\u5E16\u5B50\u5217\u8868"}
+            rows={rows}
+            rowKey={(post) => String(post.id)}
+            columns={[
+              {
+                key: "column0",
+                title: "\u9009\u62E9",
+                render: (post) => (
+                  <>
                     <Checkbox
-                      aria-label={`选择 ${post.title}`}
+                      onChange={(checked) => choose(post.id, checked)}
+                      label={`选择 ${post.title}`}
                       checked={selected.includes(post.id)}
                       disabled={busy}
-                      onChange={(e) => choose(post.id, e.currentTarget.checked)}
                     />
-                  </Table.Td>
-                  <Table.Td>
-                    <Group wrap="nowrap">
-                      <Image
+                  </>
+                ),
+              },
+              {
+                key: "column1",
+                title: "\u5E16\u5B50",
+                render: (post) => (
+                  <>
+                    <div
+                      className="ui-row"
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        flexWrap: "nowrap",
+                        gap: 10,
+                      }}
+                    >
+                      <img
                         className="table-image"
-                        style={{ objectPosition: coverPosition(post) }}
                         src={thumbnail(
                           (
                             post.images.find((photo) => !photo.is_hidden) ||
@@ -482,116 +581,184 @@ export default function Posts() {
                           settings.data?.data,
                         )}
                         alt=""
+                        style={{
+                          ...{ objectPosition: coverPosition(post) },
+                        }}
                       />
                       <div>
-                        <Text
-                          component={Link}
+                        <Link
                           to={`/posts/${post.id}`}
-                          fw={500}
+                          className="ui-text"
+                          style={{
+                            fontWeight: 500,
+                          }}
                         >
                           {post.title}
-                        </Text>
-                        <Text size="xs" c="dimmed">
+                        </Link>
+                        <p
+                          className="ui-text"
+                          style={{
+                            fontSize: 12,
+                            color: "var(--muted)",
+                          }}
+                        >
                           {post.images.length} 张图片
-                        </Text>
+                        </p>
                       </div>
-                    </Group>
-                  </Table.Td>
-                  <Table.Td>{post.location || "—"}</Table.Td>
-                  <Table.Td>{post.time?.slice(0, 10) || "—"}</Table.Td>
-                  <Table.Td>
+                    </div>
+                  </>
+                ),
+              },
+              {
+                key: "column2",
+                title: "\u5730\u70B9",
+                render: (post) => <>{post.location || "—"}</>,
+              },
+              {
+                key: "column3",
+                title: "\u62CD\u6444\u65E5\u671F",
+                render: (post) => <>{post.time?.slice(0, 10) || "—"}</>,
+              },
+              {
+                key: "column4",
+                title: "\u72B6\u6001",
+                render: (post) => (
+                  <>
                     <Badge
-                      variant="light"
-                      color={post.is_hidden ? "gray" : "victoria"}
+                      tone={badgeTone(post.is_hidden ? "gray" : "victoria")}
                     >
                       {post.is_hidden ? "隐藏" : "公开"}
                     </Badge>
-                  </Table.Td>
-                  <Table.Td>
-                    <ActionIcon
-                      component={Link}
-                      to={`/posts/${post.id}`}
-                      variant="subtle"
+                  </>
+                ),
+              },
+              {
+                key: "column5",
+                title: "\u64CD\u4F5C",
+                align: "right",
+                render: (post) => (
+                  <>
+                    <Button
+                      href={adminHref(`/posts/${post.id}`)}
                       aria-label={`编辑 ${post.title}`}
+                      variant="ghost"
                     >
                       <Pencil size={16} />
-                    </ActionIcon>
-                  </Table.Td>
-                </Table.Tr>
-              ))}
-            </Table.Tbody>
-          </Table>
-        </Paper>
+                    </Button>
+                  </>
+                ),
+              },
+            ]}
+          />
+        </Card>
       )}
       {posts.data && (posts.data.total || 0) > 20 ? (
-        <Group justify="center" mt={28}>
+        <div
+          className="ui-row"
+          style={{
+            display: "flex",
+            alignItems: "center",
+            flexWrap: "wrap",
+            gap: 10,
+            justifyContent: "center",
+            marginTop: 28,
+          }}
+        >
           <Pagination
             total={Math.ceil((posts.data.total || 0) / 20)}
-            value={page}
-            onChange={(value) => {
+            page={page}
+            onPageChange={(value) => {
               setPage(value);
               setSelected([]);
             }}
+            pageSize={1}
+            summary={null}
           />
-        </Group>
+        </div>
       ) : null}
-      <Modal
-        opened={!!deleting}
+      <Dialog
+        open={!!deleting}
         onClose={() => {
           if (!busy) setDeleting(null);
         }}
         title="移入回收站"
-        centered
       >
-        <Stack>
-          <Text>
+        <div
+          className="ui-stack"
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: 16,
+          }}
+        >
+          <p className="ui-text">
             将这 {deleting?.length}{" "}
             篇帖子移入回收站？访客将无法再访问，图片、分类和未发布草稿会保留，可随时恢复。
-          </Text>
-          <Group justify="flex-end">
+          </p>
+          <div
+            className="ui-row"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              flexWrap: "wrap",
+              gap: 10,
+              justifyContent: "flex-end",
+            }}
+          >
             <Button
-              variant="default"
               disabled={busy}
               onClick={() => setDeleting(null)}
+              variant="secondary"
             >
               取消
             </Button>
             <Button
-              color="red"
               loading={busy}
               onClick={() => deleting && void batch("delete", deleting)}
+              variant="danger"
             >
               移入回收站
             </Button>
-          </Group>
-        </Stack>
-      </Modal>
-      <Modal
-        opened={classifying}
+          </div>
+        </div>
+      </Dialog>
+      <Dialog
+        open={classifying}
         onClose={() => !busy && setClassifying(false)}
         title={`批量分类 · ${selected.length} 篇帖子`}
-        centered
       >
-        <Stack>
-          <SegmentedControl
+        <div
+          className="ui-stack"
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: 16,
+          }}
+        >
+          <Segmented
             aria-label="分类操作方式"
-            fullWidth
             value={categoryMode}
             onChange={setCategoryMode}
-            disabled={busy}
-            data={[
+            options={segmentOptions([
               { value: "add", label: "添加" },
               { value: "replace", label: "替换" },
               { value: "remove", label: "移除" },
-            ]}
+            ])}
+            label={"分类操作方式"}
           />
-          <Text size="sm" c="dimmed">
+          <p
+            className="ui-text"
+            style={{
+              fontSize: 13,
+              color: "var(--muted)",
+            }}
+          >
             {categoryMode === "add"
               ? "添加所选分类，保留原有分类。子分类会同时关联父分类。"
               : categoryMode === "replace"
-              ? "将原有分类替换为所选分类。留空可清除全部分类。"
-              : "移除所选分类。移除父分类时也会移除其下的子分类；只移除子分类会保留父分类。"}
-          </Text>
+                ? "将原有分类替换为所选分类。留空可清除全部分类。"
+                : "移除所选分类。移除父分类时也会移除其下的子分类；只移除子分类会保留父分类。"}
+          </p>
           <fieldset className="editor-fieldset" disabled={busy}>
             <CategoryMultiSelect
               categories={categories.data?.data || []}
@@ -600,17 +767,26 @@ export default function Posts() {
             />
           </fieldset>
           {categoryMode === "replace" && (
-            <Alert color="orange">
+            <Alert tone={tone("orange")}>
               {batchCategories.length
                 ? "原有分类将被替换。"
                 : "这会清除所选帖子的全部分类。"}
             </Alert>
           )}
-          <Group justify="flex-end">
+          <div
+            className="ui-row"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              flexWrap: "wrap",
+              gap: 10,
+              justifyContent: "flex-end",
+            }}
+          >
             <Button
-              variant="default"
               disabled={busy}
               onClick={() => setClassifying(false)}
+              variant="secondary"
             >
               取消
             </Button>
@@ -618,12 +794,13 @@ export default function Posts() {
               loading={busy}
               disabled={categoryMode !== "replace" && !batchCategories.length}
               onClick={() => void batch("categories", selected)}
+              variant="primary"
             >
               应用到 {selected.length} 篇帖子
             </Button>
-          </Group>
-        </Stack>
-      </Modal>
+          </div>
+        </div>
+      </Dialog>
     </>
   );
 }

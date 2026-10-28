@@ -1,33 +1,22 @@
-import { useRef, useState } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-  ActionIcon,
   Alert,
   Badge,
   Button,
-  Group,
-  Modal,
-  Paper,
-  PasswordInput,
+  Card,
+  Dialog,
+  FilePicker,
+  IconButton,
+  Input,
+  PasswordField,
   Progress,
-  SimpleGrid,
-  Stack,
-  Text,
-  TextInput,
-  Title,
-} from "@mantine/core";
-import {
-  Archive,
-  ArchiveRestore,
-  Download,
-  FileUp,
-  Plus,
-  Trash2,
-} from "lucide-react";
+} from "@robert-stackflow/oneui";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { Archive, ArchiveRestore, Download, Plus, Trash2 } from "lucide-react";
+import { useState } from "react";
 import { api, json, notifyError, notifySuccess } from "../api";
 import { Empty, ErrorState, Loading } from "../components/Common";
 import { UnsavedChanges } from "../components/UnsavedChanges";
-
+import { badgeTone, gridStyle, tone } from "../ui-data";
 interface Backup {
   id: string;
   created_at: string;
@@ -49,28 +38,44 @@ function dateLabel(value: string) {
 }
 function Summary({ backup }: { backup: Backup }) {
   return (
-    <SimpleGrid cols={{ base: 2, sm: 4 }} spacing="sm">
+    <div
+      className="ui-grid"
+      style={{
+        ...gridStyle({ base: 2, sm: 4 }, 10),
+      }}
+    >
       {[
         ["帖子", backup.posts],
         ["照片", backup.images],
         ["草稿", backup.drafts],
         ["回收站", backup.trash],
       ].map(([label, value]) => (
-        <Paper key={label} withBorder p="sm">
-          <Text size="xs" c="dimmed">
+        <Card key={label} className="moment-panel">
+          <p
+            className="ui-text"
+            style={{
+              fontSize: 12,
+              color: "var(--muted)",
+            }}
+          >
             {label}
-          </Text>
-          <Text fw={600} size="lg">
+          </p>
+          <p
+            className="ui-text"
+            style={{
+              fontWeight: 600,
+              fontSize: 16,
+            }}
+          >
             {value}
-          </Text>
-        </Paper>
+          </p>
+        </Card>
       ))}
-    </SimpleGrid>
+    </div>
   );
 }
 export default function Backups() {
   const client = useQueryClient();
-  const fileInput = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState("");
   const [progress, setProgress] = useState(0);
   const [restoring, setRestoring] = useState<Backup | null>(null);
@@ -180,84 +185,133 @@ export default function Backups() {
     setRestored(false);
   }
   return (
-    <Stack gap="lg">
+    <div
+      className="ui-stack"
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        gap: 24,
+      }}
+    >
       <UnsavedChanges
         dirty={!!busy}
         message="备份操作正在进行。离开可能中断传输；恢复一旦开始替换数据，将继续完成。返回后请检查操作结果。"
       />
-      <Paper withBorder p="xl">
-        <Group justify="space-between" align="flex-start" gap="lg">
+      <Card className="moment-panel">
+        <div
+          className="ui-row"
+          style={{
+            display: "flex",
+            alignItems: "flex-start",
+            flexWrap: "wrap",
+            gap: 24,
+            justifyContent: "space-between",
+          }}
+        >
           <div>
-            <Title order={3}>备份与恢复</Title>
-            <Text size="sm" c="dimmed" mt={8}>
-              保存数据库、本地照片和头像，迁移后继续使用。
-            </Text>
-          </div>
-          <Group gap="xs">
-            <Button
-              variant="default"
-              leftSection={<FileUp size={16} />}
-              disabled={!!busy}
-              onClick={() => fileInput.current?.click()}
+            <h3 className="ui-title">备份与恢复</h3>
+            <p
+              className="ui-text"
+              style={{
+                fontSize: 13,
+                color: "var(--muted)",
+                marginTop: 8,
+              }}
             >
-              导入备份
-            </Button>
+              保存数据库、本地照片和头像，迁移后继续使用。
+            </p>
+          </div>
+          <div
+            className="ui-row"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              flexWrap: "wrap",
+              gap: 6,
+            }}
+          >
+            <FilePicker
+              label="导入备份"
+              accept=".zip,application/zip"
+              maxSize={2 * 1024 ** 3}
+              multiple={false}
+              disabled={!!busy}
+              onFiles={(files) => void upload(files[0])}
+            />
             <Button
-              leftSection={<Plus size={16} />}
               disabled={!!busy}
               onClick={() => void create()}
+              variant="primary"
             >
+              {<Plus size={16} />}
               创建备份
             </Button>
-          </Group>
-        </Group>
-        <input
-          ref={fileInput}
-          type="file"
-          accept=".zip,application/zip"
-          aria-label="选择备份文件"
-          hidden
-          onChange={(event) => {
-            const file = event.currentTarget.files?.[0];
-            event.currentTarget.value = "";
-            void upload(file);
+          </div>
+        </div>
+
+        <p
+          className="ui-text"
+          style={{
+            fontSize: 12,
+            color: "var(--muted)",
+            marginTop: 24,
           }}
-        />
-        <Text size="xs" c="dimmed" mt="lg">
+        >
           包含账户及存储凭据，请妥善保管。S3
           原图不打包，需单独备份存储桶。支持本版本导出的 ZIP，最大 2
           GB；解压总量不超过 8 GB。
-        </Text>
+        </p>
         {!!busy && (
-          <Stack gap={8} mt="lg">
-            <Text size="sm" role="status">
+          <div
+            className="ui-stack"
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: 8,
+              marginTop: 24,
+            }}
+          >
+            <p
+              role="status"
+              className="ui-text"
+              style={{
+                fontSize: 13,
+              }}
+            >
               {busy}… 创建备份期间编辑请求会等待，恢复期间网站会短暂等待。
-            </Text>
+            </p>
             {busy === "正在上传备份" ? (
-              <Progress value={progress} aria-label="备份上传进度" />
+              <Progress value={progress} label={"备份上传进度"} />
             ) : (
-              <Progress value={100} animated aria-label="正在处理备份" />
+              <Progress value={100} label={"正在处理备份"} />
             )}
-          </Stack>
+          </div>
         )}
-      </Paper>
+      </Card>
       {imported && (
         <Alert
-          color="green"
+          tone={tone("green")}
           title="导入校验通过"
-          withCloseButton
           onClose={() => setImported(null)}
         >
-          <Text size="sm" mb="sm">
+          <p
+            className="ui-text"
+            style={{
+              fontSize: 13,
+              marginBottom: 10,
+            }}
+          >
             备份时间：{dateLabel(imported.created_at)}，包含{" "}
             {imported.local_files} 个本地文件。确认恢复前，当前内容保持不变。
-          </Text>
+          </p>
           <Summary backup={imported} />
           <Button
-            mt="md"
-            variant="light"
             disabled={!!busy}
             onClick={() => chooseRestore(imported)}
+            variant="secondary"
+            style={{
+              marginTop: 16,
+            }}
           >
             查看恢复选项
           </Button>
@@ -268,25 +322,56 @@ export default function Backups() {
       ) : backups.error ? (
         <ErrorState error={backups.error} retry={backups.refetch} />
       ) : !backups.data.data.length ? (
-        <Paper withBorder>
+        <Card className="moment-panel">
           <Empty
             title="还没有备份"
             description="创建一份备份，或导入之前下载的备份。"
           />
-        </Paper>
+        </Card>
       ) : (
-        <Stack gap="sm">
+        <div
+          className="ui-stack"
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: 10,
+          }}
+        >
           {backups.data.data.map((backup) => (
-            <Paper withBorder p="lg" key={backup.id}>
-              <Group justify="space-between" gap="md" mb="md">
-                <Group gap="sm">
+            <Card key={backup.id} className="moment-panel">
+              <div
+                className="ui-row"
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  flexWrap: "wrap",
+                  gap: 16,
+                  justifyContent: "space-between",
+                  marginBottom: 16,
+                }}
+              >
+                <div
+                  className="ui-row"
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    flexWrap: "wrap",
+                    gap: 10,
+                  }}
+                >
                   <Archive size={20} />
-                  <Text fw={600}>{dateLabel(backup.created_at)}</Text>
+                  <p
+                    className="ui-text"
+                    style={{
+                      fontWeight: 600,
+                    }}
+                  >
+                    {dateLabel(backup.created_at)}
+                  </p>
                   <Badge
-                    variant="light"
-                    color={
-                      backup.source === "before-restore" ? "orange" : "gray"
-                    }
+                    tone={badgeTone(
+                      backup.source === "before-restore" ? "orange" : "gray",
+                    )}
                   >
                     {
                       {
@@ -296,136 +381,197 @@ export default function Backups() {
                       }[backup.source]
                     }
                   </Badge>
-                </Group>
-                <Group gap={6}>
+                </div>
+                <div
+                  className="ui-row"
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    flexWrap: "wrap",
+                    gap: 6,
+                  }}
+                >
                   <Button
-                    component="a"
                     href={`/api/admin/backups/${backup.id}/download`}
                     download
                     disabled={!!busy}
-                    size="xs"
-                    variant="default"
-                    leftSection={<Download size={14} />}
+                    size="small"
+                    variant="secondary"
                   >
+                    {<Download size={14} />}
                     下载
                   </Button>
                   <Button
-                    size="xs"
-                    variant="light"
+                    size="small"
                     disabled={!!busy}
-                    leftSection={<ArchiveRestore size={14} />}
                     onClick={() => chooseRestore(backup)}
+                    variant="secondary"
                   >
+                    {<ArchiveRestore size={14} />}
                     恢复
                   </Button>
-                  <ActionIcon
-                    variant="subtle"
-                    color="red"
+                  <IconButton
                     disabled={!!busy}
-                    aria-label={`删除备份 ${dateLabel(backup.created_at)}`}
+                    label={`删除备份 ${dateLabel(backup.created_at)}`}
                     onClick={() => setDeleting(backup)}
+                    variant="danger"
                   >
                     <Trash2 size={16} />
-                  </ActionIcon>
-                </Group>
-              </Group>
+                  </IconButton>
+                </div>
+              </div>
               <Summary backup={backup} />
-              <Text c="dimmed" size="xs" mt="sm">
+              <p
+                className="ui-text"
+                style={{
+                  color: "var(--muted)",
+                  fontSize: 12,
+                  marginTop: 10,
+                }}
+              >
                 {sizeLabel(backup.size)} · {backup.local_files} 个本地文件 ·
                 帖子与照片数量包含回收站内容
-              </Text>
-            </Paper>
+              </p>
+            </Card>
           ))}
-        </Stack>
+        </div>
       )}
-      <Modal
-        opened={!!restoring}
+      <Dialog
+        open={!!restoring}
         onClose={() => !busy && !restored && setRestoring(null)}
         title={restored ? "恢复完成" : "恢复整站备份"}
-        centered
-        closeOnClickOutside={!busy && !restored}
-        closeOnEscape={!busy && !restored}
-        withCloseButton={!busy && !restored}
       >
         {restored ? (
-          <Stack>
-            <Alert color="green">
+          <div
+            className="ui-stack"
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: 16,
+            }}
+          >
+            <Alert tone={tone("green")}>
               内容已恢复，恢复前的数据也已自动备份。所有登录会话已失效，请使用备份中的账户重新登录。
             </Alert>
-            <Button component="a" href="/admin/login">
+            <Button href="/admin/login" variant="primary">
               重新登录
             </Button>
-          </Stack>
+          </div>
         ) : (
           restoring && (
-            <Stack>
-              <Text size="sm">
+            <div
+              className="ui-stack"
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: 16,
+              }}
+            >
+              <p
+                className="ui-text"
+                style={{
+                  fontSize: 13,
+                }}
+              >
                 将网站恢复到 {dateLabel(restoring.created_at)}
                 。现有帖子、账户、设置、本地照片和头像将被替换；服务器上的其他备份会保留。
-              </Text>
+              </p>
               <Summary backup={restoring} />
-              <Alert color="orange">
+              <Alert tone={tone("orange")}>
                 开始前会自动备份当前内容。恢复成功后需要用备份中的账户重新登录，请确认你知道该账户的密码。
                 备份中的待发布计划将暂停，需要重新确认发布时间。
               </Alert>
-              <PasswordInput
+              <PasswordField
+                onChange={(value) => setPassword(value)}
                 label="当前账户密码"
                 autoComplete="current-password"
                 value={password}
                 disabled={!!busy}
-                onChange={(event) => setPassword(event.currentTarget.value)}
               />
-              <TextInput
+              <Input
                 label="输入「恢复备份」确认"
                 value={confirm}
                 disabled={!!busy}
                 onChange={(event) => setConfirm(event.currentTarget.value)}
               />
-              <Group justify="flex-end">
+              <div
+                className="ui-row"
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  flexWrap: "wrap",
+                  gap: 10,
+                  justifyContent: "flex-end",
+                }}
+              >
                 <Button
-                  variant="default"
                   disabled={!!busy}
                   onClick={() => setRestoring(null)}
+                  variant="secondary"
                 >
                   取消
                 </Button>
                 <Button
-                  color="orange"
                   loading={!!busy}
                   disabled={!password || confirm !== "恢复备份"}
                   onClick={() => void restore()}
+                  variant="primary"
                 >
                   确认恢复
                 </Button>
-              </Group>
-            </Stack>
+              </div>
+            </div>
           )
         )}
-      </Modal>
-      <Modal
-        opened={!!deleting}
+      </Dialog>
+      <Dialog
+        open={!!deleting}
         onClose={() => !busy && setDeleting(null)}
         title="删除备份文件？"
-        centered
       >
-        <Stack>
-          <Text size="sm">
+        <div
+          className="ui-stack"
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: 16,
+          }}
+        >
+          <p
+            className="ui-text"
+            style={{
+              fontSize: 13,
+            }}
+          >
             仅删除这份服务器备份，不影响当前网站内容。删除后无法从服务器下载或恢复这份备份。
-          </Text>
-          <Group justify="flex-end">
+          </p>
+          <div
+            className="ui-row"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              flexWrap: "wrap",
+              gap: 10,
+              justifyContent: "flex-end",
+            }}
+          >
             <Button
-              variant="default"
               disabled={!!busy}
               onClick={() => setDeleting(null)}
+              variant="secondary"
             >
               取消
             </Button>
-            <Button color="red" loading={!!busy} onClick={() => void remove()}>
+            <Button
+              loading={!!busy}
+              onClick={() => void remove()}
+              variant="danger"
+            >
               删除备份
             </Button>
-          </Group>
-        </Stack>
-      </Modal>
-    </Stack>
+          </div>
+        </div>
+      </Dialog>
+    </div>
   );
 }

@@ -1,49 +1,49 @@
-import { useEffect, useRef, useState } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-  ActionIcon,
   Alert,
   Badge,
   Button,
+  Card,
   Checkbox,
-  Group,
-  Image,
-  Modal,
+  Dialog,
+  IconButton,
   Pagination,
-  Paper,
   Progress,
-  SegmentedControl,
+  Segmented,
   Select,
-  SimpleGrid,
-  Stack,
-  Text,
-  Title,
-} from "@mantine/core";
+} from "@robert-stackflow/oneui";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   ArrowUpRight,
   CheckCircle2,
   Copy,
   EyeOff,
   History,
+  ImageOff,
   Inbox,
   Info,
-  ImageOff,
   Pause,
   Play,
   RefreshCw,
   ScanSearch,
 } from "lucide-react";
-import { Link } from "react-router-dom";
+import { useEffect, useRef, useState } from "react";
 import { api, ApiError, json, notifyError, notifySuccess } from "../api";
 import { Empty, ErrorState, Loading, PageTitle } from "../components/Common";
+import { OrganizeTabs } from "../components/OrganizeTabs";
 import { PhotoHistory } from "../components/PhotoHistory";
 import { RecordDialog, RecordEmpty } from "../components/RecordDialog";
-import { OrganizeTabs } from "../components/OrganizeTabs";
-import { photoQueries } from "../lib/photo-actions";
 import { Toggle } from "../components/Toggle";
 import { UnsavedChanges } from "../components/UnsavedChanges";
+import { photoQueries } from "../lib/photo-actions";
 import { thumbnail, type Settings } from "../types";
-
+import {
+  adminHref,
+  badgeTone,
+  gridStyle,
+  segmentOptions,
+  selectOptions,
+  tone,
+} from "../ui-data";
 interface Scan {
   id: string;
   status: "scanning" | "ready" | "cancelled";
@@ -60,7 +60,10 @@ interface GroupSummary {
   anchor_id: number;
   kind: Kind;
   count: number;
-  images: { image_id: number; image_url: string }[];
+  images: {
+    image_id: number;
+    image_url: string;
+  }[];
 }
 interface ScanPhoto {
   image_id: number;
@@ -89,10 +92,9 @@ function errorText(error: unknown) {
   return error instanceof TypeError
     ? "连接中断，进度已保留，可以稍后继续。"
     : error instanceof Error
-    ? error.message
-    : "操作未完成，请重试";
+      ? error.message
+      : "操作未完成，请重试";
 }
-
 export default function Duplicates() {
   const client = useQueryClient();
   const [running, setRunning] = useState(false);
@@ -245,185 +247,265 @@ export default function Duplicates() {
         }
       />
       <PageTitle title="重复图片">
-        <Group gap="xs">
-          <Button
-            variant="default"
-            leftSection={<History size={16} />}
-            onClick={() => setHistory(true)}
-          >
+        <div
+          className="ui-row"
+          style={{
+            display: "flex",
+            alignItems: "center",
+            flexWrap: "wrap",
+            gap: 6,
+          }}
+        >
+          <Button onClick={() => setHistory(true)} variant="secondary">
+            {<History size={16} />}
             处理记录
           </Button>
-        </Group>
+        </div>
       </PageTitle>
       <OrganizeTabs />
-      <Paper withBorder p="lg" mb="xl" className="duplicate-scan-card">
-        <Group justify="space-between" align="flex-start">
+      <Card className={"moment-panel " + "duplicate-scan-card"}>
+        <div
+          className="ui-row"
+          style={{
+            display: "flex",
+            alignItems: "flex-start",
+            flexWrap: "wrap",
+            gap: 10,
+            justifyContent: "space-between",
+          }}
+        >
           <div>
-            <Text fw={600}>
+            <p
+              className="ui-text"
+              style={{
+                fontWeight: 600,
+              }}
+            >
               {scan
                 ? scan.status === "ready"
                   ? `已扫描 ${scan.done} 张照片`
                   : scan.status === "cancelled"
-                  ? "扫描已停止"
-                  : running
-                  ? scan.done >= scan.total
-                    ? "正在比较图片…"
-                    : "正在读取图片…"
-                  : "扫描已暂停，可继续"
+                    ? "扫描已停止"
+                    : running
+                      ? scan.done >= scan.total
+                        ? "正在比较图片…"
+                        : "正在读取图片…"
+                      : "扫描已暂停，可继续"
                 : "找出重复与相似照片"}
-            </Text>
-            <Text size="sm" c="dimmed" mt={5}>
+            </p>
+            <p
+              className="ui-text"
+              style={{
+                fontSize: 13,
+                color: "var(--muted)",
+                marginTop: 5,
+              }}
+            >
               {scan
-                ? `开始于 ${scan.created_at}${
-                    scan.remote ? " · 包含远程图片" : " · 本地图片与相同链接"
-                  }`
+                ? `开始于 ${scan.created_at}${scan.remote ? " · 包含远程图片" : " · 本地图片与相同链接"}`
                 : "比较现有帖子中的照片，再由你选择保留或隐藏。"}
-            </Text>
+            </p>
           </div>
           {scan && (
-            <ActionIcon
-              variant="subtle"
-              aria-label="刷新扫描进度"
+            <IconButton
+              label={"刷新扫描进度"}
               disabled={running}
               loading={latest.isFetching}
               onClick={() => void latest.refetch()}
+              variant="ghost"
             >
               <RefreshCw size={17} />
-            </ActionIcon>
+            </IconButton>
           )}
-        </Group>
+        </div>
         {scan?.status === "scanning" && (
           <>
-            <Progress
-              value={scan.total ? (scan.done / scan.total) * 100 : 100}
-              mt="lg"
-              size={6}
-              aria-label="扫描进度"
-            />
-            <Group justify="space-between" mt="md">
-              <Text size="sm" c="dimmed" role="status">
+            <div
+              style={{
+                marginTop: 24,
+              }}
+            >
+              <Progress
+                value={scan.total ? (scan.done / scan.total) * 100 : 100}
+                label={"扫描进度"}
+              />
+            </div>
+            <div
+              className="ui-row"
+              style={{
+                display: "flex",
+                alignItems: "center",
+                flexWrap: "wrap",
+                gap: 10,
+                justifyContent: "space-between",
+                marginTop: 16,
+              }}
+            >
+              <p
+                role="status"
+                className="ui-text"
+                style={{
+                  fontSize: 13,
+                  color: "var(--muted)",
+                }}
+              >
                 {scan.done} / {scan.total} 张{note ? ` · ${note}` : ""}
-              </Text>
-              <Group gap="xs">
+              </p>
+              <div
+                className="ui-row"
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  flexWrap: "wrap",
+                  gap: 6,
+                }}
+              >
                 {running ? (
                   <Button
-                    size="xs"
-                    variant="default"
-                    leftSection={<Pause size={14} />}
+                    size="small"
                     onClick={() => controller.current?.abort()}
+                    variant="secondary"
                   >
+                    {<Pause size={14} />}
                     暂停
                   </Button>
                 ) : (
                   <Button
-                    size="xs"
-                    leftSection={<Play size={14} />}
+                    size="small"
                     onClick={() => void run(scan)}
+                    variant="primary"
                   >
+                    {<Play size={14} />}
                     继续扫描
                   </Button>
                 )}
                 <Button
-                  size="xs"
-                  color="gray"
-                  variant="subtle"
+                  size="small"
                   onClick={() => setCancelDialog(true)}
+                  variant="ghost"
                 >
                   取消扫描
                 </Button>
-              </Group>
-            </Group>
+              </div>
+            </div>
           </>
         )}
         {scan?.message && (
-          <Text size="sm" c="dimmed" mt="sm">
+          <p
+            className="ui-text"
+            style={{
+              fontSize: 13,
+              color: "var(--muted)",
+              marginTop: 10,
+            }}
+          >
             {scan.message}
-          </Text>
+          </p>
         )}
         <div className="duplicate-scan-actions">
           {scan && scan.done > 0 && (
             <Button
-              variant="default"
-              size="sm"
-              leftSection={<Info size={16} />}
+              size="small"
               onClick={() => setIssues(true)}
+              variant="secondary"
             >
+              {<Info size={16} />}
               读取说明与未完成图片
             </Button>
           )}
           {scan?.status !== "scanning" && (
             <Button
               className="duplicate-scan-start"
-              leftSection={<ScanSearch size={17} />}
               disabled={running || latest.isPending}
               onClick={() => {
                 setError("");
                 setStartDialog(true);
               }}
+              variant="primary"
             >
+              {<ScanSearch size={17} />}
               {scan ? "重新扫描" : "开始扫描"}
             </Button>
           )}
         </div>
         {error && !startDialog && (
-          <Alert color="red" mt="md">
-            {error}
-          </Alert>
+          <div
+            style={{
+              marginTop: 16,
+            }}
+          >
+            <Alert tone={tone("red")}>{error}</Alert>
+          </div>
         )}
-      </Paper>
+      </Card>
       {latest.isPending ? (
         <Loading />
       ) : latest.error ? (
         <ErrorState error={latest.error} retry={() => latest.refetch()} />
       ) : scan?.status === "ready" ? (
         <>
-          <Group justify="space-between" mb="lg" className="duplicate-filters">
-            <SegmentedControl
-              className="duplicate-view-switch"
-              aria-label="重复分组状态"
-              withItemsBorders={false}
-              value={view}
-              onChange={(value) => {
-                setView(value);
-                setPage(1);
-              }}
-              data={[
-                {
-                  value: "pending",
-                  label: (
-                    <span className="duplicate-view-option">
-                      <Inbox size={15} aria-hidden="true" />
-                      待处理
-                    </span>
-                  ),
-                },
-                {
-                  value: "ignored",
-                  label: (
-                    <span className="duplicate-view-option">
-                      <EyeOff size={15} aria-hidden="true" />
-                      已忽略
-                    </span>
-                  ),
-                },
-              ]}
-            />
-            <Select
-              className="duplicate-type-filter"
-              aria-label="重复类型"
-              placeholder="全部类型"
-              clearable
-              value={kind}
-              onChange={(value) => {
-                setKind(value);
-                setPage(1);
-              }}
-              data={Object.entries(kinds).map(([value, label]) => ({
-                value,
-                label,
-              }))}
-            />
-          </Group>
+          <div
+            className={"ui-row " + "duplicate-filters"}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              flexWrap: "wrap",
+              gap: 10,
+              justifyContent: "space-between",
+              marginBottom: 24,
+            }}
+          >
+            <div className="duplicate-view-switch">
+              <Segmented
+                aria-label="重复分组状态"
+                value={view}
+                onChange={(value) => {
+                  setView(value);
+                  setPage(1);
+                }}
+                options={segmentOptions([
+                  {
+                    value: "pending",
+                    label: (
+                      <span className="duplicate-view-option">
+                        <Inbox size={15} aria-hidden="true" />
+                        待处理
+                      </span>
+                    ),
+                  },
+                  {
+                    value: "ignored",
+                    label: (
+                      <span className="duplicate-view-option">
+                        <EyeOff size={15} aria-hidden="true" />
+                        已忽略
+                      </span>
+                    ),
+                  },
+                ])}
+                label={"重复分组状态"}
+              />
+            </div>
+            <div className="duplicate-type-filter">
+              <Select
+                aria-label="重复类型"
+                placeholder="全部类型"
+                onChange={(value) => {
+                  setKind(value);
+                  setPage(1);
+                }}
+                options={selectOptions([
+                  { value: "", label: "全部类型" },
+                  ...Object.entries(kinds).map(([value, label]) => ({
+                    value,
+                    label,
+                  })),
+                ])}
+                label={"重复类型"}
+                value={kind ?? ""}
+              />
+            </div>
+          </div>
           {groups.isPending ? (
             <Loading />
           ) : groups.error ? (
@@ -436,33 +518,62 @@ export default function Duplicates() {
               description="相似判断仅供参考；未能读取的图片可在读取说明中查看。"
             />
           ) : (
-            <SimpleGrid cols={{ base: 1, lg: 2 }} spacing="lg">
+            <div
+              className="ui-grid"
+              style={{
+                ...gridStyle({ base: 1, lg: 2 }, 24),
+              }}
+            >
               {groups.data.data.map((item) => (
-                <Paper
+                <Card
                   key={item.id}
-                  withBorder
-                  p="lg"
-                  className="duplicate-group-card"
+                  className={"moment-panel " + "duplicate-group-card"}
                 >
-                  <Group justify="space-between" mb="md">
-                    <Group gap="xs">
+                  <div
+                    className="ui-row"
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      flexWrap: "wrap",
+                      gap: 10,
+                      justifyContent: "space-between",
+                      marginBottom: 16,
+                    }}
+                  >
+                    <div
+                      className="ui-row"
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        flexWrap: "wrap",
+                        gap: 6,
+                      }}
+                    >
                       <Copy size={17} />
-                      <Text fw={600}>{kinds[item.kind]}</Text>
-                    </Group>
+                      <p
+                        className="ui-text"
+                        style={{
+                          fontWeight: 600,
+                        }}
+                      >
+                        {kinds[item.kind]}
+                      </p>
+                    </div>
                     <Badge
-                      variant="light"
-                      color={item.kind === "similar" ? "orange" : "victoria"}
+                      tone={badgeTone(
+                        item.kind === "similar" ? "orange" : "victoria",
+                      )}
                     >
                       {item.count} 张
                     </Badge>
-                  </Group>
+                  </div>
                   <button
                     className="duplicate-previews"
                     onClick={() => setGroup(item)}
                     aria-label={`比较分组 ${item.id}，${item.count} 张图片`}
                   >
                     {item.images.map((photo) => (
-                      <Image
+                      <img
                         key={photo.image_id}
                         src={thumbnail(
                           photo.image_url,
@@ -471,96 +582,162 @@ export default function Duplicates() {
                         )}
                         alt="待比较照片"
                         loading="lazy"
-                        fit="cover"
                       />
                     ))}
                   </button>
-                  <Group justify="space-between" mt="md">
+                  <div
+                    className="ui-row"
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      flexWrap: "wrap",
+                      gap: 10,
+                      justifyContent: "space-between",
+                      marginTop: 16,
+                    }}
+                  >
                     <Button
-                      size="sm"
-                      variant="subtle"
-                      color="gray"
+                      size="small"
                       onClick={() => void ignore(item)}
+                      variant="ghost"
                     >
                       {view === "ignored" ? "恢复分组" : "忽略此组"}
                     </Button>
                     <Button
-                      size="sm"
-                      variant="light"
+                      size="small"
                       onClick={() => setGroup(item)}
+                      variant="secondary"
                     >
                       比较与处理
                     </Button>
-                  </Group>
-                </Paper>
+                  </div>
+                </Card>
               ))}
-            </SimpleGrid>
+            </div>
           )}
           {(groups.data?.total || 0) > 8 && (
-            <Group justify="center" mt="xl">
+            <div
+              className="ui-row"
+              style={{
+                display: "flex",
+                alignItems: "center",
+                flexWrap: "wrap",
+                gap: 10,
+                justifyContent: "center",
+                marginTop: 32,
+              }}
+            >
               <Pagination
-                value={page}
-                onChange={setPage}
+                page={page}
+                onPageChange={setPage}
                 total={Math.ceil(groups.data!.total! / 8)}
+                pageSize={1}
+                summary={null}
               />
-            </Group>
+            </div>
           )}
         </>
       ) : (
         !scan && <Empty title="还没有扫描结果" />
       )}
-      <Modal
-        opened={startDialog}
+      <Dialog
+        open={startDialog}
         onClose={() => !starting && setStartDialog(false)}
         title="扫描重复图片"
-        centered
       >
-        <Stack gap="lg">
-          <Text size="sm">
+        <div
+          className="ui-stack"
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: 24,
+          }}
+        >
+          <p
+            className="ui-text"
+            style={{
+              fontSize: 13,
+            }}
+          >
             扫描已发布帖子的全部照片（含隐藏照片），不包含草稿和回收站。已有内容不会自动改变。
-          </Text>
+          </p>
           <Toggle
             label="同时读取远程图片"
             description="从图片原地址读取，可能产生存储流量费用；照片不会发送到识别服务。"
             checked={remote}
-            onChange={(e) => setRemote(e.currentTarget.checked)}
+            onChange={(e) => setRemote(e)}
             disabled={starting}
           />
-          <Text size="xs" c="dimmed">
+          <p
+            className="ui-text"
+            style={{
+              fontSize: 12,
+              color: "var(--muted)",
+            }}
+          >
             每次只分析一张，支持暂停继续。单张读取上限 32 MB；超过 3200
             万像素或动图仅比较文件内容。远程读取仅支持公网地址。相似结果需人工核对。
-          </Text>
-          {error && <Alert color="red">{error}</Alert>}
-          <Group justify="flex-end">
+          </p>
+          {error && <Alert tone={tone("red")}>{error}</Alert>}
+          <div
+            className="ui-row"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              flexWrap: "wrap",
+              gap: 10,
+              justifyContent: "flex-end",
+            }}
+          >
             <Button
-              variant="default"
               onClick={() => setStartDialog(false)}
               disabled={starting}
+              variant="secondary"
             >
               取消
             </Button>
-            <Button onClick={() => void start()} loading={starting}>
+            <Button
+              onClick={() => void start()}
+              loading={starting}
+              variant="primary"
+            >
               开始检测
             </Button>
-          </Group>
-        </Stack>
-      </Modal>
-      <Modal
-        opened={cancelDialog}
+          </div>
+        </div>
+      </Dialog>
+      <Dialog
+        open={cancelDialog}
         onClose={() => setCancelDialog(false)}
         title="取消这次扫描？"
-        centered
       >
-        <Text size="sm">取消后可以重新扫描；照片与之前的处理记录会保留。</Text>
-        <Group justify="flex-end" mt="lg">
-          <Button variant="default" onClick={() => setCancelDialog(false)}>
+        <p
+          className="ui-text"
+          style={{
+            fontSize: 13,
+          }}
+        >
+          取消后可以重新扫描；照片与之前的处理记录会保留。
+        </p>
+        <div
+          className="ui-row"
+          style={{
+            display: "flex",
+            alignItems: "center",
+            flexWrap: "wrap",
+            gap: 10,
+            justifyContent: "flex-end",
+            marginTop: 24,
+          }}
+        >
+          <Button onClick={() => setCancelDialog(false)} variant="secondary">
             保留进度
           </Button>
-          <Button color="red" onClick={() => void cancel()}>
+          <Button onClick={() => void cancel()} variant="danger">
             确认取消扫描
           </Button>
-        </Group>
-      </Modal>
+        </div>
+      </Dialog>
       {scan && group && (
         <DuplicateGroup
           key={`${scan.id}:${group.id}`}
@@ -578,7 +755,6 @@ export default function Duplicates() {
     </>
   );
 }
-
 function DuplicateGroup({
   scan,
   summary,
@@ -604,7 +780,12 @@ function DuplicateGroup({
   const group = useQuery({
     queryKey: ["duplicateGroup", scan, summary.id, page],
     queryFn: () =>
-      api<{ id: number; kind: Kind; total: number; images: ScanPhoto[] }>(
+      api<{
+        id: number;
+        kind: Kind;
+        total: number;
+        images: ScanPhoto[];
+      }>(
         `/duplicates/scans/${scan}/groups/${summary.id}?page=${page}&page_size=12`,
       ),
     staleTime: 0,
@@ -666,28 +847,61 @@ function DuplicateGroup({
   }
   return (
     <>
-      <Modal
-        opened
+      <Dialog
+        open={true}
         onClose={close}
         title={`${kinds[summary.kind]} · ${summary.count} 张`}
-        size="xl"
-        centered
-        classNames={{ content: "duplicate-comparison" }}
-        closeOnClickOutside={false}
-        closeOnEscape={!busy}
+        size="large"
+        busy={busy}
       >
-        <Stack gap="lg">
-          <Text size="sm" c="dimmed">
+        <div
+          className="ui-stack"
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: 24,
+          }}
+        >
+          <p
+            className="ui-text"
+            style={{
+              fontSize: 13,
+              color: "var(--muted)",
+            }}
+          >
             选中需要隐藏的照片，至少保留一张。隐藏会同步影响照片墙与分享相册，原图仍保留。
             {summary.kind === "similar" &&
               "相似画面可能是连拍或不同作品，请仔细比较。"}
-          </Text>
-          <Group justify="space-between" className="duplicate-selection">
-            <Text size="sm">已选 {selected.length} 张</Text>
-            <Group gap="xs">
+          </p>
+          <div
+            className={"ui-row " + "duplicate-selection"}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              flexWrap: "wrap",
+              gap: 10,
+              justifyContent: "space-between",
+            }}
+          >
+            <p
+              className="ui-text"
+              style={{
+                fontSize: 13,
+              }}
+            >
+              已选 {selected.length} 张
+            </p>
+            <div
+              className="ui-row"
+              style={{
+                display: "flex",
+                alignItems: "center",
+                flexWrap: "wrap",
+                gap: 6,
+              }}
+            >
               <Button
-                variant="subtle"
-                size="xs"
+                size="small"
                 disabled={busy}
                 onClick={() => {
                   setSelected([]);
@@ -695,28 +909,35 @@ function DuplicateGroup({
                   setError("");
                   void group.refetch();
                 }}
+                variant="ghost"
               >
                 清空选择并刷新
               </Button>
               <Button
-                size="sm"
-                leftSection={<EyeOff size={15} />}
+                size="small"
                 disabled={!selected.length || busy}
                 onClick={() => {
                   setError("");
                   setConfirm(true);
                 }}
+                variant="primary"
               >
+                {<EyeOff size={15} />}
                 隐藏所选
               </Button>
-            </Group>
-          </Group>
+            </div>
+          </div>
           {group.isPending ? (
             <Loading />
           ) : group.error ? (
             <ErrorState error={group.error} retry={() => group.refetch()} />
           ) : (
-            <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
+            <div
+              className="ui-grid"
+              style={{
+                ...gridStyle({ base: 1, sm: 2 }, 16),
+              }}
+            >
               {group.data?.data.images.map((photo) => (
                 <div
                   className={`duplicate-photo ${
@@ -731,169 +952,237 @@ function DuplicateGroup({
                     aria-label={`查看原图 ${photo.image_id}`}
                     onClick={() => setPreview(photo)}
                   >
-                    <Image
+                    <img
                       src={thumbnail(photo.image_url, settings, 640)}
                       alt={photo.current_title || photo.post_title}
                       loading="lazy"
-                      fit="contain"
                     />
                   </button>
                   <div className="duplicate-photo-copy">
-                    <Group
-                      justify="space-between"
-                      align="flex-start"
-                      wrap="nowrap"
+                    <div
+                      className="ui-row"
+                      style={{
+                        display: "flex",
+                        alignItems: "flex-start",
+                        flexWrap: "nowrap",
+                        gap: 10,
+                        justifyContent: "space-between",
+                      }}
                     >
                       <Checkbox
-                        aria-label={`选择图片 ${photo.image_id}`}
+                        onChange={(checked) => choose(photo, checked)}
+                        label={`选择图片 ${photo.image_id}`}
                         checked={selected.some(
                           (item) => item.image_id === photo.image_id,
                         )}
                         disabled={!photo.current || photo.is_hidden || busy}
-                        onChange={(e) => choose(photo, e.currentTarget.checked)}
                       />
-                      <Text
-                        size="sm"
-                        fw={600}
+                      <p
+                        className="ui-text"
                         style={{
-                          flex: 1,
-                          minWidth: 0,
-                          overflowWrap: "anywhere",
+                          fontSize: 13,
+                          fontWeight: 600,
+                          ...{
+                            flex: 1,
+                            minWidth: 0,
+                            overflowWrap: "anywhere",
+                          },
                         }}
                       >
                         {photo.current_title || photo.post_title}
-                      </Text>
+                      </p>
                       {photo.image_id === summary.anchor_id && (
-                        <Badge variant="light" size="sm">
-                          参考
-                        </Badge>
+                        <Badge>参考</Badge>
                       )}
-                    </Group>
-                    <Group gap={6} mt="sm">
+                    </div>
+                    <div
+                      className="ui-row"
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        flexWrap: "wrap",
+                        gap: 6,
+                        marginTop: 10,
+                      }}
+                    >
                       {photo.is_hidden && (
-                        <Badge color="gray" size="xs">
-                          图片已隐藏
-                        </Badge>
+                        <Badge tone={badgeTone("gray")}>图片已隐藏</Badge>
                       )}
                       {photo.post_hidden && (
-                        <Badge color="gray" size="xs">
-                          帖子已隐藏
-                        </Badge>
+                        <Badge tone={badgeTone("gray")}>帖子已隐藏</Badge>
                       )}
                       {!photo.current && (
-                        <Badge color="orange" size="xs">
-                          内容已变化
-                        </Badge>
+                        <Badge tone={badgeTone("orange")}>内容已变化</Badge>
                       )}
-                    </Group>
-                    <Text size="xs" c="dimmed" mt={6}>
+                    </div>
+                    <p
+                      className="ui-text"
+                      style={{
+                        fontSize: 12,
+                        color: "var(--muted)",
+                        marginTop: 6,
+                      }}
+                    >
                       #{photo.image_id} ·{" "}
                       {photo.fingerprint.width
                         ? `${photo.fingerprint.width} × ${photo.fingerprint.height}`
                         : "尺寸未知"}
                       {photo.fingerprint.bytes > 0
-                        ? ` · ${(photo.fingerprint.bytes / 1024 / 1024).toFixed(
-                            2,
-                          )} MB`
+                        ? ` · ${(photo.fingerprint.bytes / 1024 / 1024).toFixed(2)} MB`
                         : ""}
-                    </Text>
+                    </p>
                     {photo.fingerprint.reason && (
-                      <Text size="xs" c="dimmed" mt={4}>
+                      <p
+                        className="ui-text"
+                        style={{
+                          fontSize: 12,
+                          color: "var(--muted)",
+                          marginTop: 4,
+                        }}
+                      >
                         {photo.fingerprint.reason}
-                      </Text>
+                      </p>
                     )}
                     <Button
-                      component={Link}
-                      to={`/posts/${photo.post_id}`}
-                      variant="subtle"
-                      size="xs"
-                      px={0}
-                      mt={5}
+                      href={adminHref(`/posts/${photo.post_id}`)}
+                      size="small"
+                      variant="ghost"
+                      style={{
+                        paddingLeft: 0,
+                        paddingRight: 0,
+                        marginTop: 5,
+                      }}
                     >
                       编辑所属帖子
                     </Button>
                   </div>
                 </div>
               ))}
-            </SimpleGrid>
+            </div>
           )}
           {(group.data?.data.total || 0) > 12 && (
-            <Group justify="center">
+            <div
+              className="ui-row"
+              style={{
+                display: "flex",
+                alignItems: "center",
+                flexWrap: "wrap",
+                gap: 10,
+                justifyContent: "center",
+              }}
+            >
               <Pagination
-                value={page}
-                onChange={setPage}
+                page={page}
+                onPageChange={setPage}
                 total={Math.ceil(group.data!.data.total / 12)}
+                pageSize={1}
+                summary={null}
               />
-            </Group>
+            </div>
           )}
-        </Stack>
-      </Modal>
-      <Modal
-        opened={confirm}
+        </div>
+      </Dialog>
+      <Dialog
+        open={confirm}
         onClose={() => !busy && setConfirm(false)}
         title={`隐藏这 ${selected.length} 张照片？`}
-        centered
-        closeOnClickOutside={!busy}
+        busy={busy}
       >
-        <Text size="sm">
+        <p
+          className="ui-text"
+          style={{
+            fontSize: 13,
+          }}
+        >
           照片将从公开页面和分享相册中隐藏。如果某篇帖子的可见照片全部隐藏，该帖子也将不再出现在照片墙。可在处理记录中撤销；之后若编辑过帖子，请在编辑页调整。
-        </Text>
+        </p>
         {error && (
-          <Alert color="red" mt="md" role="alert">
-            {error}
-          </Alert>
+          <div
+            style={{
+              marginTop: 16,
+            }}
+          >
+            <Alert tone={tone("red")}>{error}</Alert>
+          </div>
         )}
-        <Group justify="flex-end" mt="lg">
+        <div
+          className="ui-row"
+          style={{
+            display: "flex",
+            alignItems: "center",
+            flexWrap: "wrap",
+            gap: 10,
+            justifyContent: "flex-end",
+            marginTop: 24,
+          }}
+        >
           <Button
-            variant="default"
             disabled={busy}
             onClick={() => setConfirm(false)}
+            variant="secondary"
           >
             继续比较
           </Button>
-          <Button loading={busy} onClick={() => void hide()}>
+          <Button loading={busy} onClick={() => void hide()} variant="primary">
             确认隐藏
           </Button>
-        </Group>
-      </Modal>
-      <Modal
-        opened={closing}
+        </div>
+      </Dialog>
+      <Dialog
+        open={closing}
         onClose={() => setClosing(false)}
         title="清空选择并关闭？"
-        centered
       >
-        <Text size="sm">尚未隐藏任何照片，关闭会清空当前选择。</Text>
-        <Group justify="flex-end" mt="lg">
-          <Button variant="default" onClick={() => setClosing(false)}>
+        <p
+          className="ui-text"
+          style={{
+            fontSize: 13,
+          }}
+        >
+          尚未隐藏任何照片，关闭会清空当前选择。
+        </p>
+        <div
+          className="ui-row"
+          style={{
+            display: "flex",
+            alignItems: "center",
+            flexWrap: "wrap",
+            gap: 10,
+            justifyContent: "flex-end",
+            marginTop: 24,
+          }}
+        >
+          <Button onClick={() => setClosing(false)} variant="secondary">
             继续比较
           </Button>
-          <Button onClick={onClose}>清空并关闭</Button>
-        </Group>
-      </Modal>
-      <Modal
-        opened={!!preview}
+          <Button onClick={onClose} variant="primary">
+            清空并关闭
+          </Button>
+        </div>
+      </Dialog>
+      <Dialog
+        open={!!preview}
         onClose={() => setPreview(null)}
         title={
           preview
             ? `原图 · ${preview.current_title || preview.post_title}`
             : "原图"
         }
-        size="xl"
-        centered
+        size="large"
       >
         {preview && (
-          <Image
+          <img
             src={preview.image_url}
             alt="用于比较的原图"
-            fit="contain"
-            mah="75vh"
+            style={{
+              maxHeight: "75vh",
+            }}
           />
         )}
-      </Modal>
+      </Dialog>
     </>
   );
 }
-
 function ScanIssues({ scan, onClose }: { scan: string; onClose: () => void }) {
   const [page, setPage] = useState(1);
   const issues = useQuery({
@@ -924,11 +1213,24 @@ function ScanIssues({ scan, onClose }: { scan: string; onClose: () => void }) {
       ) : issues.error ? (
         <ErrorState error={issues.error} retry={() => issues.refetch()} />
       ) : (
-        <Stack gap="sm">
+        <div
+          className="ui-stack"
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: 10,
+          }}
+        >
           {!!issues.data?.data.length && (
-            <Text size="sm" c="dimmed" className="record-dialog-note">
+            <p
+              className={"ui-text " + "record-dialog-note"}
+              style={{
+                fontSize: 13,
+                color: "var(--muted)",
+              }}
+            >
               以下图片未能进行完整的画面比较；相同链接或已读取的文件内容仍会参与比较。修正地址或启用远程读取后可重新扫描。
-            </Text>
+            </p>
           )}
           {issues.data?.data.length ? (
             issues.data.data.map((item) => (
@@ -937,30 +1239,44 @@ function ScanIssues({ scan, onClose }: { scan: string; onClose: () => void }) {
                   <ImageOff size={18} />
                 </span>
                 <div className="photo-record-copy">
-                  <Text size="sm" fw={600}>
+                  <p
+                    className="ui-text"
+                    style={{
+                      fontSize: 13,
+                      fontWeight: 600,
+                    }}
+                  >
                     {item.post_title}
-                  </Text>
-                  <Text size="xs" c="dimmed" mt={5}>
+                  </p>
+                  <p
+                    className="ui-text"
+                    style={{
+                      fontSize: 12,
+                      color: "var(--muted)",
+                      marginTop: 5,
+                    }}
+                  >
                     照片 #{item.image_id}
-                  </Text>
-                  <Text
-                    size="sm"
-                    c="dimmed"
-                    mt="sm"
-                    className="photo-record-detail"
+                  </p>
+                  <p
+                    className={"ui-text " + "photo-record-detail"}
+                    style={{
+                      fontSize: 13,
+                      color: "var(--muted)",
+                      marginTop: 10,
+                    }}
                   >
                     {item.reason}
-                  </Text>
+                  </p>
                 </div>
                 <div className="photo-record-action">
                   <Button
-                    component={Link}
-                    to={`/posts/${item.post_id}`}
-                    size="xs"
-                    variant="default"
-                    rightSection={<ArrowUpRight size={14} />}
+                    href={adminHref(`/posts/${item.post_id}`)}
+                    size="small"
+                    variant="secondary"
                   >
                     查看帖子
+                    {<ArrowUpRight size={14} />}
                   </Button>
                 </div>
               </article>
@@ -972,7 +1288,7 @@ function ScanIssues({ scan, onClose }: { scan: string; onClose: () => void }) {
               description="如有照片未能完整比较，会列在这里。"
             />
           )}
-        </Stack>
+        </div>
       )}
     </RecordDialog>
   );

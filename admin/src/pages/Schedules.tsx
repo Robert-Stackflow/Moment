@@ -1,32 +1,27 @@
-import { useState } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useDebouncedValue } from "@mantine/hooks";
 import {
   Alert,
   Badge,
   Button,
-  Group,
-  Image,
-  Modal,
+  Card,
+  Dialog,
+  Input,
   Pagination,
-  Paper,
   Select,
-  Stack,
-  Text,
-  TextInput,
-} from "@mantine/core";
+} from "@robert-stackflow/oneui";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { CalendarClock, FilePenLine, RefreshCw, Search } from "lucide-react";
-import { Link } from "react-router-dom";
+import { useState } from "react";
 import { api, json, notifyError, notifySuccess } from "../api";
 import { Empty, ErrorState, Loading, PageTitle } from "../components/Common";
 import { ScheduleDialog, scheduleTime } from "../components/ScheduleDialog";
+import { useDebouncedValue } from "../hooks";
 import {
   thumbnail,
   type PostDraft,
   type PublishSchedule,
   type Settings,
 } from "../types";
-
+import { adminHref, badgeTone, selectOptions, tone } from "../ui-data";
 const labels = {
   pending: "等待发布",
   failed: "需要处理",
@@ -39,7 +34,6 @@ const colors = {
   published: "teal",
   cancelled: "gray",
 };
-
 export default function Schedules() {
   const client = useQueryClient();
   const [search, setSearch] = useState("");
@@ -67,7 +61,7 @@ export default function Schedules() {
           status,
         })}`,
       ),
-    refetchInterval: 5_000,
+    refetchInterval: 5000,
   });
   async function invalidate() {
     await Promise.all(
@@ -131,44 +125,60 @@ export default function Schedules() {
     <>
       <PageTitle title="定时发布" description="所有时间均为北京时间 · UTC+8">
         <Button
-          variant="default"
-          leftSection={<RefreshCw size={16} />}
           onClick={() => void plans.refetch()}
           loading={plans.isFetching}
+          variant="secondary"
         >
+          {<RefreshCw size={16} />}
           刷新
         </Button>
       </PageTitle>
-      <Group mb="lg" align="end">
-        <TextInput
-          style={{ flex: "1 1 220px" }}
+      <div
+        className="ui-row"
+        style={{
+          display: "flex",
+          alignItems: "end",
+          flexWrap: "wrap",
+          gap: 10,
+          marginBottom: 24,
+        }}
+      >
+        <Input
           aria-label="搜索发布计划"
           placeholder="搜索帖子标题"
-          leftSection={<Search size={17} />}
+          leading={<Search size={17} />}
           value={search}
           onChange={(e) => {
             setSearch(e.currentTarget.value);
             setPage(1);
           }}
-        />
-        <Select
-          aria-label="计划状态"
-          w={170}
-          value={status}
-          onChange={(value) => {
-            setStatus(value || "");
-            setPage(1);
+          style={{
+            ...{ flex: "1 1 220px" },
           }}
-          data={[
-            { value: "", label: "全部状态" },
-            ...Object.entries(labels).map(([value, label]) => ({
-              value,
-              label,
-            })),
-          ]}
-          allowDeselect={false}
         />
-      </Group>
+        <div
+          style={{
+            width: 170,
+          }}
+        >
+          <Select
+            aria-label="计划状态"
+            onChange={(value) => {
+              setStatus(value || "");
+              setPage(1);
+            }}
+            options={selectOptions([
+              { value: "", label: "全部状态" },
+              ...Object.entries(labels).map(([value, label]) => ({
+                value,
+                label,
+              })),
+            ])}
+            label={"计划状态"}
+            value={status ?? ""}
+          />
+        </div>
+      </div>
       {plans.isPending ? (
         <Loading />
       ) : plans.error ? (
@@ -176,118 +186,177 @@ export default function Schedules() {
       ) : !plans.data.data.length ? (
         <Empty title="没有发布计划" />
       ) : (
-        <Stack gap="sm">
+        <div
+          className="ui-stack"
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: 10,
+          }}
+        >
           {plans.data.data.map((plan) => (
-            <Paper
+            <Card
               key={plan.draft_id}
-              withBorder
-              p="lg"
-              className="schedule-card"
+              className={"moment-panel " + "schedule-card"}
             >
               <div className="schedule-copy">
                 <div className="schedule-cover">
                   {plan.cover ? (
-                    <Image
+                    <img
                       src={thumbnail(plan.cover, settings.data?.data, 320)}
                       alt=""
-                      w={64}
-                      h={64}
-                      radius={10}
+                      style={{
+                        width: 64,
+                        height: 64,
+                      }}
                     />
                   ) : (
                     <CalendarClock size={24} />
                   )}
                 </div>
                 <div className="schedule-details">
-                  <Group gap={8}>
-                    <Text fw={600} style={{ overflowWrap: "anywhere" }}>
-                      {plan.title}
-                    </Text>
-                    <Badge
-                      size="xs"
-                      variant="light"
-                      color={colors[plan.status]}
+                  <div
+                    className="ui-row"
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      flexWrap: "wrap",
+                      gap: 8,
+                    }}
+                  >
+                    <p
+                      className="ui-text"
+                      style={{
+                        fontWeight: 600,
+                        ...{ overflowWrap: "anywhere" },
+                      }}
                     >
+                      {plan.title}
+                    </p>
+                    <Badge tone={badgeTone(colors[plan.status])}>
                       {labels[plan.status]}
                     </Badge>
-                  </Group>
-                  <Text size="sm" c="dimmed" mt={6}>
+                  </div>
+                  <p
+                    className="ui-text"
+                    style={{
+                      fontSize: 13,
+                      color: "var(--muted)",
+                      marginTop: 6,
+                    }}
+                  >
                     {scheduleTime(plan.publish_at)}
-                  </Text>
+                  </p>
                   {plan.completed_at && (
-                    <Text size="xs" c="dimmed" mt={4}>
+                    <p
+                      className="ui-text"
+                      style={{
+                        fontSize: 12,
+                        color: "var(--muted)",
+                        marginTop: 4,
+                      }}
+                    >
                       {plan.status === "published" ? "实际发布" : "最近处理"} ·{" "}
                       {plan.completed_at}
-                    </Text>
+                    </p>
                   )}
                 </div>
               </div>
               {plan.error && (
-                <Alert color="orange" role="status" mt="md">
-                  {plan.error}
-                </Alert>
+                <div
+                  style={{
+                    marginTop: 16,
+                  }}
+                >
+                  <Alert tone={tone("orange")}>{plan.error}</Alert>
+                </div>
               )}
-              <Group justify="flex-end" gap={8} mt="md">
+              <div
+                className="ui-row"
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  flexWrap: "wrap",
+                  gap: 8,
+                  justifyContent: "flex-end",
+                  marginTop: 16,
+                }}
+              >
                 {plan.status === "published" ? (
                   plan.published_post_id ? (
                     <Button
-                      size="xs"
-                      variant="subtle"
-                      component={Link}
-                      to={`/posts/${plan.published_post_id}`}
+                      size="small"
+                      href={adminHref(`/posts/${plan.published_post_id}`)}
+                      variant="ghost"
                     >
                       查看帖子
                     </Button>
                   ) : (
-                    <Text size="xs" c="dimmed">
+                    <p
+                      className="ui-text"
+                      style={{
+                        fontSize: 12,
+                        color: "var(--muted)",
+                      }}
+                    >
                       帖子已删除
-                    </Text>
+                    </p>
                   )
                 ) : (
                   <>
                     <Button
-                      size="xs"
-                      variant="subtle"
-                      leftSection={<FilePenLine size={14} />}
-                      component={Link}
-                      to={`/drafts/${plan.draft_id}`}
+                      size="small"
+                      href={adminHref(`/drafts/${plan.draft_id}`)}
+                      variant="ghost"
                     >
+                      {<FilePenLine size={14} />}
                       {plan.status === "pending" ? "查看内容" : "编辑草稿"}
                     </Button>
                     <Button
-                      size="xs"
-                      variant="light"
+                      size="small"
                       disabled={busy}
                       onClick={() => void edit(plan)}
+                      variant="secondary"
                     >
                       {plan.status === "pending" ? "修改时间" : "重新安排"}
                     </Button>
                     {(plan.status === "pending" ||
                       plan.status === "failed") && (
                       <Button
-                        size="xs"
-                        variant="default"
+                        size="small"
                         disabled={busy}
                         onClick={() => setCancelling(plan)}
+                        variant="secondary"
                       >
                         取消计划
                       </Button>
                     )}
                   </>
                 )}
-              </Group>
-            </Paper>
+              </div>
+            </Card>
           ))}
           {(plans.data.total || 0) > 20 && (
-            <Group justify="center">
+            <div
+              className="ui-row"
+              style={{
+                display: "flex",
+                alignItems: "center",
+                flexWrap: "wrap",
+                gap: 10,
+                justifyContent: "center",
+              }}
+            >
               <Pagination
-                value={page}
-                onChange={setPage}
+                page={page}
+                onPageChange={setPage}
                 total={Math.ceil((plans.data.total || 0) / 20)}
+                pageSize={1}
+                summary={null}
               />
-            </Group>
+            </div>
           )}
-        </Stack>
+        </div>
       )}
       {editing && (
         <ScheduleDialog
@@ -301,29 +370,43 @@ export default function Schedules() {
           onConfirm={save}
         />
       )}
-      <Modal
-        opened={!!cancelling}
+      <Dialog
+        open={!!cancelling}
         onClose={() => !busy && setCancelling(null)}
         title="取消发布计划？"
-        centered
       >
-        <Text size="sm">
+        <p
+          className="ui-text"
+          style={{
+            fontSize: 13,
+          }}
+        >
           「{cancelling?.title}
           」将保留为草稿，可以继续编辑或重新安排时间。已公开的内容保持原样。
-        </Text>
-        <Group justify="flex-end" mt="xl">
+        </p>
+        <div
+          className="ui-row"
+          style={{
+            display: "flex",
+            alignItems: "center",
+            flexWrap: "wrap",
+            gap: 10,
+            justifyContent: "flex-end",
+            marginTop: 32,
+          }}
+        >
           <Button
-            variant="default"
             disabled={busy}
             onClick={() => setCancelling(null)}
+            variant="secondary"
           >
             保留计划
           </Button>
-          <Button color="red" loading={busy} onClick={() => void cancel()}>
+          <Button loading={busy} onClick={() => void cancel()} variant="danger">
             确认取消
           </Button>
-        </Group>
-      </Modal>
+        </div>
+      </Dialog>
     </>
   );
 }

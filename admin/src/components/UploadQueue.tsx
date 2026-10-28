@@ -1,10 +1,13 @@
-import { useEffect, useRef, useState } from "react";
-import { Button, Group, Progress, Stack, Text } from "@mantine/core";
-import { Dropzone, IMAGE_MIME_TYPE } from "@mantine/dropzone";
+import {
+  Button,
+  FileDropZone,
+  FilePicker,
+  Progress,
+} from "@robert-stackflow/oneui";
 import { RotateCcw, Upload } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import { uploadFile } from "../api";
 import type { Photo } from "../types";
-
 interface Job {
   id: string;
   file: File;
@@ -96,11 +99,7 @@ export function UploadQueue({
               if (exif.DateTimeOriginal instanceof Date) {
                 const date = exif.DateTimeOriginal;
                 const pad = (n: number) => String(n).padStart(2, "0");
-                photo.time = `${date.getFullYear()}-${pad(
-                  date.getMonth() + 1,
-                )}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(
-                  date.getMinutes(),
-                )}:${pad(date.getSeconds())}`;
+                photo.time = `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
               }
             }
             const gps = await exifr.gps(job.file);
@@ -150,17 +149,28 @@ export function UploadQueue({
     (job) => job.status === "uploading" || job.status === "waiting",
   );
   return (
-    <Stack gap="md">
+    <div
+      className="ui-stack"
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        gap: 16,
+      }}
+    >
       {!compact && (
-        <Text size="xs" c="dimmed">
+        <p
+          className="ui-text"
+          style={{
+            fontSize: 12,
+            color: "var(--muted)",
+          }}
+        >
           自动读取拍摄时间与 GPS（如有）；GPS 默认不公开，可在图片详情中调整。
-        </Text>
+        </p>
       )}
-      <Dropzone
-        accept={IMAGE_MIME_TYPE}
+      <FileDropZone
         maxSize={limit * 1024 * 1024}
         disabled={busy || !enabled || remaining <= 0}
-        onDrop={enqueue}
         onReject={(files) =>
           setJobs((current) => [
             ...current,
@@ -173,95 +183,167 @@ export function UploadQueue({
             })),
           ])
         }
-        radius="lg"
-        p={compact ? "md" : "xl"}
         className={compact ? "upload-zone is-compact" : "upload-zone"}
+        accept={"image/*"}
+        onFiles={enqueue}
       >
-        <Group justify="center" gap="md" style={{ pointerEvents: "none" }}>
+        <div
+          className="ui-row"
+          style={{
+            display: "flex",
+            alignItems: "center",
+            flexWrap: "wrap",
+            gap: 16,
+            justifyContent: "center",
+            ...{ pointerEvents: "none" },
+          }}
+        >
           <Upload size={28} strokeWidth={1.5} color="var(--moment-accent)" />
           <div>
-            <Text fw={500}>
+            <p
+              className="ui-text"
+              style={{
+                fontWeight: 500,
+              }}
+            >
               {enabled
                 ? compact
                   ? "继续添加照片"
                   : "拖入照片，或点击选择文件"
                 : "文件上传已关闭"}
-            </Text>
-            <Text size="xs" c="dimmed" mt={4}>
+            </p>
+            <p
+              className="ui-text"
+              style={{
+                fontSize: 12,
+                color: "var(--muted)",
+                marginTop: 4,
+              }}
+            >
               支持批量选择 · 每张最多 {limit} MB · 自动读取拍摄信息
-            </Text>
+            </p>
           </div>
-        </Group>
-      </Dropzone>
+        </div>
+        <FilePicker
+          onFiles={enqueue}
+          accept={"image/*"}
+          maxSize={limit * 1048576}
+          maxFiles={remaining}
+          disabled={busy || !enabled || remaining <= 0}
+          label={"\u9009\u62E9\u7167\u7247"}
+        />
+      </FileDropZone>
       {jobs.length ? (
-        <Stack gap={12} aria-live="polite">
+        <div
+          aria-live="polite"
+          className="ui-stack"
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: 12,
+          }}
+        >
           {jobs.some((job) => job.status === "done") && (
-            <Group justify="space-between">
-              <Text size="xs" c="dimmed">
+            <div
+              className="ui-row"
+              style={{
+                display: "flex",
+                alignItems: "center",
+                flexWrap: "wrap",
+                gap: 10,
+                justifyContent: "space-between",
+              }}
+            >
+              <p
+                className="ui-text"
+                style={{
+                  fontSize: 12,
+                  color: "var(--muted)",
+                }}
+              >
                 已添加 {jobs.filter((job) => job.status === "done").length}{" "}
                 张照片
-              </Text>
+              </p>
               <Button
-                size="compact-xs"
-                variant="subtle"
-                color="gray"
                 onClick={() =>
                   setJobs((current) =>
                     current.filter((job) => job.status !== "done"),
                   )
                 }
+                variant="ghost"
               >
                 清除完成记录
               </Button>
-            </Group>
+            </div>
           )}
           {jobs
             .filter((job) => job.status !== "done")
             .map((job) => (
               <div className="upload-line" key={job.id}>
                 <div className="filename">
-                  <Text size="sm" truncate>
+                  <p
+                    className="ui-text"
+                    style={{
+                      fontSize: 13,
+                    }}
+                  >
                     {job.file.name}
-                  </Text>
+                  </p>
                   {job.status === "uploading" ? (
-                    <Progress
-                      value={job.progress}
-                      size="xs"
-                      mt={6}
-                      aria-label={`${job.file.name} 上传进度`}
-                    />
+                    <div
+                      style={{
+                        marginTop: 6,
+                      }}
+                    >
+                      <Progress
+                        value={job.progress}
+                        label={`${job.file.name} 上传进度`}
+                      />
+                    </div>
                   ) : (
-                    <Text
-                      size="xs"
-                      c={job.status === "failed" ? "red" : "dimmed"}
+                    <p
+                      className="ui-text"
+                      style={{
+                        fontSize: 12,
+                        color:
+                          job.status === "failed"
+                            ? "var(--danger)"
+                            : "var(--muted)",
+                      }}
                     >
                       {job.error || "等待上传"}
-                    </Text>
+                    </p>
                   )}
                 </div>
                 {job.status === "failed" && enabled ? (
                   <Button
-                    variant="subtle"
-                    size="xs"
+                    size="small"
                     disabled={
                       busy ||
                       remaining <= 0 ||
                       job.file.size > limit * 1024 * 1024
                     }
-                    leftSection={<RotateCcw size={14} />}
                     onClick={() => void run([job])}
+                    variant="ghost"
                   >
+                    {<RotateCcw size={14} />}
                     重试
                   </Button>
                 ) : (
-                  <Text size="xs" c="dimmed">
+                  <p
+                    className="ui-text"
+                    style={{
+                      fontSize: 12,
+                      color: "var(--muted)",
+                    }}
+                  >
                     {job.progress}%
-                  </Text>
+                  </p>
                 )}
               </div>
             ))}
-        </Stack>
+        </div>
       ) : null}
-    </Stack>
+    </div>
   );
 }

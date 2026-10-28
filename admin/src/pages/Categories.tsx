@@ -1,35 +1,27 @@
-import { useState } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-  ActionIcon,
+  Badge,
   Button,
-  Group,
-  Modal,
+  Card,
+  Dialog,
+  Form,
+  FormField,
+  IconButton,
+  Input,
   NumberInput,
-  Paper,
   Select,
-  Stack,
-  Collapse,
-  Text,
   Textarea,
-  TextInput,
-} from "@mantine/core";
-import {
-  Pencil,
-  Plus,
-  Trash2,
-  ChevronRight,
-  Folder,
-  Tag,
-  FolderPlus,
-} from "lucide-react";
+  TreeTable,
+} from "@robert-stackflow/oneui";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { Folder, FolderPlus, Pencil, Plus, Tag, Trash2 } from "lucide-react";
+import { useState } from "react";
 import { api, json, notifyError, notifySuccess } from "../api";
 import { Empty, ErrorState, Loading, PageTitle } from "../components/Common";
-import { flatten } from "../types";
-import type { Category } from "../types";
 import { usePendingChanges } from "../components/PendingChanges";
+import { useModelForm } from "../components/useModelForm";
+import type { Category } from "../types";
+import { flatten } from "../types";
 const blank = { name: "", alias: "", desc: "", order: 0, parent_id: 0 };
-
 export default function Categories() {
   const client = useQueryClient();
   const categories = useQuery({
@@ -38,6 +30,15 @@ export default function Categories() {
   });
   const [editing, setEditing] = useState<Category | "new" | null>(null);
   const [form, setForm] = useState(blank);
+  const sharedForm = useModelForm(form, {
+    name: { label: "分类名称", required: true, maxLength: 30 },
+    alias: {
+      label: "访问别名",
+      required: true,
+      maxLength: 50,
+      pattern: /^[a-zA-Z0-9_-]+$/,
+    },
+  });
   const [initialForm, setInitialForm] = useState(blank);
   usePendingChanges(
     !!editing && JSON.stringify(form) !== JSON.stringify(initialForm),
@@ -62,6 +63,7 @@ export default function Categories() {
             parent_id: item.parent_id,
           };
     setForm(nextForm);
+    sharedForm.reset(nextForm);
     setInitialForm(nextForm);
   }
   async function refresh() {
@@ -71,8 +73,7 @@ export default function Categories() {
       client.invalidateQueries({ queryKey: ["posts"] }),
     ]);
   }
-  async function save(event: React.FormEvent) {
-    event.preventDefault();
+  async function save() {
     setBusy(true);
     try {
       const path =
@@ -103,10 +104,12 @@ export default function Categories() {
       setBusy(false);
     }
   }
+  const data = categories.data?.data || [];
   return (
     <>
       <PageTitle title="分类管理">
-        <Button leftSection={<Plus size={18} />} onClick={() => edit("new")}>
+        <Button variant="primary" onClick={() => edit("new")}>
+          <Plus />
           新建分类
         </Button>
       </PageTitle>
@@ -114,238 +117,193 @@ export default function Categories() {
         <Loading />
       ) : categories.error ? (
         <ErrorState error={categories.error} retry={categories.refetch} />
-      ) : rows.length === 0 ? (
-        <Paper withBorder>
-          <Empty description="创建第一个分类，开始整理你的照片。" />
-        </Paper>
+      ) : !data.length ? (
+        <Card>
+          <Empty title="还没有分类" description="为照片创建第一个分类。" />
+        </Card>
       ) : (
-        <Paper withBorder className="category-tree">
-          <div className="category-tree-heading">
-            <span>分类与层级</span>
-            <span>访问路径</span>
-            <span>排序</span>
-            <span>操作</span>
-          </div>
-          {(categories.data?.data || []).map((parent) => {
-            const children = parent.children || [];
-            const expanded = !collapsed.includes(parent.id);
-            const row = (item: Category, child = false) => (
-              <div
-                className={`category-tree-row ${child ? "is-child" : "is-parent"}`}
-                key={item.id}
-              >
-                <div className="category-tree-name">
-                  {!child && (
-                    <ActionIcon
-                      className="category-expand"
-                      variant="subtle"
-                      color="gray"
-                      aria-label={`${expanded ? "收起" : "展开"} ${item.name}`}
-                      aria-expanded={expanded}
-                      disabled={!children.length}
-                      onClick={() =>
-                        setCollapsed((current) =>
-                          expanded
-                            ? [...current, item.id]
-                            : current.filter((id) => id !== item.id),
-                        )
-                      }
-                    >
-                      <ChevronRight
-                        size={16}
-                        className={expanded ? "is-expanded" : ""}
-                      />
-                    </ActionIcon>
-                  )}
-                  <span
-                    className={`category-tree-icon ${child ? "is-child" : ""}`}
-                  >
-                    {child ? (
-                      <Tag size={16} strokeWidth={1.7} />
-                    ) : (
-                      <Folder size={20} strokeWidth={1.6} />
-                    )}
+        <TreeTable
+          rows={data}
+          label="分类与层级"
+          rowKey={(item) => item.id}
+          rowLabel={(item) => item.name}
+          getChildren={(item) => item.children}
+          expanded={data
+            .filter((item) => !collapsed.includes(item.id))
+            .map((item) => item.id)}
+          onExpandedChange={(keys) =>
+            setCollapsed(
+              data
+                .filter((item) => !keys.includes(item.id))
+                .map((item) => item.id),
+            )
+          }
+          columns={[
+            {
+              key: "name",
+              title: "分类与层级",
+              render: (item) => (
+                <div className="category-label">
+                  <span className="category-symbol">
+                    {item.parent_id ? <Tag /> : <Folder />}
                   </span>
-                  <div className="category-name-copy">
-                    <Group gap={9}>
-                      <Text fw={child ? 500 : 600} size="sm">
-                        {item.name}
-                      </Text>
-                      {!child && children.length > 0 && (
-                        <span className="category-count">
-                          {children.length}
-                        </span>
-                      )}
-                    </Group>
-                    <Text size="xs" c="dimmed" lineClamp={1} mt={3}>
-                      {item.desc || (child ? `属于 ${parent.name}` : "主分类")}
-                    </Text>
-                  </div>
+                  <span>
+                    <strong>{item.name}</strong>
+                    {!!item.children?.length && (
+                      <Badge>{item.children.length}</Badge>
+                    )}
+                    <small>
+                      {item.parent_id
+                        ? "属于 " +
+                          rows.find((parent) => parent.id === item.parent_id)
+                            ?.name
+                        : "主分类"}
+                    </small>
+                  </span>
                 </div>
-                <a
-                  className="category-path"
-                  href={`/category/${encodeURIComponent(item.alias)}`}
-                  target="_blank"
-                  rel="noopener"
-                >
-                  /{item.alias}
-                </a>
-                <span className="category-order">{item.order}</span>
-                <Group gap={3} wrap="nowrap" className="category-tree-actions">
-                  {!child && (
-                    <ActionIcon
-                      aria-label={`新建子分类 ${item.name}`}
-                      data-tooltip="新建子分类"
-                      variant="subtle"
+              ),
+            },
+            {
+              key: "path",
+              title: "访问路径",
+              render: (item) => <span className="muted">/{item.alias}</span>,
+            },
+            {
+              key: "order",
+              title: "排序",
+              width: 80,
+              render: (item) => item.order,
+            },
+            {
+              key: "actions",
+              title: "操作",
+              align: "right",
+              width: 156,
+              render: (item) => (
+                <div className="row-actions">
+                  {!item.parent_id && (
+                    <IconButton
+                      label={"在 " + item.name + " 下添加分类"}
+                      variant="ghost"
                       onClick={() => edit("new", item.id)}
                     >
-                      <FolderPlus size={17} />
-                    </ActionIcon>
+                      <FolderPlus />
+                    </IconButton>
                   )}
-                  <ActionIcon
-                    aria-label={`编辑分类 ${item.name}`}
-                    variant="subtle"
+                  <IconButton
+                    label={"编辑 " + item.name}
+                    variant="ghost"
                     onClick={() => edit(item)}
                   >
-                    <Pencil size={16} />
-                  </ActionIcon>
-                  <ActionIcon
-                    aria-label={`删除分类 ${item.name}`}
-                    variant="subtle"
-                    color="red"
+                    <Pencil />
+                  </IconButton>
+                  <IconButton
+                    label={"删除 " + item.name}
+                    variant="danger"
                     onClick={() => setDeleting(item)}
                   >
-                    <Trash2 size={16} />
-                  </ActionIcon>
-                </Group>
-              </div>
-            );
-            return (
-              <section className="category-tree-group" key={parent.id}>
-                {row(parent)}
-                {children.length > 0 && (
-                  <Collapse
-                    in={expanded}
-                    transitionDuration={200}
-                    transitionTimingFunction="cubic-bezier(.2,.7,.2,1)"
-                  >
-                    <div className="category-tree-children">
-                      {children.map((child) => row(child, true))}
-                    </div>
-                  </Collapse>
-                )}
-              </section>
-            );
-          })}
-        </Paper>
+                    <Trash2 />
+                  </IconButton>
+                </div>
+              ),
+            },
+          ]}
+        />
       )}
-      <Modal
-        opened={!!editing}
-        onClose={() => {
-          if (!busy) setEditing(null);
-        }}
+      <Dialog
+        open={!!editing}
+        onClose={() => !busy && setEditing(null)}
+        busy={busy}
         title={editing === "new" ? "新建分类" : "编辑分类"}
-        centered
+        variant="form"
       >
-        <form onSubmit={save}>
-          <Stack gap="lg">
-            <TextInput
+        <Form controller={sharedForm} onSubmit={save}>
+          <div className="ui-stack form-fields">
+            <Input
+              {...sharedForm.field("name")}
               label="分类名称"
               required
               maxLength={30}
               value={form.name}
-              onChange={(e) => field("name", e.currentTarget.value)}
+              onChange={(event) => field("name", event.currentTarget.value)}
             />
-            <TextInput
+            <Input
+              {...sharedForm.field("alias")}
               label="访问别名"
-              description="用于分类网址，可使用字母、数字、下划线和连字符"
+              hint="字母、数字、下划线或连字符"
               required
               maxLength={50}
               value={form.alias}
-              onChange={(e) => field("alias", e.currentTarget.value)}
+              onChange={(event) => field("alias", event.currentTarget.value)}
             />
             <Textarea
               label="描述"
               value={form.desc}
-              onChange={(e) => field("desc", e.currentTarget.value)}
+              onChange={(event) => field("desc", event.currentTarget.value)}
             />
-            <Select
-              label="父分类"
-              data={[
-                { value: "0", label: "作为顶级分类" },
-                ...rows
-                  .filter(
-                    (item) =>
-                      !item.parent_id &&
-                      (editing === "new" || item.id !== editing?.id),
-                  )
-                  .map((item) => ({
-                    value: String(item.id),
-                    label: item.name,
-                  })),
-              ]}
-              value={String(form.parent_id)}
-              onChange={(value) =>
-                setForm((current) => ({
-                  ...current,
-                  parent_id: Number(value || 0),
-                }))
-              }
-            />
-            <NumberInput
-              label="显示顺序"
-              description="数字越小越靠前"
-              allowDecimal={false}
-              value={form.order}
-              onChange={(value) =>
-                setForm((current) => ({
-                  ...current,
-                  order: Number(value || 0),
-                }))
-              }
-            />
-            <Group justify="flex-end">
-              <Button
-                variant="default"
-                onClick={() => setEditing(null)}
-                disabled={busy}
-              >
+            <FormField label="父分类">
+              <Select
+                label="父分类"
+                value={String(form.parent_id)}
+                onChange={(value) => field("parent_id", Number(value))}
+                options={[
+                  { value: "0", label: "作为顶级分类" },
+                  ...rows
+                    .filter(
+                      (item) =>
+                        !item.parent_id &&
+                        (editing === "new" || item.id !== editing?.id),
+                    )
+                    .map((item) => ({
+                      value: String(item.id),
+                      label: item.name,
+                    })),
+                ]}
+              />
+            </FormField>
+            <FormField label="显示顺序">
+              <NumberInput
+                label="显示顺序"
+                value={form.order}
+                onChange={(value) => field("order", value)}
+              />
+            </FormField>
+            <div className="dialog-actions">
+              <Button disabled={busy} onClick={() => setEditing(null)}>
                 取消
               </Button>
-              <Button type="submit" loading={busy}>
+              <Button type="submit" variant="primary" loading={busy}>
                 保存分类
               </Button>
-            </Group>
-          </Stack>
-        </form>
-      </Modal>
-      <Modal
-        opened={!!deleting}
-        onClose={() => {
-          if (!busy) setDeleting(null);
-        }}
+            </div>
+          </div>
+        </Form>
+      </Dialog>
+      <Dialog
+        open={!!deleting}
+        onClose={() => !busy && setDeleting(null)}
+        busy={busy}
         title="删除分类"
-        centered
-      >
-        <Stack>
-          <Text>
-            确定删除「{deleting?.name}
-            」？帖子和图片会保留，所属分类关系会移除。有子分类时需要先处理子分类。
-          </Text>
-          <Group justify="flex-end">
-            <Button
-              variant="default"
-              disabled={busy}
-              onClick={() => setDeleting(null)}
-            >
+        variant="confirm"
+        footer={
+          <>
+            <Button disabled={busy} onClick={() => setDeleting(null)}>
               取消
             </Button>
-            <Button color="red" loading={busy} onClick={() => void remove()}>
+            <Button
+              loading={busy}
+              variant="danger"
+              onClick={() => void remove()}
+            >
               删除分类
             </Button>
-          </Group>
-        </Stack>
-      </Modal>
+          </>
+        }
+      >
+        <p>
+          删除「{deleting?.name}」？子分类会一起删除，帖子会保留并移除此分类。
+        </p>
+      </Dialog>
     </>
   );
 }

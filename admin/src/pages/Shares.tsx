@@ -1,36 +1,31 @@
-import { useState } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useDebouncedValue, useInterval } from "@mantine/hooks";
 import {
-  ActionIcon,
   Badge,
   Button,
-  Group,
+  Card,
+  Dialog,
+  Input,
   Menu,
-  Modal,
   Pagination,
-  Paper,
-  Stack,
-  Text,
-  TextInput,
-} from "@mantine/core";
-import { Link } from "react-router-dom";
+} from "@robert-stackflow/oneui";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Copy,
   ExternalLink,
   Link2,
   LockKeyhole,
-  MoreHorizontal,
   Pencil,
   Plus,
+  RefreshCw,
   Search,
   ShieldOff,
   Trash2,
-  RefreshCw,
 } from "lucide-react";
+import { useState } from "react";
+import { Link } from "react-router-dom";
 import { api, json, notifyError, notifySuccess } from "../api";
 import { Empty, ErrorState, Loading, PageTitle } from "../components/Common";
-
+import { useDebouncedValue, useInterval } from "../hooks";
+import { adminHref, badgeTone } from "../ui-data";
 export interface Share {
   id: number;
   token: string;
@@ -108,24 +103,23 @@ export default function Shares() {
   return (
     <>
       <PageTitle title="分享相册">
-        <Button
-          component={Link}
-          to="/shares/new"
-          leftSection={<Plus size={17} />}
-        >
+        <Button href={adminHref("/shares/new")} variant="primary">
+          {<Plus size={17} />}
           新建相册
         </Button>
       </PageTitle>
-      <TextInput
-        mb="xl"
-        maw={440}
+      <Input
         aria-label="搜索分享相册"
         placeholder="搜索相册名称"
-        leftSection={<Search size={17} />}
+        leading={<Search size={17} />}
         value={search}
         onChange={(e) => {
           setSearch(e.currentTarget.value);
           setPage(1);
+        }}
+        style={{
+          marginBottom: 32,
+          maxWidth: 440,
         }}
       />
       {list.isLoading ? (
@@ -145,174 +139,239 @@ export default function Shares() {
                 share.expires_at !== null && share.expires_at * 1000 <= clock;
               const active = !share.revoked && !expired;
               return (
-                <Paper withBorder p="xl" key={share.id} className="share-card">
-                  <Group justify="space-between">
+                <Card key={share.id} className={"moment-panel " + "share-card"}>
+                  <div
+                    className="ui-row"
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      flexWrap: "wrap",
+                      gap: 10,
+                      justifyContent: "space-between",
+                    }}
+                  >
                     <span className="share-card-icon">
                       <Link2 size={21} />
                     </span>
                     <Badge
-                      color={
-                        share.revoked ? "gray" : expired ? "orange" : "green"
-                      }
-                      variant="light"
+                      tone={badgeTone(
+                        share.revoked ? "gray" : expired ? "orange" : "green",
+                      )}
                     >
                       {share.revoked ? "已撤销" : expired ? "已到期" : "分享中"}
                     </Badge>
-                  </Group>
+                  </div>
                   <Link to={`/shares/${share.id}`} className="share-card-title">
                     {share.title}
                   </Link>
-                  <Text size="sm" c="dimmed" lineClamp={2} mih={42}>
+                  <p
+                    className="ui-text"
+                    style={{
+                      fontSize: 13,
+                      color: "var(--muted)",
+                      display: "-webkit-box",
+                      WebkitLineClamp: 2,
+                      WebkitBoxOrient: "vertical",
+                      overflow: "hidden",
+                      minHeight: 42,
+                    }}
+                  >
                     {share.description || `${share.post_count} 篇帖子`}
-                  </Text>
-                  <Stack gap={7} my="lg">
-                    <Group gap={7}>
+                  </p>
+                  <div
+                    className="ui-stack"
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: 7,
+                      marginTop: 24,
+                      marginBottom: 24,
+                    }}
+                  >
+                    <div
+                      className="ui-row"
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        flexWrap: "wrap",
+                        gap: 7,
+                      }}
+                    >
                       <LockKeyhole size={14} />
-                      <Text size="xs">
+                      <p
+                        className="ui-text"
+                        style={{
+                          fontSize: 12,
+                        }}
+                      >
                         {share.password_required ? "需要密码" : "持链接可访问"}
-                      </Text>
-                    </Group>
-                    <Text size="xs" c="dimmed">
+                      </p>
+                    </div>
+                    <p
+                      className="ui-text"
+                      style={{
+                        fontSize: 12,
+                        color: "var(--muted)",
+                      }}
+                    >
                       {share.expires_at
                         ? `${shareDate(share.expires_at)} 到期`
                         : "长期有效"}
-                    </Text>
-                  </Stack>
-                  <Group justify="space-between" className="share-card-actions">
+                    </p>
+                  </div>
+                  <div
+                    className={"ui-row " + "share-card-actions"}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      flexWrap: "wrap",
+                      gap: 10,
+                      justifyContent: "space-between",
+                    }}
+                  >
                     <Button
-                      variant="light"
-                      size="xs"
-                      leftSection={<Copy size={14} />}
+                      size="small"
                       disabled={!active}
                       onClick={() => void copy(share)}
+                      variant="secondary"
                     >
+                      {<Copy size={14} />}
                       复制链接
                     </Button>
-                    <Group gap={4}>
-                      <ActionIcon
-                        component={Link}
-                        to={`/shares/${share.id}`}
-                        variant="subtle"
+                    <div
+                      className="ui-row"
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        flexWrap: "wrap",
+                        gap: 4,
+                      }}
+                    >
+                      <Button
+                        href={adminHref(`/shares/${share.id}`)}
                         aria-label={`编辑 ${share.title}`}
+                        variant="ghost"
                       >
                         <Pencil size={17} />
-                      </ActionIcon>
+                      </Button>
                       {active && (
-                        <ActionIcon
-                          component="a"
+                        <Button
                           href={`/share/${share.token}`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          variant="subtle"
                           aria-label={`打开 ${share.title}`}
+                          variant="ghost"
                         >
                           <ExternalLink size={17} />
-                        </ActionIcon>
+                        </Button>
                       )}
-                      <Menu position="bottom-end">
-                        <Menu.Target>
-                          <ActionIcon
-                            variant="subtle"
-                            color="gray"
-                            aria-label={`更多操作 ${share.title}`}
-                          >
-                            <MoreHorizontal size={19} />
-                          </ActionIcon>
-                        </Menu.Target>
-                        <Menu.Dropdown>
-                          <Menu.Item
-                            leftSection={<ShieldOff size={15} />}
-                            onClick={() =>
+                      <Menu
+                        label={"\u5206\u4EAB\u64CD\u4F5C"}
+                        items={[
+                          {
+                            label: share.revoked ? "恢复分享" : "停用分享",
+                            icon: <ShieldOff size={15} />,
+                            action: () =>
                               setAction({
                                 share,
                                 kind: share.revoked ? "resume" : "revoke",
-                              })
-                            }
-                          >
-                            {share.revoked ? "恢复分享" : "撤销分享"}
-                          </Menu.Item>
-                          <Menu.Item
-                            leftSection={<RefreshCw size={15} />}
-                            onClick={() => setAction({ share, kind: "rotate" })}
-                          >
-                            更换链接
-                          </Menu.Item>
-                          <Menu.Divider />
-                          <Menu.Item
-                            color="red"
-                            leftSection={<Trash2 size={15} />}
-                            onClick={() => setAction({ share, kind: "delete" })}
-                          >
-                            删除相册
-                          </Menu.Item>
-                        </Menu.Dropdown>
-                      </Menu>
-                    </Group>
-                  </Group>
-                </Paper>
+                              }),
+                          },
+                          {
+                            label: "\u66F4\u6362\u94FE\u63A5",
+                            icon: <RefreshCw size={15} />,
+                            action: () => setAction({ share, kind: "rotate" }),
+                          },
+                          {
+                            label: "\u5220\u9664\u76F8\u518C",
+                            icon: <Trash2 size={15} />,
+                            action: () => setAction({ share, kind: "delete" }),
+                            danger: true,
+                          },
+                        ]}
+                      />
+                    </div>
+                  </div>
+                </Card>
               );
             })}
           </div>
           {(list.data.total || 0) > 12 && (
-            <Pagination
-              mt="xl"
-              value={page}
-              onChange={setPage}
-              total={Math.ceil((list.data.total || 0) / 12)}
-            />
+            <div
+              style={{
+                marginTop: 32,
+              }}
+            >
+              <Pagination
+                page={page}
+                onPageChange={setPage}
+                total={Math.ceil((list.data.total || 0) / 12)}
+                pageSize={1}
+                summary={null}
+              />
+            </div>
           )}
         </>
       )}
-      <Modal
-        opened={!!action}
+      <Dialog
+        open={!!action}
         onClose={() => !busy && setAction(null)}
         title={action ? `${labels[action.kind]}？` : ""}
-        centered
       >
-        <Text size="sm">
+        <p
+          className="ui-text"
+          style={{
+            fontSize: 13,
+          }}
+        >
           {action?.kind === "delete"
             ? "仅删除分享相册和访问授权，原帖子与照片保留。"
             : action?.kind === "rotate"
-            ? "旧链接将立即失效，已解锁的访客需要使用新链接重新访问。"
-            : action?.kind === "revoke"
-            ? "链接和图片入口立即停止接受新请求。已经下载的照片无法收回。"
-            : "重新启用当前链接。有密码的访客需要重新解锁。"}
-        </Text>
-        <Group justify="flex-end" mt="xl">
+              ? "旧链接将立即失效，已解锁的访客需要使用新链接重新访问。"
+              : action?.kind === "revoke"
+                ? "链接和图片入口立即停止接受新请求。已经下载的照片无法收回。"
+                : "重新启用当前链接。有密码的访客需要重新解锁。"}
+        </p>
+        <div
+          className="ui-row"
+          style={{
+            display: "flex",
+            alignItems: "center",
+            flexWrap: "wrap",
+            gap: 10,
+            justifyContent: "flex-end",
+            marginTop: 32,
+          }}
+        >
           <Button
-            variant="default"
             disabled={busy}
             onClick={() => setAction(null)}
+            variant="secondary"
           >
             取消
           </Button>
           <Button
-            color={
-              action?.kind === "delete" || action?.kind === "revoke"
-                ? "red"
-                : undefined
-            }
             loading={busy}
             onClick={() => void confirm()}
+            variant="primary"
           >
             {action ? labels[action.kind] : "确认"}
           </Button>
-        </Group>
-      </Modal>
-      <Modal
-        opened={!!copyLink}
+        </div>
+      </Dialog>
+      <Dialog
+        open={!!copyLink}
         onClose={() => setCopyLink("")}
         title="复制分享链接"
-        centered
       >
-        <TextInput
+        <Input
           readOnly
           value={copyLink}
           aria-label="分享链接"
           onFocus={(e) => e.currentTarget.select()}
           data-autofocus
         />
-      </Modal>
+      </Dialog>
     </>
   );
 }

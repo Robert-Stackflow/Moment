@@ -1,31 +1,32 @@
-import { useEffect, useRef, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
 import {
   Alert,
   Button,
-  Center,
+  Card,
   Divider,
-  Paper,
-  PasswordInput,
-  Stack,
-  Text,
-  TextInput,
-  Title,
-} from "@mantine/core";
+  Form,
+  Input,
+  PasswordField,
+} from "@robert-stackflow/oneui";
+import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, Fingerprint } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import { Navigate, useLocation, useNavigate } from "react-router-dom";
 import { api, json } from "../api";
 import { Brand } from "../components/Brand";
-import { useAuth } from "../session";
+import { useModelForm } from "../components/useModelForm";
 import { canUsePasskeys, passkeyError, type PasskeyConfig } from "../passkeys";
-
+import { useAuth } from "../session";
+import { tone } from "../ui-data";
 export function Login() {
   const auth = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const setup = useQuery({
     queryKey: ["setup"],
-    queryFn: () => api<{ needs_setup: boolean }>("/setup"),
+    queryFn: () =>
+      api<{
+        needs_setup: boolean;
+      }>("/setup"),
   });
   const passkeys = useQuery({
     queryKey: ["passkeyConfig"],
@@ -41,6 +42,23 @@ export function Login() {
   const [finishing, setFinishing] = useState(false);
   const controller = useRef<AbortController | null>(null);
   useEffect(() => () => controller.current?.abort(), []);
+  const sharedForm = useModelForm(
+    { username, password, email },
+    {
+      username: { label: "用户名", required: true, maxLength: 20 },
+      password: {
+        label: "密码",
+        required: true,
+        minLength: setup.data?.data.needs_setup ? 10 : undefined,
+      },
+      email: {
+        label: "邮箱",
+        required: setup.data?.data.needs_setup === true,
+        disabled: setup.data?.data.needs_setup !== true,
+        pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+      },
+    },
+  );
   const from = location.state?.from;
   const destination =
     typeof from === "string" &&
@@ -71,8 +89,7 @@ export function Login() {
       controller.current = null;
     }
   }
-  async function submit(event: React.FormEvent) {
-    event.preventDefault();
+  async function submit() {
     if (busy || passkeyBusy) return;
     setBusy(true);
     setError("");
@@ -88,89 +105,162 @@ export function Login() {
     }
   }
   return (
-    <Center className="login-page">
-      <Stack w="100%" maw={420} px={20} gap={26}>
-        <Stack align="center" gap={12}>
+    <div
+      className={"ui-center " + "login-page"}
+      style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+      }}
+    >
+      <div
+        className="ui-stack"
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          gap: 26,
+          width: "100%",
+          maxWidth: 420,
+          paddingLeft: 20,
+          paddingRight: 20,
+        }}
+      >
+        <div
+          className="ui-stack"
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: 12,
+            alignItems: "center",
+          }}
+        >
           <Brand size={58} />
-          <Title order={1}>Moment</Title>
-        </Stack>
-        <Paper withBorder p={30}>
-          <form onSubmit={submit}>
-            <Stack gap="lg">
+          <h1 className="ui-title">Moment</h1>
+        </div>
+        <Card className="moment-panel">
+          <Form controller={sharedForm} onSubmit={submit}>
+            <div
+              className="ui-stack"
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: 24,
+              }}
+            >
               <div>
-                <Title order={3}>
+                <h3 className="ui-title">
                   {initializing ? "创建管理账户" : "欢迎回来"}
-                </Title>
-                <Text c="dimmed" size="sm" mt={6}>
+                </h3>
+                <p
+                  className="ui-text"
+                  style={{
+                    color: "var(--muted)",
+                    fontSize: 13,
+                    marginTop: 6,
+                  }}
+                >
                   {initializing
                     ? "设置你的第一个管理员账户。"
                     : "登录后继续整理你的相册。"}
-                </Text>
+                </p>
               </div>
-              {error ? (
-                <Alert color="red" role="alert">
-                  {error}
-                </Alert>
-              ) : null}
+              {error ? <Alert tone={tone("red")}>{error}</Alert> : null}
               {setup.error ? (
-                <Alert color="red">
+                <Alert tone={tone("red")}>
                   服务连接失败。
-                  <Button variant="subtle" onClick={() => void setup.refetch()}>
+                  <Button onClick={() => void setup.refetch()} variant="ghost">
                     重试
                   </Button>
                 </Alert>
               ) : null}
               {!initializing && passkeys.data?.data.enabled && (
-                <Stack gap="xs">
+                <div
+                  className="ui-stack"
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 6,
+                  }}
+                >
                   <Button
                     type="button"
-                    variant="default"
-                    fullWidth
-                    leftSection={<Fingerprint size={19} />}
                     loading={passkeyBusy}
                     disabled={busy || !correctOrigin || !canUsePasskeys()}
                     onClick={() => void usePasskey()}
+                    variant="secondary"
+                    style={{
+                      width: "100%",
+                    }}
                   >
+                    {<Fingerprint size={19} />}
                     使用通行密钥登录
                   </Button>
                   {passkeyBusy && (
                     <>
-                      <Text size="xs" c="dimmed" ta="center" role="status">
+                      <p
+                        role="status"
+                        className="ui-text"
+                        style={{
+                          fontSize: 12,
+                          color: "var(--muted)",
+                          textAlign: "center",
+                        }}
+                      >
                         {finishing
                           ? "验证成功，正在登录…"
                           : "请在设备上完成验证"}
-                      </Text>
+                      </p>
                       <Button
                         type="button"
-                        variant="subtle"
-                        size="xs"
+                        size="small"
                         disabled={finishing}
                         onClick={() => controller.current?.abort()}
+                        variant="ghost"
                       >
                         取消验证
                       </Button>
                     </>
                   )}
                   {!correctOrigin ? (
-                    <Text
-                      size="xs"
-                      c="dimmed"
-                      style={{ overflowWrap: "anywhere" }}
+                    <p
+                      className="ui-text"
+                      style={{
+                        fontSize: 12,
+                        color: "var(--muted)",
+                        ...{ overflowWrap: "anywhere" },
+                      }}
                     >
                       通行密钥需在 {passkeys.data.data.origin}{" "}
                       使用；当前可使用密码登录。
-                    </Text>
+                    </p>
                   ) : (
                     !canUsePasskeys() && (
-                      <Text size="xs" c="dimmed">
+                      <p
+                        className="ui-text"
+                        style={{
+                          fontSize: 12,
+                          color: "var(--muted)",
+                        }}
+                      >
                         此浏览器暂不支持通行密钥，请使用密码登录。
-                      </Text>
+                      </p>
                     )
                   )}
-                  <Divider label="或使用密码" labelPosition="center" mt="sm" />
-                </Stack>
+                  <div
+                    style={{
+                      marginTop: 10,
+                    }}
+                  >
+                    <div className="login-divider">
+                      <Divider />
+                      <span>或使用密码</span>
+                      <Divider />
+                    </div>
+                  </div>
+                </div>
               )}
-              <TextInput
+              <Input
+                {...sharedForm.field("username")}
                 label="用户名"
                 placeholder="输入用户名"
                 autoComplete="username"
@@ -180,7 +270,8 @@ export function Login() {
                 onChange={(e) => setUsername(e.currentTarget.value)}
               />
               {initializing ? (
-                <TextInput
+                <Input
+                  {...sharedForm.field("email")}
                   label="邮箱"
                   type="email"
                   required
@@ -189,7 +280,9 @@ export function Login() {
                   onChange={(e) => setEmail(e.currentTarget.value)}
                 />
               ) : null}
-              <PasswordInput
+              <PasswordField
+                {...sharedForm.field("password")}
+                onChange={(value) => setPassword(value)}
                 label="密码"
                 placeholder={initializing ? "至少 10 位" : "输入密码"}
                 autoComplete={
@@ -198,29 +291,26 @@ export function Login() {
                 required
                 minLength={initializing ? 10 : undefined}
                 value={password}
-                onChange={(e) => setPassword(e.currentTarget.value)}
               />
               <Button
-                fullWidth
                 type="submit"
                 loading={busy}
                 disabled={setup.isPending || !!setup.error || passkeyBusy}
+                variant="primary"
+                style={{
+                  width: "100%",
+                }}
               >
                 {initializing ? "创建账户并进入" : "进入管理后台"}
               </Button>
-            </Stack>
-          </form>
-        </Paper>
-        <Button
-          component="a"
-          href="/"
-          variant="subtle"
-          color="gray"
-          leftSection={<ArrowLeft size={16} />}
-        >
+            </div>
+          </Form>
+        </Card>
+        <Button href="/" variant="ghost">
+          {<ArrowLeft size={16} />}
           返回相册
         </Button>
-      </Stack>
-    </Center>
+      </div>
+    </div>
   );
 }

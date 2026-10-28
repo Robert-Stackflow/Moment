@@ -1,22 +1,15 @@
-import { useEffect, useState } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useDebouncedValue } from "@mantine/hooks";
 import {
-  ActionIcon,
   Alert,
   Badge,
   Button,
+  Card,
   Checkbox,
-  Group,
-  Image,
-  Modal,
+  Dialog,
+  IconButton,
+  Input,
   Pagination,
-  Paper,
-  Stack,
-  Text,
-  TextInput,
-  Title,
-} from "@mantine/core";
+} from "@robert-stackflow/oneui";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   ArchiveRestore,
   ArrowLeft,
@@ -24,12 +17,13 @@ import {
   Search,
   Trash2,
 } from "lucide-react";
-import { Link } from "react-router-dom";
+import { useEffect, useState } from "react";
 import { api, json, notifyError, notifySuccess } from "../api";
 import { Empty, ErrorState, Loading, PageTitle } from "../components/Common";
-import { coverPosition, thumbnail } from "../types";
+import { useDebouncedValue } from "../hooks";
 import type { Settings, TrashedPost } from "../types";
-
+import { coverPosition, thumbnail } from "../types";
+import { adminHref, badgeTone, tone } from "../ui-data";
 export default function Trash() {
   const client = useQueryClient();
   const [search, setSearch] = useState("");
@@ -41,7 +35,11 @@ export default function Trash() {
   const [purging, setPurging] = useState<TrashedPost[] | null>(null);
   const [confirmed, setConfirmed] = useState(false);
   const [failures, setFailures] = useState<
-    { id: number; title: string; error: string }[]
+    {
+      id: number;
+      title: string;
+      error: string;
+    }[]
   >([]);
   const trash = useQuery({
     queryKey: ["trash", page, q],
@@ -76,7 +74,13 @@ export default function Trash() {
     setBusy(true);
     setFailures([]);
     try {
-      const result = await api<{ id: number; ok: boolean; error?: string }[]>(
+      const result = await api<
+        {
+          id: number;
+          ok: boolean;
+          error?: string;
+        }[]
+      >(
         "/trash/batch",
         json("POST", {
           action,
@@ -123,20 +127,15 @@ export default function Trash() {
   return (
     <>
       <PageTitle title="回收站">
-        <Button
-          component={Link}
-          to="/posts"
-          variant="subtle"
-          color="gray"
-          leftSection={<ArrowLeft size={16} />}
-        >
+        <Button href={adminHref("/posts")} variant="ghost">
+          {<ArrowLeft size={16} />}
           返回帖子
         </Button>
       </PageTitle>
-      <TextInput
+      <Input
         aria-label="搜索回收站"
         placeholder="搜索已删除帖子的标题或描述"
-        leftSection={<Search size={17} />}
+        leading={<Search size={17} />}
         value={search}
         onChange={(event) => {
           setSearch(event.currentTarget.value);
@@ -144,12 +143,20 @@ export default function Trash() {
           setSelected([]);
         }}
       />
-      <Group
-        justify="space-between"
-        className="selection-bar trash-selection"
-        wrap="nowrap"
+      <div
+        className={"ui-row " + "selection-bar trash-selection"}
+        style={{
+          display: "flex",
+          alignItems: "center",
+          flexWrap: "nowrap",
+          gap: 10,
+          justifyContent: "space-between",
+        }}
       >
         <Checkbox
+          onChange={(checked) =>
+            setSelected(checked ? rows.map((post) => post.id) : [])
+          }
           label={
             selectedRows.length ? `已选 ${selectedRows.length} 项` : "选择本页"
           }
@@ -158,91 +165,119 @@ export default function Trash() {
             selectedRows.length > 0 && selectedRows.length < rows.length
           }
           disabled={busy || !rows.length}
-          onChange={(event) =>
-            setSelected(
-              event.currentTarget.checked ? rows.map((post) => post.id) : [],
-            )
-          }
         />
-        <Group
-          gap="xs"
-          className={`selection-actions ${
-            selectedRows.length ? "is-visible" : ""
-          }`}
+        <div
           aria-hidden={!selectedRows.length}
-          wrap="nowrap"
+          className={
+            "ui-row " +
+            `selection-actions ${selectedRows.length ? "is-visible" : ""}`
+          }
+          style={{
+            display: "flex",
+            alignItems: "center",
+            flexWrap: "nowrap",
+            gap: 6,
+          }}
         >
           <Button
-            size="xs"
-            variant="light"
-            leftSection={<ArchiveRestore size={14} />}
+            size="small"
             disabled={busy || !selectedRows.length}
             onClick={() => void change("restore", selectedRows)}
+            variant="secondary"
           >
+            {<ArchiveRestore size={14} />}
             恢复
           </Button>
           <Button
-            size="xs"
-            variant="light"
-            color="red"
-            leftSection={<Trash2 size={14} />}
+            size="small"
             disabled={busy || !selectedRows.length}
             onClick={() => confirmPurge(selectedRows)}
+            variant="danger"
           >
+            {<Trash2 size={14} />}
             永久删除
           </Button>
-        </Group>
-      </Group>
+        </div>
+      </div>
       {!!failures.length && (
-        <Alert
-          title={`${failures.length} 篇帖子未完成操作`}
-          color="orange"
-          mb="lg"
-          withCloseButton
-          onClose={() => setFailures([])}
+        <div
+          style={{
+            marginBottom: 24,
+          }}
         >
-          <Stack gap={5}>
-            {failures.map((item) => (
-              <Text size="sm" key={item.id}>
-                {item.title}：{item.error}
-              </Text>
-            ))}
-          </Stack>
-          <Text size="xs" mt="sm">
-            列表已刷新，请核对状态后重试。
-          </Text>
-        </Alert>
+          <Alert
+            title={`${failures.length} 篇帖子未完成操作`}
+            tone={tone("orange")}
+            onClose={() => setFailures([])}
+          >
+            <div
+              className="ui-stack"
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: 5,
+              }}
+            >
+              {failures.map((item) => (
+                <p
+                  key={item.id}
+                  className="ui-text"
+                  style={{
+                    fontSize: 13,
+                  }}
+                >
+                  {item.title}：{item.error}
+                </p>
+              ))}
+            </div>
+            <p
+              className="ui-text"
+              style={{
+                fontSize: 12,
+                marginTop: 10,
+              }}
+            >
+              列表已刷新，请核对状态后重试。
+            </p>
+          </Alert>
+        </div>
       )}
       {trash.isPending ? (
         <Loading />
       ) : trash.error ? (
         <ErrorState error={trash.error} retry={trash.refetch} />
       ) : !rows.length ? (
-        <Paper withBorder>
+        <Card className="moment-panel">
           <Empty
             title={q ? "没有匹配的内容" : "回收站是空的"}
             description={q ? "试试其他关键词。" : undefined}
           />
-        </Paper>
+        </Card>
       ) : (
-        <Stack gap="sm">
+        <div
+          className="ui-stack"
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: 10,
+          }}
+        >
           {rows.map((post) => {
             const cover =
               post.images.find((photo) => !photo.is_hidden) || post.images[0];
             return (
-              <Paper withBorder p="md" className="trash-row" key={post.id}>
+              <Card key={post.id} className={"moment-panel " + "trash-row"}>
                 <Checkbox
-                  aria-label={`选择 ${post.title}`}
-                  checked={selected.includes(post.id)}
-                  disabled={busy}
-                  onChange={(event) => {
-                    const checked = event.currentTarget.checked;
+                  onChange={(checked) => {
                     setSelected((ids) =>
                       checked
                         ? [...ids, post.id]
                         : ids.filter((id) => id !== post.id),
                     );
                   }}
+                  label={`选择 ${post.title}`}
+                  checked={selected.includes(post.id)}
+                  disabled={busy}
                 />
                 <button
                   className="trash-preview-target"
@@ -252,174 +287,294 @@ export default function Trash() {
                 >
                   <div className="trash-cover">
                     {cover ? (
-                      <Image
+                      <img
                         src={thumbnail(cover.image_url, settings.data?.data)}
-                        style={{ objectPosition: coverPosition(post) }}
                         alt=""
-                        w={84}
-                        h={76}
-                        radius={10}
+                        style={{
+                          ...{ objectPosition: coverPosition(post) },
+                          width: 84,
+                          height: 76,
+                        }}
                       />
                     ) : (
                       <ImageOff size={22} />
                     )}
                   </div>
                   <div className="trash-copy">
-                    <Group gap={8}>
-                      <Text fw={600} truncate>
+                    <div
+                      className="ui-row"
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        flexWrap: "wrap",
+                        gap: 8,
+                      }}
+                    >
+                      <p
+                        className="ui-text"
+                        style={{
+                          fontWeight: 600,
+                        }}
+                      >
                         {post.title}
-                      </Text>
+                      </p>
                       <Badge
-                        size="xs"
-                        variant="light"
-                        color={post.is_hidden ? "gray" : "victoria"}
+                        tone={badgeTone(post.is_hidden ? "gray" : "victoria")}
                       >
                         {post.is_hidden ? "原为隐藏" : "原为公开"}
                       </Badge>
-                    </Group>
-                    <Text size="xs" c="dimmed" mt={5}>
+                    </div>
+                    <p
+                      className="ui-text"
+                      style={{
+                        fontSize: 12,
+                        color: "var(--muted)",
+                        marginTop: 5,
+                      }}
+                    >
                       {post.images.length} 张照片
                       {post.draft_count > 0
                         ? ` · ${post.draft_count} 份草稿`
                         : ""}
-                    </Text>
-                    <Text size="xs" c="dimmed" mt={4}>
+                    </p>
+                    <p
+                      className="ui-text"
+                      style={{
+                        fontSize: 12,
+                        color: "var(--muted)",
+                        marginTop: 4,
+                      }}
+                    >
                       删除于 {post.deleted_at}
-                    </Text>
+                    </p>
                   </div>
                 </button>
-                <Group className="trash-row-actions" gap={5} wrap="nowrap">
-                  <ActionIcon
-                    variant="light"
-                    aria-label={`恢复 ${post.title}`}
+                <div
+                  className={"ui-row " + "trash-row-actions"}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    flexWrap: "nowrap",
+                    gap: 5,
+                  }}
+                >
+                  <IconButton
+                    label={`恢复 ${post.title}`}
                     disabled={busy}
                     onClick={() => void change("restore", [post])}
+                    variant="secondary"
                   >
                     <ArchiveRestore size={17} />
-                  </ActionIcon>
-                  <ActionIcon
-                    variant="subtle"
-                    color="red"
-                    aria-label={`永久删除 ${post.title}`}
+                  </IconButton>
+                  <IconButton
+                    label={`永久删除 ${post.title}`}
                     disabled={busy}
                     onClick={() => confirmPurge([post])}
+                    variant="danger"
                   >
                     <Trash2 size={17} />
-                  </ActionIcon>
-                </Group>
-              </Paper>
+                  </IconButton>
+                </div>
+              </Card>
             );
           })}
           {(trash.data?.total || 0) > 20 && (
-            <Group justify="center" mt="md">
+            <div
+              className="ui-row"
+              style={{
+                display: "flex",
+                alignItems: "center",
+                flexWrap: "wrap",
+                gap: 10,
+                justifyContent: "center",
+                marginTop: 16,
+              }}
+            >
               <Pagination
                 total={Math.ceil((trash.data?.total || 0) / 20)}
-                value={page}
-                onChange={(value) => {
+                page={page}
+                onPageChange={(value) => {
                   setPage(value);
                   setSelected([]);
                 }}
+                pageSize={1}
+                summary={null}
               />
-            </Group>
+            </div>
           )}
-        </Stack>
+        </div>
       )}
-      <Modal
-        opened={!!preview}
+      <Dialog
+        open={!!preview}
         onClose={() => !busy && setPreview(null)}
         title="已删除的帖子"
-        size="lg"
+        size="medium"
       >
         {preview && (
-          <Stack>
-            <Group justify="space-between">
-              <Title order={3}>{preview.title}</Title>
+          <div
+            className="ui-stack"
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: 16,
+            }}
+          >
+            <div
+              className="ui-row"
+              style={{
+                display: "flex",
+                alignItems: "center",
+                flexWrap: "wrap",
+                gap: 10,
+                justifyContent: "space-between",
+              }}
+            >
+              <h3 className="ui-title">{preview.title}</h3>
               <Button
-                size="xs"
-                leftSection={<ArchiveRestore size={15} />}
+                size="small"
                 loading={busy}
                 onClick={() => void change("restore", [preview])}
+                variant="primary"
               >
+                {<ArchiveRestore size={15} />}
                 恢复帖子
               </Button>
-            </Group>
-            <Text size="sm" c="dimmed">
+            </div>
+            <p
+              className="ui-text"
+              style={{
+                fontSize: 13,
+                color: "var(--muted)",
+              }}
+            >
               {preview.location} {preview.time?.replace("T", " ")} ·{" "}
               {preview.is_hidden ? "恢复后仅自己可见" : "恢复后重新公开"}
-            </Text>
-            <Text size="sm" style={{ whiteSpace: "pre-wrap" }}>
+            </p>
+            <p
+              className="ui-text"
+              style={{
+                fontSize: 13,
+                ...{ whiteSpace: "pre-wrap" },
+              }}
+            >
               {preview.desc}
-            </Text>
+            </p>
             {!!preview.categories.length && (
-              <Group gap={6}>
+              <div
+                className="ui-row"
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  flexWrap: "wrap",
+                  gap: 6,
+                }}
+              >
                 {preview.categories.map((cat) => (
-                  <Badge variant="light" key={cat.id}>
-                    {cat.name}
-                  </Badge>
+                  <Badge key={cat.id}>{cat.name}</Badge>
                 ))}
-              </Group>
+              </div>
             )}
             {preview.draft_count > 0 && (
-              <Alert color="blue">
+              <Alert tone={tone("blue")}>
                 关联草稿会随帖子恢复，可在编辑器中继续处理。
               </Alert>
             )}
             {preview.images.map((photo) => (
-              <Stack key={photo.id} gap={6}>
-                <Image
+              <div
+                key={photo.id}
+                className="ui-stack"
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 6,
+                }}
+              >
+                <img
                   src={photo.image_url}
                   alt={photo.title || preview.title}
-                  radius="md"
                   loading="lazy"
                 />
-                <Group gap={8}>
-                  <Text size="sm">{photo.title}</Text>
+                <div
+                  className="ui-row"
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    flexWrap: "wrap",
+                    gap: 8,
+                  }}
+                >
+                  <p
+                    className="ui-text"
+                    style={{
+                      fontSize: 13,
+                    }}
+                  >
+                    {photo.title}
+                  </p>
                   {photo.is_hidden && (
-                    <Badge color="gray" variant="light">
-                      隐藏图片
-                    </Badge>
+                    <Badge tone={badgeTone("gray")}>隐藏图片</Badge>
                   )}
-                </Group>
-              </Stack>
+                </div>
+              </div>
             ))}
-          </Stack>
+          </div>
         )}
-      </Modal>
-      <Modal
-        opened={!!purging}
+      </Dialog>
+      <Dialog
+        open={!!purging}
         onClose={() => !busy && setPurging(null)}
         title={`永久删除 ${purging?.length || 0} 篇帖子？`}
-        centered
       >
-        <Stack>
-          <Text size="sm">
+        <div
+          className="ui-stack"
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: 16,
+          }}
+        >
+          <p
+            className="ui-text"
+            style={{
+              fontSize: 13,
+            }}
+          >
             帖子、图片记录和关联草稿将无法恢复。存储中的原始文件会保留，避免影响其他引用。
-          </Text>
+          </p>
           <Checkbox
+            onChange={(checked) => setConfirmed(checked)}
             checked={confirmed}
-            onChange={(event) => setConfirmed(event.currentTarget.checked)}
             disabled={busy}
             label="我确认永久删除这些内容"
           />
-          <Group justify="flex-end">
+          <div
+            className="ui-row"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              flexWrap: "wrap",
+              gap: 10,
+              justifyContent: "flex-end",
+            }}
+          >
             <Button
-              variant="default"
               disabled={busy}
               onClick={() => setPurging(null)}
+              variant="secondary"
             >
               取消
             </Button>
             <Button
-              color="red"
               disabled={!confirmed}
               loading={busy}
               onClick={() => purging && void change("purge", purging)}
+              variant="danger"
             >
               永久删除
             </Button>
-          </Group>
-        </Stack>
-      </Modal>
+          </div>
+        </div>
+      </Dialog>
     </>
   );
 }

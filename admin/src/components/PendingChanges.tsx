@@ -1,3 +1,4 @@
+import { Button, Dialog } from "@robert-stackflow/oneui";
 import {
   createContext,
   useCallback,
@@ -8,12 +9,9 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { Button, Group, Modal, Text } from "@mantine/core";
-
 const PendingContext = createContext<
   ((id: string, pending: boolean) => void) | null
 >(null);
-
 export function PendingChangesProvider({ children }: { children: ReactNode }) {
   const sources = useRef(new Set<string>());
   const allowRefresh = useRef(false);
@@ -22,7 +20,6 @@ export function PendingChangesProvider({ children }: { children: ReactNode }) {
     if (pending) sources.current.add(id);
     else sources.current.delete(id);
   }, []);
-
   useLayoutEffect(() => {
     const warn = (event: BeforeUnloadEvent) => {
       if (allowRefresh.current || sources.current.size === 0) return;
@@ -48,43 +45,54 @@ export function PendingChangesProvider({ children }: { children: ReactNode }) {
       window.removeEventListener("keydown", refresh, true);
     };
   }, []);
-
   return (
     <PendingContext.Provider value={register}>
       {children}
-      <Modal
-        opened={refreshRequested}
+      <Dialog
+        open={refreshRequested}
         onClose={() => setRefreshRequested(false)}
         title="刷新当前页面？"
-        centered
-        zIndex={500}
       >
-        <Text size="sm">
+        <p
+          className="ui-text"
+          style={{
+            fontSize: 13,
+          }}
+        >
           当前修改尚未保存，刷新会丢失这些修改，并中断正在进行的上传。
-        </Text>
-        <Group justify="flex-end" mt="xl">
+        </p>
+        <div
+          className="ui-row"
+          style={{
+            display: "flex",
+            alignItems: "center",
+            flexWrap: "wrap",
+            gap: 10,
+            justifyContent: "flex-end",
+            marginTop: 32,
+          }}
+        >
           <Button
-            variant="default"
             onClick={() => setRefreshRequested(false)}
             data-autofocus
+            variant="secondary"
           >
             继续编辑
           </Button>
           <Button
-            color="red"
             onClick={() => {
               allowRefresh.current = true;
               window.location.reload();
             }}
+            variant="danger"
           >
             放弃修改并刷新
           </Button>
-        </Group>
-      </Modal>
+        </div>
+      </Dialog>
     </PendingContext.Provider>
   );
 }
-
 export function usePendingChanges(pending: boolean) {
   const register = useContext(PendingContext);
   const id = useId();

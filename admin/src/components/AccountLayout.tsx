@@ -1,48 +1,29 @@
-import { Suspense } from "react";
-import { NavLink, Paper } from "@mantine/core";
+import { SettingsLayout } from "@robert-stackflow/oneui";
 import { Fingerprint, KeyRound, Monitor, UserRound } from "lucide-react";
-import { NavLink as RouterLink, Outlet, useLocation } from "react-router-dom";
+import { Suspense } from "react";
+import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { Loading, PageTitle } from "./Common";
-
 const sections = [
-  { path: "/account", label: "账户资料", icon: UserRound },
-  { path: "/account/security", label: "登录安全", icon: Fingerprint },
-  { path: "/account/password", label: "修改密码", icon: KeyRound },
-  { path: "/account/sessions", label: "登录会话", icon: Monitor },
+  { value: "/account", label: "账户资料", icon: <UserRound /> },
+  { value: "/account/security", label: "登录安全", icon: <Fingerprint /> },
+  { value: "/account/password", label: "修改密码", icon: <KeyRound /> },
+  { value: "/account/sessions", label: "登录会话", icon: <Monitor /> },
 ];
-
 export default function AccountLayout() {
-  const { pathname } = useLocation();
+  const { pathname } = useLocation(),
+    navigate = useNavigate();
   return (
     <>
       <PageTitle title="我的账户" />
-      <div className="settings-layout account-layout">
-        <Paper
-          component="nav"
-          aria-label="账户设置"
-          withBorder
-          p="xs"
-          className="settings-navigation account-navigation"
-        >
-          {sections.map(({ path, label, icon: Icon }) => (
-            <NavLink
-              key={path}
-              component={RouterLink}
-              to={path}
-              end
-              label={label}
-              leftSection={<Icon size={18} />}
-              active={pathname.replace(/\/$/, "") === path}
-              className="studio-nav"
-            />
-          ))}
-        </Paper>
-        <div className="account-content">
-          <Suspense fallback={<Loading />}>
-            <Outlet />
-          </Suspense>
-        </div>
-      </div>
+      <SettingsLayout
+        value={pathname.replace(/\/$/, "")}
+        onChange={navigate}
+        groups={[{ id: "account", items: sections }]}
+      >
+        <Suspense fallback={<Loading />}>
+          <Outlet />
+        </Suspense>
+      </SettingsLayout>
     </>
   );
 }

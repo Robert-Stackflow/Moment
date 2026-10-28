@@ -1,7 +1,6 @@
-import { useState } from "react";
-import { Button, Group, Slider, Stack, Text } from "@mantine/core";
+import { Button, Slider } from "@robert-stackflow/oneui";
 import { RotateCcw } from "lucide-react";
-
+import { useState } from "react";
 export function FocusPicker({
   src,
   x = 50,
@@ -33,29 +32,62 @@ export function FocusPicker({
     );
   }
   return (
-    <Stack gap="sm" className="focus-picker">
-      <Group justify="space-between">
-        <Text size="sm" fw={600}>
+    <div
+      className={"ui-stack " + "focus-picker"}
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        gap: 10,
+      }}
+    >
+      <div
+        className="ui-row"
+        style={{
+          display: "flex",
+          alignItems: "center",
+          flexWrap: "wrap",
+          gap: 10,
+          justifyContent: "space-between",
+        }}
+      >
+        <p
+          className="ui-text"
+          style={{
+            fontSize: 13,
+            fontWeight: 600,
+          }}
+        >
           封面焦点
-        </Text>
+        </p>
         <Button
-          size="compact-xs"
-          variant="subtle"
-          leftSection={<RotateCcw size={12} />}
           onClick={() => onChange(50, 50)}
           disabled={x === 50 && y === 50}
+          variant="ghost"
         >
+          {<RotateCcw size={12} />}
           居中
         </Button>
-      </Group>
-      <Text size="xs" c="dimmed">
+      </div>
+      <p
+        className="ui-text"
+        style={{
+          fontSize: 12,
+          color: "var(--muted)",
+        }}
+      >
         点击或拖动圆点，让重要部分留在画面中。仅影响缩略图裁切，原图保持完整。
-      </Text>
+      </p>
       <div className="focus-source-wrap">
         {failed ? (
-          <Text size="xs" c="dimmed">
+          <p
+            className="ui-text"
+            style={{
+              fontSize: 12,
+              color: "var(--muted)",
+            }}
+          >
             图片暂时无法预览，可用下方滑块调整。
-          </Text>
+          </p>
         ) : (
           <button
             type="button"
@@ -94,7 +126,9 @@ export function FocusPicker({
             />
             <span
               className="focus-point"
-              style={{ left: `${x}%`, top: `${y}%` }}
+              style={{
+                ...{ left: `${x}%`, top: `${y}%` },
+              }}
             />
           </button>
         )}
@@ -104,16 +138,20 @@ export function FocusPicker({
           <figure>
             <img
               src={src}
-              style={{ objectPosition: position }}
               alt="横向封面预览"
+              style={{
+                ...{ objectPosition: position },
+              }}
             />
             <figcaption>横向</figcaption>
           </figure>
           <figure>
             <img
               src={src}
-              style={{ objectPosition: position }}
               alt="方形封面预览"
+              style={{
+                ...{ objectPosition: position },
+              }}
             />
             <figcaption>方形</figcaption>
           </figure>
@@ -121,26 +159,40 @@ export function FocusPicker({
       )}
       <div className="focus-sliders">
         <div>
-          <Text size="xs" c="dimmed" mb={8}>
+          <p
+            className="ui-text"
+            style={{
+              fontSize: 12,
+              color: "var(--muted)",
+              marginBottom: 8,
+            }}
+          >
             水平 · {x}%
-          </Text>
+          </p>
           <Slider
-            thumbLabel="焦点水平位置"
             value={x}
             onChange={(value) => onChange(value, y)}
+            label={"焦点水平位置"}
           />
         </div>
         <div>
-          <Text size="xs" c="dimmed" mb={8}>
+          <p
+            className="ui-text"
+            style={{
+              fontSize: 12,
+              color: "var(--muted)",
+              marginBottom: 8,
+            }}
+          >
             垂直 · {y}%
-          </Text>
+          </p>
           <Slider
-            thumbLabel="焦点垂直位置"
             value={y}
             onChange={(value) => onChange(x, value)}
+            label={"焦点垂直位置"}
           />
         </div>
       </div>
-    </Stack>
+    </div>
   );
 }

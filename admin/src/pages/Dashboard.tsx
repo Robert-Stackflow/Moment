@@ -1,36 +1,29 @@
+import { Badge, Button, Card } from "@robert-stackflow/oneui";
 import { useQuery } from "@tanstack/react-query";
 import {
-  Badge,
-  Button,
-  Group,
-  Image,
-  Paper,
-  SimpleGrid,
-  Stack,
-  Text,
-  Title,
-} from "@mantine/core";
-import { Link } from "react-router-dom";
-import {
-  ArrowUpRight,
-  Plus,
-  Images,
-  FolderTree,
-  EyeOff,
   Aperture,
+  ArrowUpRight,
+  EyeOff,
+  FolderTree,
+  Images,
+  Plus,
 } from "lucide-react";
+import { Link } from "react-router-dom";
 import { api } from "../api";
-import { PageTitle, Loading, ErrorState, Empty } from "../components/Common";
-import { thumbnail } from "../types";
+import { Empty, ErrorState, Loading, PageTitle } from "../components/Common";
 import type { Post, Settings } from "../types";
-
+import { thumbnail } from "../types";
+import { adminHref, badgeTone, gridStyle } from "../ui-data";
 export default function Dashboard() {
   const stats = useQuery({
     queryKey: ["stats"],
     queryFn: () =>
-      api<{ blog: number; image: number; category: number; hidden: number }>(
-        "/stats",
-      ),
+      api<{
+        blog: number;
+        image: number;
+        category: number;
+        hidden: number;
+      }>("/stats"),
   });
   const recent = useQuery({
     queryKey: ["posts", "recent"],
@@ -49,95 +42,159 @@ export default function Dashboard() {
   return (
     <>
       <PageTitle title="工作台">
-        <Button
-          component={Link}
-          to="/posts/new"
-          leftSection={<Plus size={18} />}
-        >
+        <Button href={adminHref("/posts/new")} variant="primary">
+          {<Plus size={18} />}
           新建帖子
         </Button>
       </PageTitle>
       {stats.error ? (
         <ErrorState error={stats.error} retry={stats.refetch} />
       ) : (
-        <SimpleGrid cols={{ base: 2, md: 4 }} spacing="lg" mb={32}>
+        <div
+          className="ui-grid"
+          style={{
+            ...gridStyle({ base: 2, md: 4 }, 24),
+            marginBottom: 32,
+          }}
+        >
           {metrics.map(({ label, key, icon: Icon }) => (
-            <Paper withBorder p="xl" key={key}>
-              <Group justify="space-between">
-                <Text c="dimmed" size="sm">
+            <Card key={key} className="moment-panel">
+              <div
+                className="ui-row"
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  flexWrap: "wrap",
+                  gap: 10,
+                  justifyContent: "space-between",
+                }}
+              >
+                <p
+                  className="ui-text"
+                  style={{
+                    color: "var(--muted)",
+                    fontSize: 13,
+                  }}
+                >
                   {label}
-                </Text>
+                </p>
                 <Icon
                   size={20}
                   color="var(--moment-accent)"
                   strokeWidth={1.5}
                 />
-              </Group>
-              <Text size="32px" fw={600} mt={10}>
+              </div>
+              <p
+                className="ui-text"
+                style={{
+                  fontSize: 14,
+                  fontWeight: 600,
+                  marginTop: 10,
+                }}
+              >
                 {stats.data?.data[key] ?? "—"}
-              </Text>
-            </Paper>
+              </p>
+            </Card>
           ))}
-        </SimpleGrid>
+        </div>
       )}
-      <Group justify="space-between" mb={18}>
-        <Title order={3}>最近帖子</Title>
-        <Button
-          component={Link}
-          to="/posts"
-          variant="subtle"
-          rightSection={<ArrowUpRight size={16} />}
-        >
+      <div
+        className="ui-row"
+        style={{
+          display: "flex",
+          alignItems: "center",
+          flexWrap: "wrap",
+          gap: 10,
+          justifyContent: "space-between",
+          marginBottom: 18,
+        }}
+      >
+        <h3 className="ui-title">最近帖子</h3>
+        <Button href={adminHref("/posts")} variant="ghost">
           查看全部
+          {<ArrowUpRight size={16} />}
         </Button>
-      </Group>
+      </div>
       {recent.isPending ? (
         <Loading />
       ) : recent.error ? (
         <ErrorState error={recent.error} retry={recent.refetch} />
       ) : recent.data.data.length === 0 ? (
-        <Paper withBorder>
+        <Card className="moment-panel">
           <Empty description="从上传第一张照片开始。">
-            <Button component={Link} to="/posts/new">
+            <Button href={adminHref("/posts/new")} variant="primary">
               新建帖子
             </Button>
           </Empty>
-        </Paper>
+        </Card>
       ) : (
         <div className="post-grid">
           {recent.data.data.map((post) => (
-            <Paper
-              component={Link}
-              to={`/posts/${post.id}`}
-              withBorder
-              p={12}
-              key={post.id}
-            >
-              <Image
-                className="photo-cover"
-                src={thumbnail(
-                  post.images[0]?.image_url || "",
-                  settings.data?.data,
-                )}
-                alt={post.title}
-                fallbackSrc="/assets/loading.gif"
-              />
-              <Stack gap={8} p={8} pt={16}>
-                <Group justify="space-between">
-                  <Text fw={600} lineClamp={1}>
-                    {post.title}
-                  </Text>
-                  {post.is_hidden ? (
-                    <Badge variant="light" color="gray">
-                      隐藏
-                    </Badge>
-                  ) : null}
-                </Group>
-                <Text size="xs" c="dimmed">
-                  {post.location || "未设置地点"} · {post.images.length} 张图片
-                </Text>
-              </Stack>
-            </Paper>
+            <Link key={post.id} to={`/posts/${post.id}`}>
+              <Card className="moment-panel">
+                <img
+                  onError={(event) => {
+                    if (
+                      !event.currentTarget.src.endsWith("/assets/loading.gif")
+                    )
+                      event.currentTarget.src = "/assets/loading.gif";
+                  }}
+                  className="photo-cover"
+                  src={thumbnail(
+                    post.images[0]?.image_url || "",
+                    settings.data?.data,
+                  )}
+                  alt={post.title}
+                />
+                <div
+                  className="ui-stack"
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 8,
+                    padding: 8,
+                    paddingTop: 16,
+                  }}
+                >
+                  <div
+                    className="ui-row"
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      flexWrap: "wrap",
+                      gap: 10,
+                      justifyContent: "space-between",
+                    }}
+                  >
+                    <p
+                      className="ui-text"
+                      style={{
+                        fontWeight: 600,
+                        display: "-webkit-box",
+                        WebkitLineClamp: 1,
+                        WebkitBoxOrient: "vertical",
+                        overflow: "hidden",
+                      }}
+                    >
+                      {post.title}
+                    </p>
+                    {post.is_hidden ? (
+                      <Badge tone={badgeTone("gray")}>隐藏</Badge>
+                    ) : null}
+                  </div>
+                  <p
+                    className="ui-text"
+                    style={{
+                      fontSize: 12,
+                      color: "var(--muted)",
+                    }}
+                  >
+                    {post.location || "未设置地点"} · {post.images.length}{" "}
+                    张图片
+                  </p>
+                </div>
+              </Card>
+            </Link>
           ))}
         </div>
       )}

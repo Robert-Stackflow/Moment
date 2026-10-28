@@ -1,8 +1,11 @@
-import { notifications } from "@mantine/notifications";
+import { notifications } from "./notifications";
 import type { Result } from "./types";
 
 export class ApiError extends Error {
-  constructor(public status: number, message: string) {
+  constructor(
+    public status: number,
+    message: string,
+  ) {
     super(message);
   }
 }
@@ -35,14 +38,13 @@ export async function api<T>(
   return result as Result<T>;
 }
 export function notifyError(error: unknown) {
-  notifications.show({
-    color: "red",
+  notifications.notify(error instanceof Error ? error.message : "请稍后重试", {
+    tone: "error",
     title: "操作未完成",
-    message: error instanceof Error ? error.message : "请稍后重试",
   });
 }
 export function notifySuccess(message = "已保存") {
-  notifications.show({ color: "green", message });
+  notifications.notify(message, { tone: "success" });
 }
 export function json(method: string, body: unknown): RequestInit {
   return { method, body: JSON.stringify(body) };

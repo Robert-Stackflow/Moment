@@ -27,3 +27,4 @@ backups/
 **/.env.*.local
 # Optional self-hosted recognition weights; fetch with admin/scripts/download-tag-model.mjs
 admin/public/tag-model/local/
+admin/test-results/

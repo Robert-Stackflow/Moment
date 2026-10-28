@@ -1,25 +1,20 @@
-import { useEffect, useRef, useState } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useDebouncedValue } from "@mantine/hooks";
 import {
-  ActionIcon,
   Alert,
   Badge,
   Button,
+  Card,
   Checkbox,
-  Group,
-  Image,
-  Modal,
+  Dialog,
+  FormField,
+  IconButton,
+  Input,
   Pagination,
-  Paper,
   Progress,
   Select,
-  SimpleGrid,
-  Stack,
-  TagsInput,
-  Text,
-  TextInput,
-} from "@mantine/core";
+  TagInput,
+  Tooltip,
+} from "@robert-stackflow/oneui";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Check,
   History,
@@ -31,20 +26,22 @@ import {
   Trash2,
   X,
 } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import { api, ApiError, json, notifyError, notifySuccess } from "../api";
 import { Empty, ErrorState, Loading, PageTitle } from "../components/Common";
 import { OrganizeTabs } from "../components/OrganizeTabs";
 import { PhotoHistory } from "../components/PhotoHistory";
 import { Toggle } from "../components/Toggle";
 import { UnsavedChanges } from "../components/UnsavedChanges";
+import { useDebouncedValue } from "../hooks";
+import { photoQueries } from "../lib/photo-actions";
 import {
   TagModel,
   type ModelProgress,
   type TagSuggestion,
 } from "../lib/tag-model";
-import { photoQueries } from "../lib/photo-actions";
 import { thumbnail, type Settings } from "../types";
-
+import { badgeTone, gridStyle, selectOptions, tone } from "../ui-data";
 interface TagPhoto {
   id: number;
   post_id: number;
@@ -80,11 +77,10 @@ function message(error: unknown) {
   return error instanceof TypeError
     ? "连接中断，请恢复网络后重试。已选标签仍保留。"
     : error instanceof Error
-    ? error.message
-    : "操作未完成，请重试";
+      ? error.message
+      : "操作未完成，请重试";
 }
 const operationID = () => crypto.randomUUID().replaceAll("-", "");
-
 export default function SmartTags() {
   const client = useQueryClient();
   const [search, setSearch] = useState("");
@@ -117,7 +113,10 @@ export default function SmartTags() {
   const controller = useRef<AbortController | null>(null);
   const model = useRef<TagModel | null>(null);
   const saveLock = useRef(false);
-  const receipt = useRef<{ key: string; id: string } | null>(null);
+  const receipt = useRef<{
+    key: string;
+    id: string;
+  } | null>(null);
   const mounted = useRef(true);
   useEffect(() => {
     mounted.current = true;
@@ -430,38 +429,61 @@ export default function SmartTags() {
     }
   }
   const progressView = running && (
-    <Paper withBorder p="md" className="tag-progress">
-      <Group justify="space-between">
-        <Text size="sm" role="status">
+    <Card className={"moment-panel " + "tag-progress"}>
+      <div
+        className="ui-row"
+        style={{
+          display: "flex",
+          alignItems: "center",
+          flexWrap: "wrap",
+          gap: 10,
+          justifyContent: "space-between",
+        }}
+      >
+        <p
+          role="status"
+          className="ui-text"
+          style={{
+            fontSize: 13,
+          }}
+        >
           {phase}
-        </Text>
-        <Button variant="subtle" size="xs" onClick={stop}>
+        </p>
+        <Button size="small" onClick={stop} variant="ghost">
           取消识别
         </Button>
-      </Group>
-      <Progress
-        mt="sm"
-        size={5}
-        aria-label="识别进度"
-        value={
-          phase.includes("识别")
-            ? (processed / Math.max(1, total)) * 100
-            : progress && progress.total > 0
-            ? (progress.loaded / progress.total) * 100
-            : 0
-        }
-        animated
-      />
-      <Text size="xs" c="dimmed" mt={6}>
+      </div>
+      <div
+        style={{
+          marginTop: 10,
+        }}
+      >
+        <Progress
+          value={
+            phase.includes("识别")
+              ? (processed / Math.max(1, total)) * 100
+              : progress && progress.total > 0
+                ? (progress.loaded / progress.total) * 100
+                : 0
+          }
+          label={"识别进度"}
+        />
+      </div>
+      <p
+        className="ui-text"
+        style={{
+          fontSize: 12,
+          color: "var(--muted)",
+          marginTop: 6,
+        }}
+      >
         {phase.includes("识别")
           ? "照片只在当前浏览器分析，完成的候选会保留。"
           : progress
-          ? `${Math.round(progress.loaded / 1e6)} / ${Math.round(
-              progress.total / 1e6,
-            )} MB · 首次准备可能需要一些时间`
-          : "首次使用需要下载模型，页面仍可操作。"}
-      </Text>
-    </Paper>
+            ? `${Math.round(progress.loaded / 1e6)} / ${Math.round(progress.total / 1e6)} MB · 首次准备可能需要一些时间`
+            : "首次使用需要下载模型，页面仍可操作。"}
+      </p>
+    </Card>
   );
   return (
     <>
@@ -471,107 +493,179 @@ export default function SmartTags() {
       />
       <PageTitle title="智能标签">
         <Button
-          variant="default"
-          leftSection={<History size={16} />}
           onClick={() => setHistory(true)}
           disabled={locked}
+          variant="secondary"
         >
+          {<History size={16} />}
           处理记录
         </Button>
       </PageTitle>
       <OrganizeTabs />
-      <Paper withBorder p="lg" mb="lg">
-        <Group justify="space-between" align="flex-start" wrap="nowrap">
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <Text fw={600}>用标签整理照片</Text>
-            <Text size="sm" c="dimmed" mt={5}>
+      <Card className="moment-panel">
+        <div
+          className="ui-row"
+          style={{
+            display: "flex",
+            alignItems: "flex-start",
+            flexWrap: "nowrap",
+            gap: 10,
+            justifyContent: "space-between",
+          }}
+        >
+          <div
+            style={{
+              ...{ flex: 1, minWidth: 0 },
+            }}
+          >
+            <p
+              className="ui-text"
+              style={{
+                fontWeight: 600,
+              }}
+            >
+              用标签整理照片
+            </p>
+            <p
+              className="ui-text"
+              style={{
+                fontSize: 13,
+                color: "var(--muted)",
+                marginTop: 5,
+              }}
+            >
               本地识别后逐项确认。标签仅用于后台搜索，不会公开展示。
-            </Text>
+            </p>
           </div>
-          <ActionIcon
-            variant="subtle"
-            aria-label="清除识别模型缓存"
+          <IconButton
+            label={"清除识别模型缓存"}
             disabled={locked}
             onClick={() => setCacheDialog(true)}
+            variant="ghost"
           >
             <Trash2 size={17} />
-          </ActionIcon>
-        </Group>
-        <Group mt="lg" justify="space-between">
-          <Text size="sm" c="dimmed">
+          </IconButton>
+        </div>
+        <div
+          className="ui-row"
+          style={{
+            display: "flex",
+            alignItems: "center",
+            flexWrap: "wrap",
+            gap: 10,
+            marginTop: 24,
+            justifyContent: "space-between",
+          }}
+        >
+          <p
+            className="ui-text"
+            style={{
+              fontSize: 13,
+              color: "var(--muted)",
+            }}
+          >
             {reviews.length
               ? `${reviews.length} 张待核对 · ${targets.length} 张已选标签`
               : `已选择 ${selectedCount} / 50 张`}
-          </Text>
-          <Group gap="xs">
+          </p>
+          <div
+            className="ui-row"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              flexWrap: "wrap",
+              gap: 6,
+            }}
+          >
             {reviews.length ? (
               <>
                 <Button
-                  variant="subtle"
-                  color="gray"
                   disabled={locked}
                   onClick={() => setDiscard(true)}
+                  variant="ghost"
                 >
                   放弃本次结果
                 </Button>
-                <Button onClick={() => setReviewOpen(true)}>核对标签</Button>
+                <Button onClick={() => setReviewOpen(true)} variant="primary">
+                  核对标签
+                </Button>
               </>
             ) : (
               <>
                 <Button
-                  variant="default"
                   disabled={!selectedCount}
                   onClick={() => beginReview()}
+                  variant="secondary"
                 >
                   手动整理
                 </Button>
                 <Button
-                  leftSection={<Sparkles size={16} />}
                   disabled={!selectedCount}
                   onClick={() => setConsent(true)}
+                  variant="primary"
                 >
+                  {<Sparkles size={16} />}
                   识别所选照片
                 </Button>
               </>
             )}
-          </Group>
-        </Group>
+          </div>
+        </div>
         {running && !reviewOpen && (
-          <div style={{ marginTop: 14 }}>{progressView}</div>
+          <div
+            style={{
+              ...{ marginTop: 14 },
+            }}
+          >
+            {progressView}
+          </div>
         )}
-      </Paper>
-      <Group mb="md" align="center">
-        <TextInput
+      </Card>
+      <div
+        className="ui-row"
+        style={{
+          display: "flex",
+          alignItems: "center",
+          flexWrap: "wrap",
+          gap: 10,
+          marginBottom: 16,
+        }}
+      >
+        <Input
           aria-label="搜索待整理照片"
           placeholder="搜索帖子、图片标题或标签"
-          leftSection={<Search size={16} />}
+          leading={<Search size={16} />}
           value={search}
           onChange={(e) => {
             setSearch(e.currentTarget.value);
             setPage(1);
           }}
-          style={{ flex: 1, minWidth: 220 }}
-        />
-        <Checkbox
-          label="只看未设置标签"
-          checked={untagged}
-          onChange={(e) => {
-            setUntagged(e.currentTarget.checked);
-            setPage(1);
+          style={{
+            ...{ flex: 1, minWidth: 220 },
           }}
         />
-      </Group>
-      <Group justify="space-between" className="tag-selection" mb="md">
         <Checkbox
-          label="选择本页"
-          disabled={!rows.length || !!reviews.length || locked}
-          checked={rows.length > 0 && rows.every((p) => !!selected[p.id])}
-          indeterminate={
-            rows.some((p) => !!selected[p.id]) &&
-            !rows.every((p) => !!selected[p.id])
-          }
-          onChange={(e) => {
-            const checked = e.currentTarget.checked;
+          onChange={(checked) => {
+            setUntagged(checked);
+            setPage(1);
+          }}
+          label="只看未设置标签"
+          checked={untagged}
+        />
+      </div>
+      <div
+        className={"ui-row " + "tag-selection"}
+        style={{
+          display: "flex",
+          alignItems: "center",
+          flexWrap: "wrap",
+          gap: 10,
+          justifyContent: "space-between",
+          marginBottom: 16,
+        }}
+      >
+        <Checkbox
+          onChange={(checked) => {
             if (
               checked &&
               new Set([
@@ -591,30 +685,51 @@ export default function SmartTags() {
               return next;
             });
           }}
+          label="选择本页"
+          disabled={!rows.length || !!reviews.length || locked}
+          checked={rows.length > 0 && rows.every((p) => !!selected[p.id])}
+          indeterminate={
+            rows.some((p) => !!selected[p.id]) &&
+            !rows.every((p) => !!selected[p.id])
+          }
         />
-        <Group gap="xs">
-          <Text size="sm" c="dimmed">
+        <div
+          className="ui-row"
+          style={{
+            display: "flex",
+            alignItems: "center",
+            flexWrap: "wrap",
+            gap: 6,
+          }}
+        >
+          <p
+            className="ui-text"
+            style={{
+              fontSize: 13,
+              color: "var(--muted)",
+            }}
+          >
             共 {photos.data?.total || 0} 张
-          </Text>
-          <ActionIcon
-            aria-label="刷新照片列表"
-            variant="subtle"
+          </p>
+          <IconButton
+            label={"刷新照片列表"}
             disabled={locked}
             onClick={() => void photos.refetch()}
             loading={photos.isFetching}
+            variant="ghost"
           >
             <RefreshCw size={16} />
-          </ActionIcon>
+          </IconButton>
           <Button
-            size="xs"
-            variant="subtle"
+            size="small"
             disabled={!selectedCount || !!reviews.length || locked}
             onClick={() => setSelected({})}
+            variant="ghost"
           >
             清空选择
           </Button>
-        </Group>
-      </Group>
+        </div>
+      </div>
       {photos.isPending ? (
         <Loading />
       ) : photos.error ? (
@@ -625,153 +740,242 @@ export default function SmartTags() {
           description="调整搜索条件，或先发布包含照片的帖子。"
         />
       ) : (
-        <SimpleGrid cols={{ base: 1, xs: 2, lg: 3, xl: 4 }} spacing="md">
+        <div
+          className="ui-grid"
+          style={{
+            ...gridStyle({ base: 1, xs: 2, lg: 3, xl: 4 }, 16),
+          }}
+        >
           {rows.map((photo) => (
-            <Paper
+            <Card
               key={photo.id}
-              withBorder
-              className={`tag-photo ${selected[photo.id] ? "is-selected" : ""}`}
+              className={
+                "moment-panel " +
+                `tag-photo ${selected[photo.id] ? "is-selected" : ""}`
+              }
             >
               <div className="tag-photo-image">
-                <Image
+                <img
                   src={thumbnail(photo.image_url, settings.data?.data, 320)}
                   alt={photo.post_title}
                   loading="lazy"
-                  fit="cover"
                 />
                 <Checkbox
-                  aria-label={`选择照片 ${photo.id}`}
+                  onChange={(checked) => choose(photo, checked)}
+                  label={`选择照片 ${photo.id}`}
                   checked={!!selected[photo.id]}
                   disabled={!!reviews.length || locked}
-                  onChange={(e) => choose(photo, e.currentTarget.checked)}
                 />
               </div>
-              <Stack gap={8} p="md">
-                <Group justify="space-between" wrap="nowrap">
-                  <Text fw={600} size="sm" lineClamp={1}>
+              <div
+                className="ui-stack"
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 8,
+                  padding: 16,
+                }}
+              >
+                <div
+                  className="ui-row"
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    flexWrap: "nowrap",
+                    gap: 10,
+                    justifyContent: "space-between",
+                  }}
+                >
+                  <p
+                    className="ui-text"
+                    style={{
+                      fontWeight: 600,
+                      fontSize: 13,
+                      display: "-webkit-box",
+                      WebkitLineClamp: 1,
+                      WebkitBoxOrient: "vertical",
+                      overflow: "hidden",
+                    }}
+                  >
                     {photo.post_title}
-                  </Text>
+                  </p>
                   {(photo.is_hidden || photo.post_hidden) && (
-                    <Badge size="xs" color="gray">
-                      隐藏
-                    </Badge>
+                    <Badge tone={badgeTone("gray")}>隐藏</Badge>
                   )}
-                </Group>
-                <Group gap={5}>
+                </div>
+                <div
+                  className="ui-row"
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    flexWrap: "wrap",
+                    gap: 5,
+                  }}
+                >
                   {photo.tags.length ? (
-                    photo.tags.slice(0, 4).map((tag) => (
-                      <Badge key={tag} variant="light" size="sm">
-                        {tag}
-                      </Badge>
-                    ))
+                    photo.tags
+                      .slice(0, 4)
+                      .map((tag) => <Badge key={tag}>{tag}</Badge>)
                   ) : (
-                    <Text size="xs" c="dimmed">
+                    <p
+                      className="ui-text"
+                      style={{
+                        fontSize: 12,
+                        color: "var(--muted)",
+                      }}
+                    >
                       未设置标签
-                    </Text>
+                    </p>
                   )}
                   {photo.tags.length > 4 && (
-                    <Text size="xs" c="dimmed">
+                    <p
+                      className="ui-text"
+                      style={{
+                        fontSize: 12,
+                        color: "var(--muted)",
+                      }}
+                    >
                       +{photo.tags.length - 4}
-                    </Text>
+                    </p>
                   )}
-                </Group>
-              </Stack>
-            </Paper>
+                </div>
+              </div>
+            </Card>
           ))}
-        </SimpleGrid>
+        </div>
       )}
       {(photos.data?.total || 0) > pageSize && (
-        <Group justify="center" mt="xl">
+        <div
+          className="ui-row"
+          style={{
+            display: "flex",
+            alignItems: "center",
+            flexWrap: "wrap",
+            gap: 10,
+            justifyContent: "center",
+            marginTop: 32,
+          }}
+        >
           <Pagination
-            value={page}
-            onChange={setPage}
+            page={page}
+            onPageChange={setPage}
             total={Math.ceil(photos.data!.total! / pageSize)}
+            pageSize={1}
+            summary={null}
           />
-        </Group>
+        </div>
       )}
-      <Modal
-        opened={consent}
-        zIndex={220}
+      <Dialog
+        open={consent}
         onClose={() => setConsent(false)}
         title="识别照片标签"
-        centered
       >
-        <Stack gap="lg">
-          <Text size="sm">
+        <div
+          className="ui-stack"
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: 24,
+          }}
+        >
+          <p
+            className="ui-text"
+            style={{
+              fontSize: 13,
+            }}
+          >
             照片由当前浏览器分析，不会上传给模型提供方。首次下载约 90 MB
             模型和约 30 MB 运行文件，后续可使用浏览器缓存；每次最多 50
             张，逐张处理。
-          </Text>
-          <Select
-            label="模型来源"
-            value={source}
-            onChange={(value) =>
-              setSource(value === "local" ? "local" : "remote")
-            }
-            allowDeselect={false}
-            data={[
-              { value: "remote", label: "在线下载（Hugging Face）" },
-              { value: "local", label: "从本站加载" },
-            ]}
-          />
-          <Text size="xs" c="dimmed">
+          </p>
+          <FormField label={"模型来源"}>
+            <Select
+              label="模型来源"
+              onChange={(value) =>
+                setSource(value === "local" ? "local" : "remote")
+              }
+              options={selectOptions([
+                { value: "remote", label: "在线下载（Hugging Face）" },
+                { value: "local", label: "从本站加载" },
+              ])}
+              value={source ?? ""}
+            />
+          </FormField>
+          <p
+            className="ui-text"
+            style={{
+              fontSize: 12,
+              color: "var(--muted)",
+            }}
+          >
             {source === "remote"
               ? "下载时会连接模型站点，该站点可见你的网络地址，不会收到照片。"
               : "需要管理员先部署模型文件，未部署时可切换在线下载。"}
-          </Text>
+          </p>
           <Toggle
             label="允许读取远程照片"
             description="从原图片地址读取，可能产生存储流量。未启用时只识别本地照片。"
             checked={remote}
-            onChange={(e) => setRemote(e.currentTarget.checked)}
+            onChange={(e) => setRemote(e)}
           />
-          <Text size="xs" c="dimmed">
+          <p
+            className="ui-text"
+            style={{
+              fontSize: 12,
+              color: "var(--muted)",
+            }}
+          >
             适合粗略内容归类，可能误识别或遗漏；不识别人脸身份。单张上限 32
             MB、3200 万像素，动图可手动添加标签。
-          </Text>
-          <Group justify="flex-end">
-            <Button variant="default" onClick={() => setConsent(false)}>
+          </p>
+          <div
+            className="ui-row"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              flexWrap: "wrap",
+              gap: 10,
+              justifyContent: "flex-end",
+            }}
+          >
+            <Button onClick={() => setConsent(false)} variant="secondary">
               取消
             </Button>
-            <Button onClick={() => void recognize()}>开始识别</Button>
-          </Group>
-        </Stack>
-      </Modal>
-      <Modal
-        opened={reviewOpen}
+            <Button onClick={() => void recognize()} variant="primary">
+              开始识别
+            </Button>
+          </div>
+        </div>
+      </Dialog>
+      <Dialog
+        open={reviewOpen}
         onClose={() => !saving && setReviewOpen(false)}
-        title={
-          <Group gap="sm">
-            <Text fw={600}>核对照片标签</Text>
-            <Badge variant="light" size="sm">
-              {reviews.length} 张
-            </Badge>
-          </Group>
-        }
-        size={920}
-        padding={0}
-        centered
-        classNames={{
-          content: "tag-review",
-          header: "tag-review-header",
-          body: "tag-review-body",
-        }}
+        size="large"
+        title={"\u6838\u5BF9\u7167\u7247\u6807\u7B7E \u5F20"}
       >
         <div className="tag-review-scroll" ref={reviewScroll}>
-          <Text size="sm" c="dimmed" className="tag-review-hint">
+          <p
+            className={"ui-text " + "tag-review-hint"}
+            style={{
+              fontSize: 13,
+              color: "var(--muted)",
+            }}
+          >
             点选需要的候选，或输入自己的标签。已有标签会保留，没有选择的候选不会保存。
-          </Text>
+          </p>
           {progressView}
           {error && (
-            <Alert color="red" role="alert">
+            <Alert tone={tone("red")}>
               {error}
               {conflict && (
                 <Button
-                  size="xs"
-                  variant="white"
-                  mt="sm"
+                  size="small"
                   loading={refreshing}
                   onClick={() => void refreshVersions()}
+                  variant="primary"
+                  style={{
+                    marginTop: 10,
+                  }}
                 >
                   核对最新版本
                 </Button>
@@ -779,49 +983,65 @@ export default function SmartTags() {
             </Alert>
           )}
           {reviews.slice((reviewPage - 1) * 6, reviewPage * 6).map((item) => (
-            <Paper
-              withBorder
-              p="md"
+            <Card
               key={item.photo.id}
-              className="tag-review-row"
+              className={"moment-panel " + "tag-review-row"}
             >
-              <button
-                type="button"
-                className="tag-review-image"
-                aria-label={`查看照片 ${item.photo.id} 原图`}
-                data-tooltip="查看完整照片"
-                onClick={() => setPreview(item.photo)}
+              <Tooltip content="查看完整照片">
+                <button
+                  type="button"
+                  className="tag-review-image"
+                  aria-label={`查看照片 ${item.photo.id} 原图`}
+                  onClick={() => setPreview(item.photo)}
+                >
+                  <img
+                    src={thumbnail(
+                      item.photo.image_url,
+                      settings.data?.data,
+                      320,
+                    )}
+                    alt={item.photo.post_title}
+                    loading="lazy"
+                  />
+                  <span className="tag-review-image-expand" aria-hidden="true">
+                    <Maximize2 size={14} />
+                  </span>
+                </button>
+              </Tooltip>
+              <div
+                className={"ui-stack " + "tag-review-copy"}
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 6,
+                }}
               >
-                <Image
-                  src={thumbnail(
-                    item.photo.image_url,
-                    settings.data?.data,
-                    320,
-                  )}
-                  alt={item.photo.post_title}
-                  fit="cover"
-                  loading="lazy"
-                />
-                <span className="tag-review-image-expand" aria-hidden="true">
-                  <Maximize2 size={14} />
-                </span>
-              </button>
-              <Stack gap="xs" className="tag-review-copy">
-                <Group justify="space-between" wrap="nowrap">
-                  <Text
-                    fw={600}
-                    size="sm"
-                    lineClamp={2}
-                    className="tag-review-title"
+                <div
+                  className="ui-row"
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    flexWrap: "nowrap",
+                    gap: 10,
+                    justifyContent: "space-between",
+                  }}
+                >
+                  <p
+                    className={"ui-text " + "tag-review-title"}
+                    style={{
+                      fontWeight: 600,
+                      fontSize: 13,
+                      display: "-webkit-box",
+                      WebkitLineClamp: 2,
+                      WebkitBoxOrient: "vertical",
+                      overflow: "hidden",
+                    }}
                   >
                     {item.photo.post_title}
-                  </Text>
-                  <ActionIcon
-                    variant="subtle"
-                    color="gray"
-                    size="sm"
-                    aria-label={`移除照片 ${item.photo.id}`}
-                    data-tooltip="从本次核对中移除"
+                  </p>
+                  <IconButton
+                    size="small"
+                    label={`移除照片 ${item.photo.id}`}
                     disabled={locked}
                     onClick={() => {
                       setReviews((current) =>
@@ -834,23 +1054,34 @@ export default function SmartTags() {
                       });
                       setReviewPage(1);
                     }}
+                    variant="ghost"
                   >
                     <X size={15} />
-                  </ActionIcon>
-                </Group>
+                  </IconButton>
+                </div>
                 {item.photo.tags.length > 0 && (
-                  <Text
-                    size="xs"
-                    c="dimmed"
-                    style={{ overflowWrap: "anywhere" }}
+                  <p
+                    className="ui-text"
+                    style={{
+                      fontSize: 12,
+                      color: "var(--muted)",
+                      ...{ overflowWrap: "anywhere" },
+                    }}
                   >
                     已有：{item.photo.tags.join("、")}
-                  </Text>
+                  </p>
                 )}
                 {item.error && (
-                  <Text size="xs" c="red" role="status">
+                  <p
+                    role="status"
+                    className="ui-text"
+                    style={{
+                      fontSize: 12,
+                      color: "var(--danger)",
+                    }}
+                  >
                     {item.error}
-                  </Text>
+                  </p>
                 )}
                 {!item.blocked && (
                   <>
@@ -864,12 +1095,11 @@ export default function SmartTags() {
                             .map(normalize)
                             .includes(normalize(s.label));
                           return (
-                            <button
+                            <Button
                               type="button"
                               key={s.label}
                               aria-pressed={chosen}
                               disabled={locked}
-                              className={chosen ? "is-selected" : ""}
                               onClick={() =>
                                 changeTags(
                                   item.photo.id,
@@ -881,9 +1111,11 @@ export default function SmartTags() {
                                     : [...item.tags, s.label],
                                 )
                               }
+                              size="small"
+                              variant={chosen ? "primary" : "secondary"}
                             >
                               {chosen && <Check size={13} />} {s.label}
-                            </button>
+                            </Button>
                           );
                         })}
                     </div>
@@ -891,40 +1123,43 @@ export default function SmartTags() {
                       item.suggestions.filter(
                         (s) => !item.photo.tags.includes(normalize(s.label)),
                       ).length === 0 && (
-                        <Text size="xs" c="dimmed">
+                        <p
+                          className="ui-text"
+                          style={{
+                            fontSize: 12,
+                            color: "var(--muted)",
+                          }}
+                        >
                           没有合适的新候选，可手动添加标签。
-                        </Text>
+                        </p>
                       )}
-                    <TagsInput
-                      className="tag-review-input"
-                      label="待保存标签"
-                      aria-label={`照片 ${item.photo.id} 的待保存标签`}
-                      placeholder="输入后按回车添加"
-                      value={item.tags}
-                      onChange={(tags) => changeTags(item.photo.id, tags)}
-                      maxTags={20}
-                      disabled={locked}
-                      error={
-                        invalidTags([
-                          ...new Set([
-                            ...item.photo.tags,
-                            ...item.tags.map(normalize),
-                          ]),
-                        ])
-                          ? "合计最多 20 个标签，每个 1–32 字，不含控制字符"
-                          : undefined
-                      }
-                      clearable
-                      clearButtonProps={{
-                        "aria-hidden": false,
-                        tabIndex: 0,
-                        "aria-label": `清空照片 ${item.photo.id} 的待保存标签`,
-                      }}
-                    />
+                    <FormField label={"待保存标签"}>
+                      <div className="tag-review-input">
+                        <TagInput
+                          label="待保存标签"
+                          aria-label={`照片 ${item.photo.id} 的待保存标签`}
+                          placeholder="输入后按回车添加"
+                          value={item.tags}
+                          onChange={(tags) => changeTags(item.photo.id, tags)}
+                          maxTags={20}
+                          disabled={locked}
+                          error={
+                            invalidTags([
+                              ...new Set([
+                                ...item.photo.tags,
+                                ...item.tags.map(normalize),
+                              ]),
+                            ])
+                              ? "合计最多 20 个标签，每个 1–32 字，不含控制字符"
+                              : undefined
+                          }
+                        />
+                      </div>
+                    </FormField>
                   </>
                 )}
-              </Stack>
-            </Paper>
+              </div>
+            </Card>
           ))}
           {reviews.length === 0 && (
             <Empty
@@ -938,101 +1173,147 @@ export default function SmartTags() {
             <span className="tag-review-summary-icon" aria-hidden="true">
               <Tags size={18} />
             </span>
-            <Text size="sm">
+            <p
+              className="ui-text"
+              style={{
+                fontSize: 13,
+              }}
+            >
               <strong>{targets.length}</strong> 张照片待保存
-            </Text>
+            </p>
           </div>
           {reviews.length > 6 && (
-            <Pagination
-              className="tag-review-pagination"
-              size="sm"
-              siblings={0}
-              value={reviewPage}
-              onChange={(value) => {
-                setReviewPage(value);
-                reviewScroll.current?.scrollTo({ top: 0 });
-              }}
-              total={Math.ceil(reviews.length / 6)}
-            />
+            <div className="tag-review-pagination">
+              <Pagination
+                page={reviewPage}
+                onPageChange={(value) => {
+                  setReviewPage(value);
+                  reviewScroll.current?.scrollTo({ top: 0 });
+                }}
+                total={Math.ceil(reviews.length / 6)}
+                pageSize={1}
+                summary={null}
+              />
+            </div>
           )}
-          <Group gap="xs" className="tag-review-buttons">
+          <div
+            className={"ui-row " + "tag-review-buttons"}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              flexWrap: "wrap",
+              gap: 6,
+            }}
+          >
             {!!pending.length && (
               <Button
-                variant="default"
-                leftSection={<Sparkles size={16} />}
                 disabled={locked}
                 onClick={() => setConsent(true)}
+                variant="secondary"
               >
+                {<Sparkles size={16} />}
                 {reviews.some((r) => r.state === "done")
                   ? "继续识别剩余照片"
                   : "识别候选标签"}
               </Button>
             )}
             <Button
-              leftSection={<Check size={16} />}
               loading={saving}
               disabled={locked || !targets.length || badTags}
               onClick={() => setConfirm(true)}
+              variant="primary"
             >
+              {<Check size={16} />}
               保存标签
             </Button>
-          </Group>
+          </div>
         </div>
-      </Modal>
-      <Modal
-        opened={!!preview}
+      </Dialog>
+      <Dialog
+        open={!!preview}
         onClose={() => setPreview(null)}
         title={preview?.post_title || "查看完整照片"}
-        size="xl"
-        centered
+        size="large"
       >
         {preview && (
-          <Image
+          <img
             src={preview.image_url}
             alt={preview.post_title}
-            fit="contain"
-            mah="70dvh"
+            style={{
+              maxHeight: "70dvh",
+            }}
           />
         )}
-      </Modal>
-      <Modal
-        opened={confirm}
+      </Dialog>
+      <Dialog
+        open={confirm}
         onClose={() => !saving && setConfirm(false)}
         title="保存所选标签？"
-        centered
       >
-        <Text size="sm">
+        <p
+          className="ui-text"
+          style={{
+            fontSize: 13,
+          }}
+        >
           为 {targets.length}{" "}
           张照片添加你选中的标签，保留已有标签。本次未选择的候选不会保存，核对列表将清空。保存后可在处理记录中撤销。
-        </Text>
-        <Group justify="flex-end" mt="lg">
+        </p>
+        <div
+          className="ui-row"
+          style={{
+            display: "flex",
+            alignItems: "center",
+            flexWrap: "wrap",
+            gap: 10,
+            justifyContent: "flex-end",
+            marginTop: 24,
+          }}
+        >
           <Button
-            variant="default"
             disabled={saving}
             onClick={() => setConfirm(false)}
+            variant="secondary"
           >
             继续核对
           </Button>
-          <Button loading={saving} onClick={() => void save()}>
+          <Button
+            loading={saving}
+            onClick={() => void save()}
+            variant="primary"
+          >
             确认保存标签
           </Button>
-        </Group>
-      </Modal>
-      <Modal
-        opened={discard}
+        </div>
+      </Dialog>
+      <Dialog
+        open={discard}
         onClose={() => setDiscard(false)}
         title="放弃本次结果？"
-        centered
       >
-        <Text size="sm">
+        <p
+          className="ui-text"
+          style={{
+            fontSize: 13,
+          }}
+        >
           候选与未保存的标签将清空，已经保存的内容不会改变。
-        </Text>
-        <Group justify="flex-end" mt="lg">
-          <Button variant="default" onClick={() => setDiscard(false)}>
+        </p>
+        <div
+          className="ui-row"
+          style={{
+            display: "flex",
+            alignItems: "center",
+            flexWrap: "wrap",
+            gap: 10,
+            justifyContent: "flex-end",
+            marginTop: 24,
+          }}
+        >
+          <Button onClick={() => setDiscard(false)} variant="secondary">
             继续核对
           </Button>
           <Button
-            color="red"
             onClick={() => {
               setReviews([]);
               setSelected({});
@@ -1042,33 +1323,52 @@ export default function SmartTags() {
               setReviewOpen(false);
               receipt.current = null;
             }}
+            variant="danger"
           >
             确认放弃
           </Button>
-        </Group>
-      </Modal>
-      <Modal
-        opened={cacheDialog}
+        </div>
+      </Dialog>
+      <Dialog
+        open={cacheDialog}
         onClose={() => !cacheBusy && setCacheDialog(false)}
         title="清除模型缓存？"
-        centered
       >
-        <Text size="sm">
+        <p
+          className="ui-text"
+          style={{
+            fontSize: 13,
+          }}
+        >
           仅清除本浏览器为智能标签下载的模型文件，照片与已保存标签不会改变。下次识别需重新下载。
-        </Text>
-        <Group justify="flex-end" mt="lg">
+        </p>
+        <div
+          className="ui-row"
+          style={{
+            display: "flex",
+            alignItems: "center",
+            flexWrap: "wrap",
+            gap: 10,
+            justifyContent: "flex-end",
+            marginTop: 24,
+          }}
+        >
           <Button
-            variant="default"
             disabled={cacheBusy}
             onClick={() => setCacheDialog(false)}
+            variant="secondary"
           >
             取消
           </Button>
-          <Button loading={cacheBusy} onClick={() => void clearCache()}>
+          <Button
+            loading={cacheBusy}
+            onClick={() => void clearCache()}
+            variant="primary"
+          >
             清除缓存
           </Button>
-        </Group>
-      </Modal>
+        </div>
+      </Dialog>
       {history && <PhotoHistory onClose={() => setHistory(false)} />}
     </>
   );

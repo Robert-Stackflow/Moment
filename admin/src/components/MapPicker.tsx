@@ -1,10 +1,9 @@
-import { useEffect, useRef, useState } from "react";
-import { Button, Group, Stack, Text } from "@mantine/core";
-import L from "leaflet";
+import { Button } from "@robert-stackflow/oneui";
 import type { GeoJsonObject } from "geojson";
+import L from "leaflet";
 import "leaflet/dist/leaflet.css";
+import { useEffect, useRef, useState } from "react";
 import land from "../../../shared/map/land.json";
-
 export default function MapPicker({
   latitude,
   longitude,
@@ -97,10 +96,23 @@ export default function MapPicker({
     };
   }, [detailed]);
   return (
-    <Stack>
-      <Text size="sm" c="dimmed">
+    <div
+      className="ui-stack"
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        gap: 16,
+      }}
+    >
+      <p
+        className="ui-text"
+        style={{
+          fontSize: 13,
+          color: "var(--muted)",
+        }}
+      >
         拖动、缩放后点击选点，也可以关闭地图直接填写经纬度。
-      </Text>
+      </p>
       <div
         ref={node}
         className="location-map-picker"
@@ -108,40 +120,70 @@ export default function MapPicker({
       />
       {!detailed ? (
         <div className="map-network-choice">
-          <Text size="xs" c="dimmed">
+          <p
+            className="ui-text"
+            style={{
+              fontSize: 12,
+              color: "var(--muted)",
+            }}
+          >
             加载详细地图会向 OpenStreetMap 发送当前地图区域和网络地址。
-          </Text>
+          </p>
           <Button
-            variant="light"
-            size="xs"
+            size="small"
             onClick={() => {
               setDetailed(true);
               setError(false);
             }}
+            variant="secondary"
           >
             加载详细地图
           </Button>
         </div>
       ) : (
-        <Button variant="subtle" size="xs" onClick={() => setDetailed(false)}>
+        <Button size="small" onClick={() => setDetailed(false)} variant="ghost">
           仅使用本地轮廓
         </Button>
       )}
       {error && detailed && (
-        <Text size="xs" c="orange">
+        <p
+          className="ui-text"
+          style={{
+            fontSize: 12,
+            color: "orange",
+          }}
+        >
           详细地图加载失败，仍可选点或切回本地轮廓。
-        </Text>
+        </p>
       )}
-      <Group justify="space-between">
-        <Text size="sm">
+      <div
+        className="ui-row"
+        style={{
+          display: "flex",
+          alignItems: "center",
+          flexWrap: "wrap",
+          gap: 10,
+          justifyContent: "space-between",
+        }}
+      >
+        <p
+          className="ui-text"
+          style={{
+            fontSize: 13,
+          }}
+        >
           {point
             ? `${point[0].toFixed(6)}, ${point[1].toFixed(6)}`
             : "尚未选点"}
-        </Text>
-        <Button disabled={!point} onClick={() => point && onApply(...point)}>
+        </p>
+        <Button
+          disabled={!point}
+          onClick={() => point && onApply(...point)}
+          variant="primary"
+        >
           使用此位置
         </Button>
-      </Group>
-    </Stack>
+      </div>
+    </div>
   );
 }

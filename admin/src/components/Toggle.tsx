@@ -1,34 +1,49 @@
-import type { InputHTMLAttributes, ReactNode } from "react";
-import { Check, Minus } from "lucide-react";
-
-type ToggleProps = Omit<
-  InputHTMLAttributes<HTMLInputElement>,
-  "type" | "size"
-> & { label?: ReactNode; description?: ReactNode };
+import { Switch } from "@robert-stackflow/oneui";
+import type { ReactNode } from "react";
+type ToggleProps = {
+  label?: ReactNode;
+  description?: ReactNode;
+  checked: boolean;
+  onChange(value: boolean): void;
+  disabled?: boolean;
+  className?: string;
+  id?: string;
+  name?: string;
+  "aria-label"?: string;
+  "aria-labelledby"?: string;
+  "aria-busy"?: boolean;
+};
 export function Toggle({
   label,
   description,
   className = "",
-  ...props
+  checked,
+  onChange,
+  disabled,
+  id,
+  name,
+  "aria-label": ariaLabel,
+  "aria-labelledby": labelledBy,
+  "aria-busy": busy,
 }: ToggleProps) {
   return (
-    <label
-      className={`moment-toggle ${className} ${props.disabled ? "is-disabled" : ""}`}
-    >
-      <span className="toggle-control">
-        <input {...props} type="checkbox" role="switch" />
-        <span className="toggle-track" aria-hidden="true">
-          <Check className="toggle-on" size={12} />
-          <Minus className="toggle-off" size={12} />
-          <span className="toggle-thumb" />
-        </span>
-      </span>
+    <div className={"toggle-row " + className} id={id} aria-busy={busy}>
       {label && (
-        <span className="toggle-copy">
+        <span>
           <span>{label}</span>
           {description && <small>{description}</small>}
         </span>
       )}
-    </label>
+      <span aria-labelledby={labelledBy}>
+        <Switch
+          label={
+            typeof label === "string" ? label : ariaLabel || name || "开关"
+          }
+          checked={checked}
+          disabled={disabled}
+          onChange={onChange}
+        />
+      </span>
+    </div>
   );
 }

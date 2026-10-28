@@ -1,18 +1,12 @@
 import {
   Alert,
   Button,
-  Center,
-  Group,
-  Loader,
-  Stack,
-  Text,
-  Title,
-} from "@mantine/core";
+  LoadingState,
+  Placeholder,
+} from "@robert-stackflow/oneui";
 import type { ReactNode } from "react";
-import { ImageOff } from "lucide-react";
 import { ApiError } from "../api";
 import { useAuth } from "../session";
-
 export function PageTitle({
   title,
   description,
@@ -23,25 +17,17 @@ export function PageTitle({
   children?: ReactNode;
 }) {
   return (
-    <Group justify="space-between" align="center" mb={28} wrap="wrap">
+    <header className="page-title">
       <div>
-        <Title order={2}>{title}</Title>
-        {description && (
-          <Text c="dimmed" mt={8} size="sm">
-            {description}
-          </Text>
-        )}
+        <h1>{title}</h1>
+        {description && <p className="muted">{description}</p>}
       </div>
       {children}
-    </Group>
+    </header>
   );
 }
 export function Loading() {
-  return (
-    <Center mih={260}>
-      <Loader aria-label="加载数据" />
-    </Center>
-  );
+  return <LoadingState label="加载数据" showLabel={false} fullPage />;
 }
 export function ErrorState({
   error,
@@ -52,12 +38,12 @@ export function ErrorState({
 }) {
   const auth = useAuth();
   return (
-    <Alert color="red" title="暂时无法显示内容">
-      <Stack gap="sm">
-        <Text size="sm">{error.message}</Text>
+    <Alert
+      tone="danger"
+      title="暂时无法显示内容"
+      action={
         <Button
-          variant="light"
-          color="red"
+          variant="secondary"
           onClick={() => {
             if (error instanceof ApiError && error.status === 401)
               void auth.refresh();
@@ -66,7 +52,9 @@ export function ErrorState({
         >
           重试
         </Button>
-      </Stack>
+      }
+    >
+      {error.message}
     </Alert>
   );
 }
@@ -80,21 +68,8 @@ export function Empty({
   children?: ReactNode;
 }) {
   return (
-    <Center mih={280}>
-      <Stack align="center" gap="md">
-        <ImageOff
-          size={36}
-          strokeWidth={1.4}
-          color="var(--mantine-color-dimmed)"
-        />
-        <Title order={4}>{title}</Title>
-        {description && (
-          <Text c="dimmed" size="sm" ta="center">
-            {description}
-          </Text>
-        )}
-        {children}
-      </Stack>
-    </Center>
+    <Placeholder title={title} description={description}>
+      {children}
+    </Placeholder>
   );
 }

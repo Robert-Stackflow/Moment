@@ -1,24 +1,18 @@
-import { useEffect, useState } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useDebouncedValue } from "@mantine/hooks";
 import {
-  ActionIcon,
   Alert,
   Badge,
   Button,
+  Card,
   Checkbox,
-  Group,
-  Image,
-  Modal,
+  Dialog,
+  Form,
+  IconButton,
+  Input,
   Pagination,
-  Paper,
-  PasswordInput,
-  Stack,
-  Text,
+  PasswordField,
   Textarea,
-  TextInput,
-  Title,
-} from "@mantine/core";
+} from "@robert-stackflow/oneui";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   ArrowDown,
   ArrowLeft,
@@ -30,16 +24,21 @@ import {
   Search,
   X,
 } from "lucide-react";
-import { Link, useNavigate, useParams } from "react-router-dom";
-import { api, json, notifyError, notifySuccess, ApiError } from "../api";
+import { useEffect, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import { api, ApiError, json, notifyError, notifySuccess } from "../api";
 import { ErrorState, Loading, PageTitle } from "../components/Common";
-import { UnsavedChanges } from "../components/UnsavedChanges";
 import { DateTimePicker } from "../components/DateTimePicker";
 import { Toggle } from "../components/Toggle";
+import { UnsavedChanges } from "../components/UnsavedChanges";
+import { useModelForm } from "../components/useModelForm";
+import { useDebouncedValue } from "../hooks";
 import { thumbnail, type Post, type Settings } from "../types";
+import { adminHref, tone } from "../ui-data";
 import type { Share } from "./Shares";
-
-type Detail = Share & { posts: Post[] };
+type Detail = Share & {
+  posts: Post[];
+};
 function shanghaiDate(value: number) {
   return new Date(value)
     .toLocaleString("sv-SE", { timeZone: "Asia/Shanghai" })
@@ -52,7 +51,6 @@ function newPassword() {
     (n) => alphabet[n % alphabet.length],
   ).join("");
 }
-
 export default function ShareEditor() {
   const { id } = useParams();
   const detail = useQuery({
@@ -98,6 +96,19 @@ function ShareForm({
         ? initial.expires_at * 1000
         : Date.now() + 7 * 86400000,
     ),
+  );
+  const sharedForm = useModelForm(
+    { title, password },
+    {
+      title: { label: "相册名称", required: true, maxLength: 100 },
+      password: {
+        label: "分享密码",
+        disabled: !protectedByPassword,
+        required: protectedByPassword && !initial?.password_required,
+        minLength: 6,
+        maxLength: 128,
+      },
+    },
   );
   const [baseline] = useState(() =>
     JSON.stringify({
@@ -223,321 +234,492 @@ function ShareForm({
   return (
     <>
       <UnsavedChanges dirty={dirty} uploading={busy} />
-      <PageTitle title={initial ? "编辑分享相册" : "新建分享相册"}>
-        <Group>
-          <Button
-            variant="default"
-            component={Link}
-            to="/shares"
-            leftSection={<ArrowLeft size={16} />}
+      <Form controller={sharedForm} onSubmit={save}>
+        <PageTitle title={initial ? "编辑分享相册" : "新建分享相册"}>
+          <div
+            className="ui-row"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              flexWrap: "wrap",
+              gap: 10,
+            }}
           >
-            返回
-          </Button>
-          <Button
-            loading={busy}
-            leftSection={<Save size={16} />}
-            onClick={() => void save()}
-          >
-            保存相册
-          </Button>
-        </Group>
-      </PageTitle>
-      {conflict && (
-        <Alert color="orange" mb="lg">
-          <Text size="sm">
-            相册或所选帖子已发生变化，当前编辑已保留。可以调整选择后重试，或加载最新内容重新编辑。
-          </Text>
-          {initial && (
-            <Button
-              mt="sm"
-              size="xs"
-              color="orange"
-              variant="light"
-              onClick={() => setReloadOpen(true)}
-            >
-              加载最新相册
+            <Button href={adminHref("/shares")} variant="secondary">
+              {<ArrowLeft size={16} />}
+              返回
             </Button>
-          )}
-        </Alert>
-      )}
-      {initial?.revoked && (
-        <Alert mb="lg">
-          此相册已撤销。保存后仍保持撤销状态，可在列表中恢复分享。
-        </Alert>
-      )}
-      <fieldset
-        disabled={busy}
-        style={{ border: 0, padding: 0, margin: 0, minWidth: 0 }}
-        aria-busy={busy}
-      >
-        <div className="share-editor-grid">
-          <Stack>
-            <Paper withBorder p="xl">
-              <Stack gap="lg">
-                <TextInput
-                  label="相册名称"
-                  required
-                  maxLength={100}
-                  value={title}
-                  onChange={(e) => setTitle(e.currentTarget.value)}
-                />
-                <Textarea
-                  label="描述"
-                  maxLength={2000}
-                  autosize
-                  minRows={2}
-                  value={description}
-                  onChange={(e) => setDescription(e.currentTarget.value)}
-                />
-                <Toggle
-                  label="密码保护"
-                  checked={protectedByPassword}
-                  onChange={(e) => setProtected(e.currentTarget.checked)}
-                />
-                {protectedByPassword ? (
-                  <>
-                    <PasswordInput
-                      label="分享密码"
-                      autoComplete="new-password"
-                      description={
-                        initial?.password_required
-                          ? "留空保留当前密码；保存后访客需重新解锁"
-                          : "至少 6 位，密码不会随链接一起复制"
-                      }
-                      placeholder={
-                        initial?.password_required
-                          ? "已设置密码"
-                          : "设置访问密码"
-                      }
-                      maxLength={128}
-                      value={password}
-                      onChange={(e) => setPassword(e.currentTarget.value)}
-                    />
-                    <Button
-                      variant="subtle"
-                      size="xs"
-                      w="fit-content"
-                      leftSection={<RefreshCw size={14} />}
-                      onClick={() => setPassword(newPassword())}
-                    >
-                      生成随机密码
-                    </Button>
-                  </>
-                ) : (
-                  <Text size="xs" c="dimmed">
-                    任何持有链接的人都可以访问。
-                  </Text>
-                )}
-                <Toggle
-                  label="设置有效期"
-                  checked={limited}
-                  onChange={(e) => setLimited(e.currentTarget.checked)}
-                />
-                {limited && (
-                  <Stack gap="sm" className="share-expiry">
-                    <DateTimePicker
-                      label="到期时间"
-                      description="北京时间（UTC+8）"
-                      timeZone="Asia/Shanghai"
-                      value={deadline}
-                      onChange={setDeadline}
-                    />
-                    <Group gap="xs">
-                      {[1, 7, 30].map((days) => (
-                        <Button
-                          key={days}
-                          size="xs"
-                          variant="default"
-                          onClick={() =>
-                            setDeadline(
-                              shanghaiDate(Date.now() + days * 86400000),
-                            )
-                          }
-                        >
-                          {days} 天后
-                        </Button>
-                      ))}
-                    </Group>
-                  </Stack>
-                )}
-                <Text size="xs" c="dimmed" className="share-access-note">
-                  仅选中的帖子可通过此链接访问；隐藏照片和回收站内容不展示。帖子更新会同步到相册。分享限制不改变原图在原存储服务中的公开状态。
-                </Text>
-              </Stack>
-            </Paper>
-            <Paper withBorder p="xl">
-              <Group justify="space-between" mb="md">
-                <Title order={4}>浏览顺序</Title>
-                <Badge variant="light">{selected.length} / 100</Badge>
-              </Group>
-              {!selected.length ? (
-                <Text size="sm" c="dimmed">
-                  从帖子列表中选择内容。
-                </Text>
-              ) : (
-                <Stack gap="xs">
-                  {selected.map((post, index) => (
-                    <div key={post.id} className="share-selected-row">
-                      <span className="share-position">{index + 1}</span>
-                      <Image
-                        w={44}
-                        h={44}
-                        radius={7}
-                        src={cover(post)}
-                        alt=""
-                      />
-                      <div className="share-post-copy">
-                        <Text size="sm" truncate>
-                          {post.title}
-                        </Text>
-                        {post.is_hidden && (
-                          <Text size="xs" c="dimmed">
-                            隐藏帖子 · 仅在分享中展示
-                          </Text>
-                        )}
-                      </div>
-                      <Group gap={2} wrap="nowrap">
-                        <ActionIcon
-                          variant="subtle"
-                          disabled={index === 0}
-                          aria-label={`上移 ${post.title}`}
-                          onClick={() => move(index, -1)}
-                        >
-                          <ArrowUp size={14} />
-                        </ActionIcon>
-                        <ActionIcon
-                          variant="subtle"
-                          disabled={index === selected.length - 1}
-                          aria-label={`下移 ${post.title}`}
-                          onClick={() => move(index, 1)}
-                        >
-                          <ArrowDown size={14} />
-                        </ActionIcon>
-                        <ActionIcon
-                          variant="subtle"
-                          color="gray"
-                          aria-label={`移除 ${post.title}`}
-                          onClick={() => choose(post, false)}
-                        >
-                          <X size={15} />
-                        </ActionIcon>
-                      </Group>
-                    </div>
-                  ))}
-                </Stack>
+            <Button loading={busy} type="submit" variant="primary">
+              {<Save size={16} />}
+              保存相册
+            </Button>
+          </div>
+        </PageTitle>
+        {conflict && (
+          <div
+            style={{
+              marginBottom: 24,
+            }}
+          >
+            <Alert tone={tone("orange")}>
+              <p
+                className="ui-text"
+                style={{
+                  fontSize: 13,
+                }}
+              >
+                相册或所选帖子已发生变化，当前编辑已保留。可以调整选择后重试，或加载最新内容重新编辑。
+              </p>
+              {initial && (
+                <Button
+                  size="small"
+                  onClick={() => setReloadOpen(true)}
+                  variant="secondary"
+                  style={{
+                    marginTop: 10,
+                  }}
+                >
+                  加载最新相册
+                </Button>
               )}
-            </Paper>
-          </Stack>
-          <Paper withBorder p="xl" className="share-picker">
-            <Group justify="space-between" mb="lg">
-              <Title order={4}>选择帖子</Title>
-              <Plus size={18} />
-            </Group>
-            <TextInput
-              mb="lg"
-              aria-label="搜索帖子"
-              placeholder="搜索标题或描述"
-              value={search}
-              onChange={(e) => {
-                setSearch(e.currentTarget.value);
-                setPage(1);
+            </Alert>
+          </div>
+        )}
+        {initial?.revoked && (
+          <div
+            style={{
+              marginBottom: 24,
+            }}
+          >
+            <Alert>
+              此相册已撤销。保存后仍保持撤销状态，可在列表中恢复分享。
+            </Alert>
+          </div>
+        )}
+        <fieldset
+          disabled={busy}
+          aria-busy={busy}
+          style={{
+            ...{ border: 0, padding: 0, margin: 0, minWidth: 0 },
+          }}
+        >
+          <div className="share-editor-grid">
+            <div
+              className="ui-stack"
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: 16,
               }}
-              leftSection={<Search size={16} />}
-            />
-            {posts.isLoading ? (
-              <Loading />
-            ) : posts.isError ? (
-              <ErrorState error={posts.error} retry={posts.refetch} />
-            ) : (
-              <>
-                <Stack gap="xs">
-                  {posts.data?.data.map((post) => {
-                    const visible = post.images.filter(
-                        (p) => !p.is_hidden,
-                      ).length,
-                      checked = selected.some((p) => p.id === post.id);
-                    return (
-                      <label
-                        key={post.id}
-                        className={`share-pick-row ${
-                          checked ? "is-selected" : ""
-                        } ${!visible ? "is-disabled" : ""}`}
+            >
+              <Card className="moment-panel">
+                <div
+                  className="ui-stack"
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 24,
+                  }}
+                >
+                  <Input
+                    {...sharedForm.field("title")}
+                    label="相册名称"
+                    required
+                    maxLength={100}
+                    value={title}
+                    onChange={(e) => setTitle(e.currentTarget.value)}
+                  />
+                  <Textarea
+                    label="描述"
+                    maxLength={2000}
+                    rows={2}
+                    value={description}
+                    onChange={(e) => setDescription(e.currentTarget.value)}
+                  />
+                  <Toggle
+                    label="密码保护"
+                    checked={protectedByPassword}
+                    onChange={(e) => setProtected(e)}
+                  />
+                  {protectedByPassword ? (
+                    <>
+                      <PasswordField
+                        {...sharedForm.field("password")}
+                        onChange={(value) => setPassword(value)}
+                        label="分享密码"
+                        autoComplete="new-password"
+                        hint={
+                          initial?.password_required
+                            ? "留空保留当前密码；保存后访客需重新解锁"
+                            : "至少 6 位，密码不会随链接一起复制"
+                        }
+                        placeholder={
+                          initial?.password_required
+                            ? "已设置密码"
+                            : "设置访问密码"
+                        }
+                        maxLength={128}
+                        value={password}
+                      />
+                      <Button
+                        size="small"
+                        onClick={() => setPassword(newPassword())}
+                        variant="ghost"
+                        style={{
+                          width: "fit-content",
+                        }}
                       >
-                        <Checkbox
-                          aria-label={`选择 ${post.title}`}
-                          checked={checked}
-                          disabled={busy || !visible}
-                          onChange={(e) =>
-                            choose(post, e.currentTarget.checked)
-                          }
-                        />
-                        <Image
+                        {<RefreshCw size={14} />}
+                        生成随机密码
+                      </Button>
+                    </>
+                  ) : (
+                    <p
+                      className="ui-text"
+                      style={{
+                        fontSize: 12,
+                        color: "var(--muted)",
+                      }}
+                    >
+                      任何持有链接的人都可以访问。
+                    </p>
+                  )}
+                  <Toggle
+                    label="设置有效期"
+                    checked={limited}
+                    onChange={(e) => setLimited(e)}
+                  />
+                  {limited && (
+                    <div
+                      className={"ui-stack " + "share-expiry"}
+                      style={{
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: 10,
+                      }}
+                    >
+                      <DateTimePicker
+                        label="到期时间"
+                        description="北京时间（UTC+8）"
+                        timeZone="Asia/Shanghai"
+                        value={deadline}
+                        onChange={setDeadline}
+                      />
+                      <div
+                        className="ui-row"
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          flexWrap: "wrap",
+                          gap: 6,
+                        }}
+                      >
+                        {[1, 7, 30].map((days) => (
+                          <Button
+                            key={days}
+                            size="small"
+                            onClick={() =>
+                              setDeadline(
+                                shanghaiDate(Date.now() + days * 86400000),
+                              )
+                            }
+                            variant="secondary"
+                          >
+                            {days} 天后
+                          </Button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  <p
+                    className={"ui-text " + "share-access-note"}
+                    style={{
+                      fontSize: 12,
+                      color: "var(--muted)",
+                    }}
+                  >
+                    仅选中的帖子可通过此链接访问；隐藏照片和回收站内容不展示。帖子更新会同步到相册。分享限制不改变原图在原存储服务中的公开状态。
+                  </p>
+                </div>
+              </Card>
+              <Card className="moment-panel">
+                <div
+                  className="ui-row"
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    flexWrap: "wrap",
+                    gap: 10,
+                    justifyContent: "space-between",
+                    marginBottom: 16,
+                  }}
+                >
+                  <h4 className="ui-title">浏览顺序</h4>
+                  <Badge>{selected.length} / 100</Badge>
+                </div>
+                {!selected.length ? (
+                  <p
+                    className="ui-text"
+                    style={{
+                      fontSize: 13,
+                      color: "var(--muted)",
+                    }}
+                  >
+                    从帖子列表中选择内容。
+                  </p>
+                ) : (
+                  <div
+                    className="ui-stack"
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: 6,
+                    }}
+                  >
+                    {selected.map((post, index) => (
+                      <div key={post.id} className="share-selected-row">
+                        <span className="share-position">{index + 1}</span>
+                        <img
                           src={cover(post)}
                           alt=""
-                          w={56}
-                          h={56}
-                          radius={8}
+                          style={{
+                            width: 44,
+                            height: 44,
+                          }}
                         />
                         <div className="share-post-copy">
-                          <Text size="sm" fw={500} truncate>
+                          <p
+                            className="ui-text"
+                            style={{
+                              fontSize: 13,
+                            }}
+                          >
                             {post.title}
-                          </Text>
-                          <Text size="xs" c="dimmed">
-                            {visible
-                              ? `${visible} 张照片${
-                                  post.is_hidden ? " · 隐藏帖子" : ""
-                                }`
-                              : "没有可分享的照片"}
-                          </Text>
+                          </p>
+                          {post.is_hidden && (
+                            <p
+                              className="ui-text"
+                              style={{
+                                fontSize: 12,
+                                color: "var(--muted)",
+                              }}
+                            >
+                              隐藏帖子 · 仅在分享中展示
+                            </p>
+                          )}
                         </div>
-                        {checked && <Check size={16} />}
-                      </label>
-                    );
-                  })}
-                </Stack>
-                {!posts.data?.data.length && (
-                  <Text c="dimmed" size="sm">
-                    没有匹配的帖子。
-                  </Text>
+                        <div
+                          className="ui-row"
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            flexWrap: "nowrap",
+                            gap: 2,
+                          }}
+                        >
+                          <IconButton
+                            disabled={index === 0}
+                            label={`上移 ${post.title}`}
+                            onClick={() => move(index, -1)}
+                            variant="ghost"
+                          >
+                            <ArrowUp size={14} />
+                          </IconButton>
+                          <IconButton
+                            disabled={index === selected.length - 1}
+                            label={`下移 ${post.title}`}
+                            onClick={() => move(index, 1)}
+                            variant="ghost"
+                          >
+                            <ArrowDown size={14} />
+                          </IconButton>
+                          <IconButton
+                            label={`移除 ${post.title}`}
+                            onClick={() => choose(post, false)}
+                            variant="ghost"
+                          >
+                            <X size={15} />
+                          </IconButton>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 )}
-                {(posts.data?.total || 0) > 12 && (
-                  <Pagination
-                    size="sm"
-                    mt="lg"
-                    value={page}
-                    onChange={setPage}
-                    total={Math.ceil((posts.data?.total || 0) / 12)}
-                  />
-                )}
-              </>
-            )}
-          </Paper>
-        </div>
-      </fieldset>
-      <Modal
-        opened={reloadOpen}
+              </Card>
+            </div>
+            <Card className={"moment-panel " + "share-picker"}>
+              <div
+                className="ui-row"
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  flexWrap: "wrap",
+                  gap: 10,
+                  justifyContent: "space-between",
+                  marginBottom: 24,
+                }}
+              >
+                <h4 className="ui-title">选择帖子</h4>
+                <Plus size={18} />
+              </div>
+              <Input
+                aria-label="搜索帖子"
+                placeholder="搜索标题或描述"
+                value={search}
+                onChange={(e) => {
+                  setSearch(e.currentTarget.value);
+                  setPage(1);
+                }}
+                leading={<Search size={16} />}
+                style={{
+                  marginBottom: 24,
+                }}
+              />
+              {posts.isLoading ? (
+                <Loading />
+              ) : posts.isError ? (
+                <ErrorState error={posts.error} retry={posts.refetch} />
+              ) : (
+                <>
+                  <div
+                    className="ui-stack"
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: 6,
+                    }}
+                  >
+                    {posts.data?.data.map((post) => {
+                      const visible = post.images.filter(
+                          (p) => !p.is_hidden,
+                        ).length,
+                        checked = selected.some((p) => p.id === post.id);
+                      return (
+                        <div
+                          onClick={(event) => {
+                            if (
+                              !(event.target as Element).closest(
+                                "label,input,button,a",
+                              ) &&
+                              !busy &&
+                              visible
+                            )
+                              choose(post, !checked);
+                          }}
+                          key={post.id}
+                          className={`share-pick-row ${checked ? "is-selected" : ""} ${!visible ? "is-disabled" : ""}`}
+                        >
+                          <Checkbox
+                            onChange={(checked) => choose(post, checked)}
+                            label={`选择 ${post.title}`}
+                            checked={checked}
+                            disabled={busy || !visible}
+                          />
+                          <img
+                            src={cover(post)}
+                            alt=""
+                            style={{
+                              width: 56,
+                              height: 56,
+                            }}
+                          />
+                          <div className="share-post-copy">
+                            <p
+                              className="ui-text"
+                              style={{
+                                fontSize: 13,
+                                fontWeight: 500,
+                              }}
+                            >
+                              {post.title}
+                            </p>
+                            <p
+                              className="ui-text"
+                              style={{
+                                fontSize: 12,
+                                color: "var(--muted)",
+                              }}
+                            >
+                              {visible
+                                ? `${visible} 张照片${post.is_hidden ? " · 隐藏帖子" : ""}`
+                                : "没有可分享的照片"}
+                            </p>
+                          </div>
+                          {checked && <Check size={16} />}
+                        </div>
+                      );
+                    })}
+                  </div>
+                  {!posts.data?.data.length && (
+                    <p
+                      className="ui-text"
+                      style={{
+                        color: "var(--muted)",
+                        fontSize: 13,
+                      }}
+                    >
+                      没有匹配的帖子。
+                    </p>
+                  )}
+                  {(posts.data?.total || 0) > 12 && (
+                    <div
+                      style={{
+                        marginTop: 24,
+                      }}
+                    >
+                      <Pagination
+                        page={page}
+                        onPageChange={setPage}
+                        total={Math.ceil((posts.data?.total || 0) / 12)}
+                        pageSize={1}
+                        summary={null}
+                      />
+                    </div>
+                  )}
+                </>
+              )}
+            </Card>
+          </div>
+        </fieldset>
+      </Form>
+      <Dialog
+        open={reloadOpen}
         onClose={() => setReloadOpen(false)}
         title="加载最新相册？"
-        centered
       >
-        <Text size="sm">
+        <p
+          className="ui-text"
+          style={{
+            fontSize: 13,
+          }}
+        >
           当前未保存的编辑将被替换。请先复制需要保留的文字或密码。
-        </Text>
-        <Group mt="xl" justify="flex-end">
-          <Button variant="default" onClick={() => setReloadOpen(false)}>
+        </p>
+        <div
+          className="ui-row"
+          style={{
+            display: "flex",
+            alignItems: "center",
+            flexWrap: "wrap",
+            gap: 10,
+            marginTop: 32,
+            justifyContent: "flex-end",
+          }}
+        >
+          <Button onClick={() => setReloadOpen(false)} variant="secondary">
             继续编辑
           </Button>
           <Button
-            color="orange"
             onClick={() => {
               void client.invalidateQueries({ queryKey: ["share-picker"] });
               onReload();
             }}
+            variant="primary"
           >
             放弃编辑并加载
           </Button>
-        </Group>
-      </Modal>
+        </div>
+      </Dialog>
     </>
   );
 }

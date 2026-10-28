@@ -5,12 +5,10 @@ import { api } from "../api";
 import { ErrorState, Loading } from "../components/Common";
 import { PostEditor } from "../components/PostEditor";
 import type { Category, Post, PostDraft, Settings } from "../types";
-
 export function NewPost() {
   const [key] = useState(() => crypto.randomUUID());
   return <Navigate to={`/drafts/${key}`} replace />;
 }
-
 export default function Editor() {
   const { id, draftID } = useParams();
   const draft = useQuery({
@@ -21,7 +19,7 @@ export default function Editor() {
       ),
     staleTime: 0,
     refetchInterval: (query) =>
-      query.state.data?.data?.schedule?.status === "pending" ? 5_000 : false,
+      query.state.data?.data?.schedule?.status === "pending" ? 5000 : false,
   });
   const postID =
     id ||

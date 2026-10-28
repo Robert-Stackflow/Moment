@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { Alert, Badge, Button, Dialog } from "@robert-stackflow/oneui";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Alert, Badge, Button, Group, Modal, Stack, Text } from "@mantine/core";
 import { Check, EyeOff, History, Tags, Undo2 } from "lucide-react";
+import { useState } from "react";
 import { api, json, notifySuccess } from "../api";
-import { ErrorState, Loading } from "./Common";
 import { photoQueries } from "../lib/photo-actions";
+import { badgeTone, tone } from "../ui-data";
+import { ErrorState, Loading } from "./Common";
 import { RecordDialog, RecordEmpty } from "./RecordDialog";
 function errorText(error: unknown) {
   return error instanceof Error ? error.message : "操作未完成，请重试";
@@ -15,7 +16,11 @@ interface PhotoAction {
   status: "applied" | "undone";
   created_at: string;
   undone_at: string | null;
-  changes: { id: number; post_id: number; post_title: string }[];
+  changes: {
+    id: number;
+    post_id: number;
+    post_title: string;
+  }[];
 }
 export function PhotoHistory({ onClose }: { onClose: () => void }) {
   const client = useQueryClient();
@@ -70,7 +75,14 @@ export function PhotoHistory({ onClose }: { onClose: () => void }) {
         ) : actions.error ? (
           <ErrorState error={actions.error} retry={() => actions.refetch()} />
         ) : (
-          <Stack gap="sm">
+          <div
+            className="ui-stack"
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: 10,
+            }}
+          >
             {actions.data?.data.length ? (
               actions.data.data.map((item) => (
                 <article className="photo-record-row" key={item.id}>
@@ -82,19 +94,34 @@ export function PhotoHistory({ onClose }: { onClose: () => void }) {
                     )}
                   </span>
                   <div className="photo-record-copy">
-                    <Text fw={600} size="sm">
+                    <p
+                      className="ui-text"
+                      style={{
+                        fontWeight: 600,
+                        fontSize: 13,
+                      }}
+                    >
                       {item.kind === "tags_add"
                         ? `为 ${item.changes.length} 张照片添加标签`
                         : `隐藏 ${item.changes.length} 张重复候选照片`}
-                    </Text>
-                    <Text size="xs" c="dimmed" mt={5}>
+                    </p>
+                    <p
+                      className="ui-text"
+                      style={{
+                        fontSize: 12,
+                        color: "var(--muted)",
+                        marginTop: 5,
+                      }}
+                    >
                       {item.created_at}
-                    </Text>
-                    <Text
-                      size="sm"
-                      c="dimmed"
-                      mt="sm"
-                      className="photo-record-detail"
+                    </p>
+                    <p
+                      className={"ui-text " + "photo-record-detail"}
+                      style={{
+                        fontSize: 13,
+                        color: "var(--muted)",
+                        marginTop: 10,
+                      }}
                     >
                       {[
                         ...new Set(
@@ -103,29 +130,37 @@ export function PhotoHistory({ onClose }: { onClose: () => void }) {
                       ]
                         .slice(0, 3)
                         .join("、")}
-                    </Text>
+                    </p>
                     {item.undone_at && (
-                      <Text size="xs" c="dimmed" mt={6}>
+                      <p
+                        className="ui-text"
+                        style={{
+                          fontSize: 12,
+                          color: "var(--muted)",
+                          marginTop: 6,
+                        }}
+                      >
                         撤销于 {item.undone_at}
-                      </Text>
+                      </p>
                     )}
                   </div>
                   <div className="photo-record-action">
                     {item.status === "undone" ? (
-                      <Badge color="gray" leftSection={<Check size={12} />}>
+                      <Badge tone={badgeTone("gray")}>
+                        {<Check size={12} />}
                         已撤销
                       </Badge>
                     ) : (
                       <Button
-                        size="xs"
-                        variant="default"
+                        size="small"
                         disabled={busy}
-                        leftSection={<Undo2 size={14} />}
                         onClick={() => {
                           setUndo(item);
                           setError("");
                         }}
+                        variant="secondary"
                       >
+                        {<Undo2 size={14} />}
                         撤销
                       </Button>
                     )}
@@ -135,41 +170,63 @@ export function PhotoHistory({ onClose }: { onClose: () => void }) {
             ) : (
               <RecordEmpty icon={History} title="暂无处理记录" />
             )}
-          </Stack>
+          </div>
         )}
       </RecordDialog>
-      <Modal
-        opened={!!undo}
+      <Dialog
+        open={!!undo}
         onClose={() => !busy && setUndo(null)}
         title={
           undo?.kind === "tags_add" ? "撤销这次标签整理？" : "撤销这次隐藏？"
         }
-        centered
       >
-        <Text size="sm">
+        <p
+          className="ui-text"
+          style={{
+            fontSize: 13,
+          }}
+        >
           {undo?.kind === "tags_add"
             ? `本次处理的 ${undo.changes.length} 张照片将恢复整理前的标签。`
             : `本次处理的 ${undo?.changes.length} 张照片将恢复可见。`}
           如果帖子在整理之后已有修改，会保留最新内容并提示你到编辑页处理。
-        </Text>
+        </p>
         {error && (
-          <Alert color="red" role="alert" mt="md">
-            {error}
-          </Alert>
+          <div
+            style={{
+              marginTop: 16,
+            }}
+          >
+            <Alert tone={tone("red")}>{error}</Alert>
+          </div>
         )}
-        <Group justify="flex-end" mt="lg">
+        <div
+          className="ui-row"
+          style={{
+            display: "flex",
+            alignItems: "center",
+            flexWrap: "wrap",
+            gap: 10,
+            justifyContent: "flex-end",
+            marginTop: 24,
+          }}
+        >
           <Button
-            variant="default"
             disabled={busy}
             onClick={() => setUndo(null)}
+            variant="secondary"
           >
             取消
           </Button>
-          <Button loading={busy} onClick={() => void restore()}>
+          <Button
+            loading={busy}
+            onClick={() => void restore()}
+            variant="primary"
+          >
             确认撤销
           </Button>
-        </Group>
-      </Modal>
+        </div>
+      </Dialog>
     </>
   );
 }

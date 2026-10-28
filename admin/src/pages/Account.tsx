@@ -1,20 +1,16 @@
-import { useState } from "react";
 import {
   Avatar,
   Button,
-  FileButton,
-  Group,
-  Paper,
-  Stack,
-  Text,
-  TextInput,
-  Title,
-} from "@mantine/core";
+  Card,
+  FilePicker,
+  Form,
+  Input,
+} from "@robert-stackflow/oneui";
+import { useState } from "react";
 import { api, json, notifyError, notifySuccess } from "../api";
-import { useAuth } from "../session";
-import { Upload } from "lucide-react";
 import { UnsavedChanges } from "../components/UnsavedChanges";
-
+import { useModelForm } from "../components/useModelForm";
+import { useAuth } from "../session";
 export default function Account() {
   const auth = useAuth();
   const [username, setUsername] = useState(auth.user?.username || "");
@@ -23,6 +19,17 @@ export default function Account() {
   const [avatar, setAvatar] = useState(auth.user?.avatar || "");
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const sharedForm = useModelForm(
+    { username, alias, email, avatar },
+    {
+      username: { label: "用户名", required: true, maxLength: 20 },
+      email: {
+        label: "邮箱",
+        required: true,
+        pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+      },
+    },
+  );
   const dirty =
     username !== (auth.user?.username || "") ||
     alias !== (auth.user?.alias || "") ||
@@ -38,7 +45,9 @@ export default function Account() {
     try {
       const body = new FormData();
       body.append("file", file);
-      const result = await api<{ avatar: string }>("/me/avatar", {
+      const result = await api<{
+        avatar: string;
+      }>("/me/avatar", {
         method: "POST",
         body,
       });
@@ -51,8 +60,7 @@ export default function Account() {
       setUploading(false);
     }
   }
-  async function save(event: React.FormEvent) {
-    event.preventDefault();
+  async function save() {
     setSaving(true);
     try {
       await api("/me", json("PATCH", { username, alias, email, avatar }));
@@ -67,45 +75,63 @@ export default function Account() {
   return (
     <>
       <UnsavedChanges dirty={dirty} uploading={uploading} />
-      <Paper withBorder p="xl" className="account-panel">
-        <form onSubmit={save}>
-          <Stack gap="lg">
-            <Group>
-              <Avatar src={avatar || undefined} size={64} radius="xl">
-                {username.slice(0, 1)}
-              </Avatar>
+      <Card className={"moment-panel " + "account-panel"}>
+        <Form controller={sharedForm} onSubmit={save}>
+          <div
+            className="ui-stack"
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: 24,
+            }}
+          >
+            <div
+              className="ui-row"
+              style={{
+                display: "flex",
+                alignItems: "center",
+                flexWrap: "wrap",
+                gap: 10,
+              }}
+            >
+              <Avatar src={avatar || undefined} name={username} size={64} />
               <div>
-                <Title order={3}>账户资料</Title>
-                <Text size="xs" c="dimmed" mt={4}>
+                <h3 className="ui-title">账户资料</h3>
+                <p
+                  className="ui-text"
+                  style={{
+                    fontSize: 12,
+                    color: "var(--muted)",
+                    marginTop: 4,
+                  }}
+                >
                   上次登录 {auth.user?.last_login || "—"}
-                </Text>
+                </p>
               </div>
-            </Group>
+            </div>
             <div className="account-avatar-upload">
-              <FileButton
-                onChange={uploadAvatar}
+              <FilePicker
+                onFiles={(files) => void uploadAvatar(files[0])}
                 accept="image/jpeg,image/png,image/webp,image/gif"
+                maxSize={5 * 1024 * 1024}
+                multiple={false}
+                disabled={saving || uploading}
+                label={uploading ? "正在上传头像…" : "上传头像"}
+              />
+              <p
+                className="ui-text"
+                style={{
+                  fontSize: 12,
+                  color: "var(--muted)",
+                }}
               >
-                {(props) => (
-                  <Button
-                    {...props}
-                    variant="light"
-                    size="xs"
-                    leftSection={<Upload size={14} />}
-                    loading={uploading}
-                    disabled={saving}
-                  >
-                    上传头像
-                  </Button>
-                )}
-              </FileButton>
-              <Text size="xs" c="dimmed">
                 JPG、PNG、WebP、GIF · 最大 5 MB
                 <br />
                 头像保存在本机服务器，上传后立即生效
-              </Text>
+              </p>
             </div>
-            <TextInput
+            <Input
+              {...sharedForm.field("username")}
               label="用户名"
               required
               maxLength={20}
@@ -113,38 +139,51 @@ export default function Account() {
               value={username}
               onChange={(e) => setUsername(e.currentTarget.value)}
             />
-            <TextInput
+            <Input
+              {...sharedForm.field("alias")}
               label="昵称"
               maxLength={30}
               value={alias}
               onChange={(e) => setAlias(e.currentTarget.value)}
             />
-            <TextInput
+            <Input
+              {...sharedForm.field("email")}
               label="邮箱"
               type="email"
               required
               value={email}
               onChange={(e) => setEmail(e.currentTarget.value)}
             />
-            <TextInput
+            <Input
+              {...sharedForm.field("avatar")}
               label="头像地址"
-              description="可上传图片，或填写已有图片地址"
+              hint={"可上传图片，或填写已有图片地址"}
               value={avatar}
               disabled={uploading}
               onChange={(e) => setAvatar(e.currentTarget.value)}
             />
-            <Group justify="flex-end">
+            <div
+              className="ui-row"
+              style={{
+                display: "flex",
+                alignItems: "center",
+                flexWrap: "wrap",
+                gap: 10,
+                justifyContent: "flex-end",
+              }}
+            >
               <Button
                 type="submit"
                 loading={saving}
                 disabled={uploading || !dirty}
+                variant="primary"
               >
                 保存资料
               </Button>
-            </Group>
-          </Stack>
-        </form>
-      </Paper>
+            </div>
+          </div>
+        </Form>
+      </Card>
     </>
   );
 }

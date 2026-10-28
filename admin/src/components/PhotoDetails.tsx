@@ -1,22 +1,19 @@
-import { Toggle as Switch } from "./Toggle";
-import { useState } from "react";
-import { usePendingChanges } from "./PendingChanges";
 import {
   Button,
-  Group,
-  Stack,
-  TagsInput,
-  Text,
+  FormField,
+  Input,
+  TagInput,
   Textarea,
-  TextInput,
-} from "@mantine/core";
+} from "@robert-stackflow/oneui";
 import { Check } from "lucide-react";
-import { DateTimePicker } from "./DateTimePicker";
-import { FocusPicker } from "./FocusPicker";
-import { DiscoveryEditor } from "./DiscoveryEditor";
-import { datetime } from "../types";
+import { useState } from "react";
 import type { Photo, Settings } from "../types";
-
+import { datetime } from "../types";
+import { DateTimePicker } from "./DateTimePicker";
+import { DiscoveryEditor } from "./DiscoveryEditor";
+import { FocusPicker } from "./FocusPicker";
+import { usePendingChanges } from "./PendingChanges";
+import { Toggle as Switch } from "./Toggle";
 export function PhotoDetails({
   photo,
   settings,
@@ -44,7 +41,14 @@ export function PhotoDetails({
     setDraft((current) => ({ ...current, [key]: value }));
   }
   return (
-    <Stack gap="lg" className="photo-details">
+    <div
+      className={"ui-stack " + "photo-details"}
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        gap: 24,
+      }}
+    >
       <FocusPicker
         key={draft.image_url}
         src={draft.image_url}
@@ -54,10 +58,16 @@ export function PhotoDetails({
           setDraft((current) => ({ ...current, focus_x, focus_y }))
         }
       />
-      <Text size="xs" c="dimmed">
+      <p
+        className="ui-text"
+        style={{
+          fontSize: 12,
+          color: "var(--muted)",
+        }}
+      >
         单张图片的文字、地点和时间留空时，沿用帖子信息。
-      </Text>
-      <TextInput
+      </p>
+      <Input
         label="图片标题"
         maxLength={50}
         value={draft.title || ""}
@@ -65,12 +75,11 @@ export function PhotoDetails({
       />
       <Textarea
         label="图片描述"
-        minRows={2}
-        autosize
+        rows={2}
         value={draft.desc || ""}
         onChange={(e) => field("desc", e.currentTarget.value)}
       />
-      <TextInput
+      <Input
         label="图片地点"
         value={draft.location || ""}
         onChange={(e) => field("location", e.currentTarget.value)}
@@ -83,8 +92,7 @@ export function PhotoDetails({
       />
       <Textarea
         label="拍摄参数"
-        autosize
-        minRows={2}
+        rows={2}
         value={draft.metadata || ""}
         onChange={(e) => field("metadata", e.currentTarget.value)}
       />
@@ -93,18 +101,18 @@ export function PhotoDetails({
         value={draft.discovery}
         onChange={(value) => field("discovery", value)}
       />
-      <TagsInput
-        label="图片标签"
-        description="仅用于后台整理与搜索，最多 20 个，每个不超过 32 字"
-        placeholder="输入后按回车添加"
-        value={draft.tags || []}
-        maxTags={20}
-        error={tagError}
-        onChange={(values) => field("tags", values)}
-        clearable
-        clearButtonProps={{ "aria-label": "清空图片标签", "aria-hidden": false, tabIndex: 0 }}
-      />
-      <TextInput
+      <FormField label={"图片标签"}>
+        <TagInput
+          label="图片标签"
+          placeholder="输入后按回车添加"
+          value={draft.tags || []}
+          maxTags={20}
+          error={tagError}
+          onChange={(values) => field("tags", values)}
+          hint={"仅用于后台整理与搜索，最多 20 个，每个不超过 32 字"}
+        />
+      </FormField>
+      <Input
         label="图片地址"
         required
         value={draft.image_url}
@@ -114,18 +122,31 @@ export function PhotoDetails({
       <Switch
         label="在相册中隐藏这张图片"
         checked={draft.is_hidden}
-        onChange={(e) => field("is_hidden", e.currentTarget.checked)}
+        onChange={(e) => field("is_hidden", e)}
       />
       <div className="photo-detail-actions">
-        <Text size="xs" c="dimmed">
+        <p
+          className="ui-text"
+          style={{
+            fontSize: 12,
+            color: "var(--muted)",
+          }}
+        >
           应用后，随帖子一起保存
-        </Text>
-        <Group gap={8}>
-          <Button variant="default" onClick={onCancel}>
+        </p>
+        <div
+          className="ui-row"
+          style={{
+            display: "flex",
+            alignItems: "center",
+            flexWrap: "wrap",
+            gap: 8,
+          }}
+        >
+          <Button onClick={onCancel} variant="secondary">
             取消
           </Button>
           <Button
-            leftSection={<Check size={15} />}
             onClick={() => {
               if (tagError) return;
               if (!/^(https?:\/\/|\/uploads\/)/i.test(draft.image_url.trim())) {
@@ -134,11 +155,13 @@ export function PhotoDetails({
               }
               onApply({ ...draft, image_url: draft.image_url.trim() });
             }}
+            variant="primary"
           >
+            {<Check size={15} />}
             应用修改
           </Button>
-        </Group>
+        </div>
       </div>
-    </Stack>
+    </div>
   );
 }

@@ -1,35 +1,26 @@
-import { Toggle as Switch } from "./Toggle";
-import { useEffect, useRef, useState } from "react";
-import { flushSync } from "react-dom";
-import { useQueryClient } from "@tanstack/react-query";
 import {
-  ActionIcon,
   Alert,
   Button,
+  Card,
+  Dialog,
   Drawer,
-  Group,
-  Image,
+  Form,
+  Input,
   Menu,
-  Modal,
-  Paper,
-  Stack,
-  Text,
   Textarea,
-  TextInput,
-  Title,
-} from "@mantine/core";
+} from "@robert-stackflow/oneui";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   ArrowDown,
   ArrowLeft,
   ArrowUp,
   CalendarClock,
   CloudCheck,
-  FilePenLine,
   Eye,
   EyeOff,
+  FilePenLine,
   GripVertical,
   Link2,
-  MoreHorizontal,
   Pencil,
   Plus,
   RotateCcw,
@@ -37,19 +28,10 @@ import {
   Star,
   Trash2,
 } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
+import { useEffect, useRef, useState } from "react";
+import { flushSync } from "react-dom";
+import { useNavigate } from "react-router-dom";
 import { api, ApiError, json, notifyError, notifySuccess } from "../api";
-import { PageTitle } from "./Common";
-import { UnsavedChanges } from "./UnsavedChanges";
-import { CategoryMultiSelect } from "./CategoryPicker";
-import { DateTimePicker } from "./DateTimePicker";
-import { localDateTime } from "./dateTime";
-import { PhotoDetails } from "./PhotoDetails";
-import { DiscoveryEditor, defaultDiscovery } from "./DiscoveryEditor";
-import { UploadQueue } from "./UploadQueue";
-import { usePostDraft } from "./usePostDraft";
-import { ScheduleDialog, scheduleTime } from "./ScheduleDialog";
-import { datetime, thumbnail } from "../types";
 import type {
   Category,
   Discovery,
@@ -59,7 +41,20 @@ import type {
   PostDraft,
   Settings,
 } from "../types";
-
+import { datetime, thumbnail } from "../types";
+import { adminHref, tone } from "../ui-data";
+import { CategoryMultiSelect } from "./CategoryPicker";
+import { PageTitle } from "./Common";
+import { localDateTime } from "./dateTime";
+import { DateTimePicker } from "./DateTimePicker";
+import { defaultDiscovery, DiscoveryEditor } from "./DiscoveryEditor";
+import { PhotoDetails } from "./PhotoDetails";
+import { ScheduleDialog, scheduleTime } from "./ScheduleDialog";
+import { Toggle as Switch } from "./Toggle";
+import { UnsavedChanges } from "./UnsavedChanges";
+import { UploadQueue } from "./UploadQueue";
+import { useModelForm } from "./useModelForm";
+import { usePostDraft } from "./usePostDraft";
 function formValues(post?: PostContent): {
   discovery: Discovery;
   title: string;
@@ -68,7 +63,9 @@ function formValues(post?: PostContent): {
   time: string;
   is_hidden: boolean;
   category_ids: string[];
-  images: (Photo & { _key: string })[];
+  images: (Photo & {
+    _key: string;
+  })[];
 } {
   return {
     discovery: post?.discovery || defaultDiscovery(false),
@@ -84,7 +81,6 @@ function formValues(post?: PostContent): {
     })),
   };
 }
-
 function payload(value: ReturnType<typeof formValues>): PostContent {
   return {
     ...value,
@@ -101,7 +97,6 @@ function payload(value: ReturnType<typeof formValues>): PostContent {
     })),
   };
 }
-
 export function PostEditor({
   initial,
   initialDraft,
@@ -119,6 +114,10 @@ export function PostEditor({
   const client = useQueryClient();
   const [draft, setDraft] = useState(() =>
     formValues(initialDraft?.payload || initial),
+  );
+  const sharedForm = useModelForm(
+    { title: draft.title },
+    { title: { label: "帖子标题", required: true, maxLength: 50 } },
   );
   const [snapshot, setSnapshot] = useState(() =>
     JSON.stringify(
@@ -151,7 +150,9 @@ export function PostEditor({
   const [publishConflict, setPublishConflict] = useState(false);
   const [needsReload, setNeedsReload] = useState(false);
   const [removed, setRemoved] = useState<{
-    photo: Photo & { _key: string };
+    photo: Photo & {
+      _key: string;
+    };
     index: number;
   } | null>(null);
   const [dragging, setDragging] = useState<string | null>(null);
@@ -233,7 +234,9 @@ export function PostEditor({
     let committed = false;
     try {
       const savedDraft = await autosave.flush();
-      const result = await api<{ id: number }>(
+      const result = await api<{
+        id: number;
+      }>(
         `/drafts/${savedDraft.id}/publish`,
         json("POST", { revision: savedDraft.revision }),
       );
@@ -411,150 +414,203 @@ export function PostEditor({
   }
   return (
     <>
-      <form
+      <Form
         className="post-editor"
-        onSubmit={(event) => {
-          event.preventDefault();
-          void save();
-        }}
+        controller={sharedForm}
+        onSubmit={() => save()}
       >
         {!scheduling && (
           <UnsavedChanges dirty={autosave.dirty} uploading={uploading} />
         )}
         <PageTitle title={initial ? "编辑帖子" : "新建帖子"}>
-          <Button
-            component={Link}
-            to="/posts"
-            variant="subtle"
-            color="gray"
-            leftSection={<ArrowLeft size={16} />}
-            disabled={busy}
-          >
+          <Button href={adminHref("/posts")} disabled={busy} variant="ghost">
+            {<ArrowLeft size={16} />}
             返回帖子
           </Button>
         </PageTitle>
         {publishConflict && (
-          <Alert color="orange" title="帖子已有更新" mb="lg">
-            <Text size="sm" mb="sm">
-              其他窗口已经修改了这篇帖子。草稿仍完整保留，可另存为新草稿后对比整理。
-            </Text>
-            <Button
-              variant="light"
-              color="orange"
-              loading={busy}
-              onClick={() => void saveCopy()}
-            >
-              另存为新草稿
-            </Button>
-          </Alert>
+          <div
+            style={{
+              marginBottom: 24,
+            }}
+          >
+            <Alert tone={tone("orange")} title="帖子已有更新">
+              <p
+                className="ui-text"
+                style={{
+                  fontSize: 13,
+                  marginBottom: 10,
+                }}
+              >
+                其他窗口已经修改了这篇帖子。草稿仍完整保留，可另存为新草稿后对比整理。
+              </p>
+              <Button
+                loading={busy}
+                onClick={() => void saveCopy()}
+                variant="secondary"
+              >
+                另存为新草稿
+              </Button>
+            </Alert>
+          </div>
         )}
         {initialDraft?.schedule &&
           ["pending", "failed"].includes(initialDraft.schedule.status) && (
-            <Alert
-              color={pendingSchedule ? "blue" : "orange"}
-              title={pendingSchedule ? "已安排定时发布" : "发布计划需要处理"}
-              mb="lg"
+            <div
+              style={{
+                marginBottom: 24,
+              }}
             >
-              <Text size="sm" mb="sm">
-                {pendingSchedule
-                  ? `将于 ${scheduleTime(
-                      initialDraft.schedule.publish_at,
-                    )}（北京时间）公开。修改内容请先取消计划。`
-                  : initialDraft.schedule.error}
-              </Text>
-              <Button
-                variant="light"
-                component={Link}
-                to="/schedules"
-                size="xs"
+              <Alert
+                tone={tone(pendingSchedule ? "blue" : "orange")}
+                title={pendingSchedule ? "已安排定时发布" : "发布计划需要处理"}
               >
-                管理发布计划
-              </Button>
-            </Alert>
+                <p
+                  className="ui-text"
+                  style={{
+                    fontSize: 13,
+                    marginBottom: 10,
+                  }}
+                >
+                  {pendingSchedule
+                    ? `将于 ${scheduleTime(initialDraft.schedule.publish_at)}（北京时间）公开。修改内容请先取消计划。`
+                    : initialDraft.schedule.error}
+                </p>
+                <Button
+                  href={adminHref("/schedules")}
+                  size="small"
+                  variant="secondary"
+                >
+                  管理发布计划
+                </Button>
+              </Alert>
+            </div>
           )}
         <div className="draft-notice">
           <FilePenLine size={17} />
-          <Text size="sm">
+          <p
+            className="ui-text"
+            style={{
+              fontSize: 13,
+            }}
+          >
             {initialDraft ? "已恢复未发布的草稿。" : "编辑会自动保存为草稿。"}
             {postID ? "发布更新后，访客才会看到修改。" : "发布前仅自己可见。"}
-          </Text>
+          </p>
         </div>
         {autosave.error && (
-          <Alert
-            color="orange"
-            title={autosave.conflict ? "编辑版本发生冲突" : "草稿尚未同步"}
-            mb="lg"
+          <div
+            style={{
+              marginBottom: 24,
+            }}
           >
-            <Stack gap="sm">
-              <Text size="sm">
-                {autosave.error.message}
-                {autosave.conflict
-                  ? "。当前内容仍在本页，可另存一份新草稿后对比处理。"
-                  : autosave.error instanceof ApiError &&
-                    autosave.error.status === 401
-                  ? "。请在新标签页登录，再回来重试。"
-                  : "。内容仍在本页，恢复连接后会自动重试。"}
-              </Text>
-              <Group>
-                {autosave.conflict ? (
-                  <Button
-                    variant="light"
-                    color="orange"
-                    loading={busy}
-                    onClick={() => void saveCopy()}
-                  >
-                    另存为新草稿
-                  </Button>
-                ) : (
-                  <Button
-                    variant="light"
-                    color="orange"
-                    onClick={() => void saveDraft()}
-                  >
-                    立即重试
-                  </Button>
-                )}
-                {autosave.error instanceof ApiError &&
-                  autosave.error.status === 401 && (
+            <Alert
+              tone={tone("orange")}
+              title={autosave.conflict ? "编辑版本发生冲突" : "草稿尚未同步"}
+            >
+              <div
+                className="ui-stack"
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 10,
+                }}
+              >
+                <p
+                  className="ui-text"
+                  style={{
+                    fontSize: 13,
+                  }}
+                >
+                  {autosave.error.message}
+                  {autosave.conflict
+                    ? "。当前内容仍在本页，可另存一份新草稿后对比处理。"
+                    : autosave.error instanceof ApiError &&
+                        autosave.error.status === 401
+                      ? "。请在新标签页登录，再回来重试。"
+                      : "。内容仍在本页，恢复连接后会自动重试。"}
+                </p>
+                <div
+                  className="ui-row"
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    flexWrap: "wrap",
+                    gap: 10,
+                  }}
+                >
+                  {autosave.conflict ? (
                     <Button
-                      component="a"
-                      href="/admin/login"
-                      target="_blank"
-                      variant="default"
+                      loading={busy}
+                      onClick={() => void saveCopy()}
+                      variant="secondary"
                     >
-                      重新登录
+                      另存为新草稿
+                    </Button>
+                  ) : (
+                    <Button
+                      onClick={() => void saveDraft()}
+                      variant="secondary"
+                    >
+                      立即重试
                     </Button>
                   )}
-              </Group>
-            </Stack>
-          </Alert>
+                  {autosave.error instanceof ApiError &&
+                    autosave.error.status === 401 && (
+                      <Button
+                        href="/admin/login"
+                        target="_blank"
+                        variant="secondary"
+                      >
+                        重新登录
+                      </Button>
+                    )}
+                </div>
+              </div>
+            </Alert>
+          </div>
         )}
         {error && (
-          <Alert
-            role="alert"
-            color="red"
-            mb="lg"
-            withCloseButton
-            onClose={() => setError("")}
+          <div
+            style={{
+              marginBottom: 24,
+            }}
           >
-            {error}
-          </Alert>
+            <Alert tone={tone("red")} onClose={() => setError("")}>
+              {error}
+            </Alert>
+          </div>
         )}
         <fieldset
           disabled={busy || needsReload || pendingSchedule}
           className="editor-fieldset"
         >
           <div className="editor-layout">
-            <Stack gap={22}>
-              <Paper withBorder className="editor-story">
+            <div
+              className="ui-stack"
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: 22,
+              }}
+            >
+              <Card className={"moment-panel " + "editor-story"}>
                 <div className="editor-section-heading">
                   <span className="editor-step">01</span>
                   <div>
-                    <Title order={4}>内容</Title>
+                    <h4 className="ui-title">内容</h4>
                   </div>
                 </div>
-                <Stack gap="lg">
-                  <TextInput
+                <div
+                  className="ui-stack"
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 24,
+                  }}
+                >
+                  <Input
+                    {...sharedForm.field("title")}
                     ref={titleInput}
                     aria-label="帖子标题"
                     placeholder="帖子标题"
@@ -569,41 +625,61 @@ export function PostEditor({
                   <Textarea
                     aria-label="帖子描述"
                     placeholder="添加描述…"
-                    autosize
-                    minRows={3}
+                    rows={3}
                     value={draft.desc}
                     onChange={(e) => field("desc", e.currentTarget.value)}
                   />
-                  <Text size="xs" c="dimmed" ta="right">
+                  <p
+                    className="ui-text"
+                    style={{
+                      fontSize: 12,
+                      color: "var(--muted)",
+                      textAlign: "right",
+                    }}
+                  >
                     标题 {draft.title.length} / 50
-                  </Text>
-                </Stack>
-              </Paper>
-              <Paper withBorder className="editor-image-section">
+                  </p>
+                </div>
+              </Card>
+              <Card className={"moment-panel " + "editor-image-section"}>
                 <div className="editor-section-heading">
                   <span className="editor-step">02</span>
                   <div>
-                    <Title order={4}>
+                    <h4 className="ui-title">
                       照片{" "}
-                      <Text span size="sm" c="dimmed" fw={400}>
+                      <p
+                        className="ui-text"
+                        style={{
+                          fontSize: 13,
+                          color: "var(--muted)",
+                          fontWeight: 400,
+                        }}
+                      >
                         {photos.length} / 200
-                      </Text>
-                    </Title>
-                    <Text size="xs" c="dimmed" mt={4}>
+                      </p>
+                    </h4>
+                    <p
+                      className="ui-text"
+                      style={{
+                        fontSize: 12,
+                        color: "var(--muted)",
+                        marginTop: 4,
+                      }}
+                    >
                       点击照片编辑；拖动排序，或在菜单中移动
-                    </Text>
+                    </p>
                   </div>
                   <Button
                     className="add-url-button"
-                    size="xs"
-                    variant="light"
-                    leftSection={<Link2 size={14} />}
+                    size="small"
                     onClick={() => {
                       setAdding(true);
                       setUrlError("");
                     }}
                     disabled={locked || photos.length >= 200}
+                    variant="secondary"
                   >
+                    {<Link2 size={14} />}
                     图片地址
                   </Button>
                 </div>
@@ -611,10 +687,8 @@ export function PostEditor({
                   <div className="photo-undo" role="status">
                     <span>已从帖子移除 1 张图片</span>
                     <Button
-                      size="xs"
-                      variant="subtle"
+                      size="small"
                       disabled={photos.length >= 200 || locked}
-                      leftSection={<RotateCcw size={13} />}
                       onClick={() => {
                         updatePhotos((current) => {
                           const next = [...current];
@@ -627,7 +701,9 @@ export function PostEditor({
                         });
                         setRemoved(null);
                       }}
+                      variant="ghost"
                     >
+                      {<RotateCcw size={13} />}
                       撤销
                     </Button>
                   </div>
@@ -636,9 +712,7 @@ export function PostEditor({
                   <div className="editor-photos">
                     {photos.map((photo, index) => (
                       <div
-                        className={`photo-editor-card ${
-                          dragging === photo._key ? "is-dragging" : ""
-                        } ${
+                        className={`photo-editor-card ${dragging === photo._key ? "is-dragging" : ""} ${
                           dragTarget === photo._key && dragging !== photo._key
                             ? "is-drop-target"
                             : ""
@@ -676,17 +750,17 @@ export function PostEditor({
                           aria-label={`编辑图片 ${index + 1}`}
                           onClick={() => setEditing(photo._key)}
                         >
-                          <Image
+                          <img
                             className="photo-cover"
-                            style={{
-                              objectPosition: `${photo.focus_x ?? 50}% ${
-                                photo.focus_y ?? 50
-                              }%`,
-                            }}
                             src={thumbnail(photo.image_url, settings)}
                             alt={photo.title || `图片 ${index + 1}`}
                             draggable={false}
                             loading="lazy"
+                            style={{
+                              ...{
+                                objectPosition: `${photo.focus_x ?? 50}% ${photo.focus_y ?? 50}%`,
+                              },
+                            }}
                           />
                           <span className="photo-edit-hint">
                             <Pencil size={15} />
@@ -694,9 +768,7 @@ export function PostEditor({
                           </span>
                         </button>
                         <span
-                          className={`photo-status-badge ${
-                            photo.is_hidden ? "is-hidden" : ""
-                          }`}
+                          className={`photo-status-badge ${photo.is_hidden ? "is-hidden" : ""}`}
                         >
                           {cover?._key === photo._key ? (
                             <>
@@ -714,43 +786,39 @@ export function PostEditor({
                         </span>
                         <div className="photo-card-footer">
                           <GripVertical size={15} className="photo-grip" />
-                          <Text size="xs" truncate>
+                          <p
+                            className="ui-text"
+                            style={{
+                              fontSize: 12,
+                            }}
+                          >
                             {photo.title ||
                               `照片 ${String(index + 1).padStart(2, "0")}`}
-                          </Text>
-                          <Menu position="bottom-end" width={172} withinPortal>
-                            <Menu.Target>
-                              <ActionIcon
-                                variant="subtle"
-                                color="gray"
-                                aria-label={`图片 ${index + 1} 更多操作`}
-                              >
-                                <MoreHorizontal size={18} />
-                              </ActionIcon>
-                            </Menu.Target>
-                            <Menu.Dropdown>
-                              <Menu.Item
-                                leftSection={<Pencil size={14} />}
-                                onClick={() => setEditing(photo._key)}
-                              >
-                                编辑图片信息
-                              </Menu.Item>
-                              <Menu.Item
-                                leftSection={<Star size={14} />}
-                                disabled={cover?._key === photo._key}
-                                onClick={() => setCover(photo._key)}
-                              >
-                                设为封面
-                              </Menu.Item>
-                              <Menu.Item
-                                leftSection={
-                                  photo.is_hidden ? (
-                                    <Eye size={14} />
-                                  ) : (
-                                    <EyeOff size={14} />
-                                  )
-                                }
-                                onClick={() =>
+                          </p>
+                          <Menu
+                            label={"\u56FE\u7247\u64CD\u4F5C"}
+                            items={[
+                              {
+                                label: "\u7F16\u8F91\u56FE\u7247\u4FE1\u606F",
+                                icon: <Pencil size={14} />,
+                                action: () => setEditing(photo._key),
+                              },
+                              {
+                                label: "\u8BBE\u4E3A\u5C01\u9762",
+                                icon: <Star size={14} />,
+                                action: () => setCover(photo._key),
+                                disabled: cover?._key === photo._key,
+                              },
+                              {
+                                label: photo.is_hidden
+                                  ? "显示图片"
+                                  : "隐藏图片",
+                                icon: photo.is_hidden ? (
+                                  <Eye size={14} />
+                                ) : (
+                                  <EyeOff size={14} />
+                                ),
+                                action: () =>
                                   updatePhotos((current) =>
                                     current.map((item) =>
                                       item._key === photo._key
@@ -760,36 +828,28 @@ export function PostEditor({
                                           }
                                         : item,
                                     ),
-                                  )
-                                }
-                              >
-                                {photo.is_hidden ? "显示图片" : "隐藏图片"}
-                              </Menu.Item>
-                              <Menu.Divider />
-                              <Menu.Item
-                                leftSection={<ArrowUp size={14} />}
-                                disabled={index === 0}
-                                onClick={() => move(index, index - 1)}
-                              >
-                                向前移动
-                              </Menu.Item>
-                              <Menu.Item
-                                leftSection={<ArrowDown size={14} />}
-                                disabled={index === photos.length - 1}
-                                onClick={() => move(index, index + 1)}
-                              >
-                                向后移动
-                              </Menu.Item>
-                              <Menu.Divider />
-                              <Menu.Item
-                                color="red"
-                                leftSection={<Trash2 size={14} />}
-                                onClick={() => removePhoto(index)}
-                              >
-                                从帖子移除
-                              </Menu.Item>
-                            </Menu.Dropdown>
-                          </Menu>
+                                  ),
+                              },
+                              {
+                                label: "\u5411\u524D\u79FB\u52A8",
+                                icon: <ArrowUp size={14} />,
+                                action: () => move(index, index - 1),
+                                disabled: index === 0,
+                              },
+                              {
+                                label: "\u5411\u540E\u79FB\u52A8",
+                                icon: <ArrowDown size={14} />,
+                                action: () => move(index, index + 1),
+                                disabled: index === photos.length - 1,
+                              },
+                              {
+                                label: "\u4ECE\u5E16\u5B50\u79FB\u9664",
+                                icon: <Trash2 size={14} />,
+                                action: () => removePhoto(index),
+                                danger: true,
+                              },
+                            ]}
+                          />
                         </div>
                       </div>
                     ))}
@@ -809,32 +869,57 @@ export function PostEditor({
                     setError("");
                   }}
                 />
-              </Paper>
-            </Stack>
-            <Stack gap={18} className="editor-details-column">
-              <Paper withBorder className="editor-meta">
+              </Card>
+            </div>
+            <div
+              className={"ui-stack " + "editor-details-column"}
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: 18,
+              }}
+            >
+              <Card className={"moment-panel " + "editor-meta"}>
                 <div className="editor-section-heading">
                   <span className="editor-step">03</span>
-                  <Title order={4}>整理与发布</Title>
+                  <h4 className="ui-title">整理与发布</h4>
                 </div>
-                <Stack gap="xl">
+                <div
+                  className="ui-stack"
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 32,
+                  }}
+                >
                   <div className="editor-visibility">
                     <div>
-                      <Text fw={600} size="sm">
+                      <p
+                        className="ui-text"
+                        style={{
+                          fontWeight: 600,
+                          fontSize: 13,
+                        }}
+                      >
                         公开到相册
-                      </Text>
-                      <Text size="xs" c="dimmed" mt={4}>
+                      </p>
+                      <p
+                        className="ui-text"
+                        style={{
+                          fontSize: 12,
+                          color: "var(--muted)",
+                          marginTop: 4,
+                        }}
+                      >
                         {draft.is_hidden
                           ? "当前仅自己可见"
                           : "发布后，访客可以看到这组照片"}
-                      </Text>
+                      </p>
                     </div>
                     <Switch
                       aria-label="公开到相册"
                       checked={!draft.is_hidden}
-                      onChange={(e) =>
-                        field("is_hidden", !e.currentTarget.checked)
-                      }
+                      onChange={(e) => field("is_hidden", !e)}
                     />
                   </div>
                   <DateTimePicker
@@ -842,7 +927,7 @@ export function PostEditor({
                     value={draft.time}
                     onChange={(value) => field("time", value)}
                   />
-                  <TextInput
+                  <Input
                     label="拍摄地点"
                     placeholder="这组照片在哪里拍摄？"
                     value={draft.location}
@@ -857,40 +942,67 @@ export function PostEditor({
                     value={draft.discovery}
                     onChange={(value) => field("discovery", value)}
                   />
-                </Stack>
-              </Paper>
+                </div>
+              </Card>
               {cover && (
-                <Paper withBorder className="editor-cover-summary">
-                  <Image
+                <Card className={"moment-panel " + "editor-cover-summary"}>
+                  <img
                     src={thumbnail(cover.image_url, settings)}
                     alt="当前封面"
-                    radius={9}
                   />
                   <div>
-                    <Text size="sm" fw={600}>
+                    <p
+                      className="ui-text"
+                      style={{
+                        fontSize: 13,
+                        fontWeight: 600,
+                      }}
+                    >
                       相册封面
-                    </Text>
-                    <Text size="xs" c="dimmed" mt={4}>
+                    </p>
+                    <p
+                      className="ui-text"
+                      style={{
+                        fontSize: 12,
+                        color: "var(--muted)",
+                        marginTop: 4,
+                      }}
+                    >
                       {visibleCount} 张公开 · {photos.length - visibleCount}{" "}
                       张隐藏
-                    </Text>
-                    <Text size="xs" c="dimmed" mt={4}>
+                    </p>
+                    <p
+                      className="ui-text"
+                      style={{
+                        fontSize: 12,
+                        color: "var(--muted)",
+                        marginTop: 4,
+                      }}
+                    >
                       在图片菜单中更换封面
-                    </Text>
+                    </p>
                   </div>
-                </Paper>
+                </Card>
               )}
               {!!photos.length && !visibleCount && (
-                <Alert color="yellow" icon={<EyeOff size={16} />}>
+                <Alert tone={tone("yellow")} icon={<EyeOff size={16} />}>
                   所有图片都已隐藏，访客不会看到这篇帖子。
                 </Alert>
               )}
               {initial && (
-                <Text size="xs" c="dimmed" px={4}>
+                <p
+                  className="ui-text"
+                  style={{
+                    fontSize: 12,
+                    color: "var(--muted)",
+                    paddingLeft: 4,
+                    paddingRight: 4,
+                  }}
+                >
                   创建于 {initial.created_at}
-                </Text>
+                </p>
               )}
-            </Stack>
+            </div>
           </div>
         </fieldset>
         <div className="editor-save-dock">
@@ -905,46 +1017,64 @@ export function PostEditor({
               />
             )}
             <div>
-              <Text size="sm" fw={500}>
+              <p
+                className="ui-text"
+                style={{
+                  fontSize: 13,
+                  fontWeight: 500,
+                }}
+              >
                 {pendingSchedule
                   ? "已安排定时发布"
                   : uploading
-                  ? "照片上传中…"
-                  : busy
-                  ? "正在保存…"
-                  : autosave.status === "saving"
-                  ? "正在保存草稿…"
-                  : autosave.error
-                  ? "草稿未同步"
-                  : autosave.dirty
-                  ? "等待自动保存…"
-                  : autosave.status === "saved"
-                  ? "草稿已保存 · 未发布"
-                  : postID
-                  ? "所有修改已保存"
-                  : "尚未保存"}
-              </Text>
-              <Text size="xs" c="dimmed">
+                    ? "照片上传中…"
+                    : busy
+                      ? "正在保存…"
+                      : autosave.status === "saving"
+                        ? "正在保存草稿…"
+                        : autosave.error
+                          ? "草稿未同步"
+                          : autosave.dirty
+                            ? "等待自动保存…"
+                            : autosave.status === "saved"
+                              ? "草稿已保存 · 未发布"
+                              : postID
+                                ? "所有修改已保存"
+                                : "尚未保存"}
+              </p>
+              <p
+                className="ui-text"
+                style={{
+                  fontSize: 12,
+                  color: "var(--muted)",
+                }}
+              >
                 {autosave.savedAt
                   ? `保存于 ${autosave.savedAt}`
                   : savedAt && !dirty
-                  ? `上次保存 ${savedAt}`
-                  : "Ctrl / ⌘ + S 保存草稿"}
-              </Text>
+                    ? `上次保存 ${savedAt}`
+                    : "Ctrl / ⌘ + S 保存草稿"}
+              </p>
             </div>
           </div>
-          <Group gap={8} className="editor-save-actions">
+          <div
+            className={"ui-row " + "editor-save-actions"}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              flexWrap: "wrap",
+              gap: 8,
+            }}
+          >
             <Button
-              variant="subtle"
-              color="gray"
-              leftSection={<Eye size={16} />}
               disabled={!photos.length || busy || uploading}
               onClick={() => setPreview(true)}
+              variant="ghost"
             >
+              {<Eye size={16} />}
               预览
             </Button>
             <Button
-              variant="default"
               disabled={
                 locked ||
                 autosave.conflict ||
@@ -952,12 +1082,11 @@ export function PostEditor({
                 (!autosave.dirty && autosave.status === "saved")
               }
               onClick={() => void saveDraft()}
+              variant="secondary"
             >
               保存草稿
             </Button>
             <Button
-              variant="light"
-              leftSection={<CalendarClock size={16} />}
               disabled={
                 locked ||
                 autosave.conflict ||
@@ -967,12 +1096,13 @@ export function PostEditor({
                 !draft.title.trim()
               }
               onClick={() => setScheduling(true)}
+              variant="secondary"
             >
+              {<CalendarClock size={16} />}
               定时发布
             </Button>
             <Button
               type="submit"
-              leftSection={<Save size={16} />}
               loading={busy}
               disabled={
                 uploading ||
@@ -982,16 +1112,18 @@ export function PostEditor({
                 publishConflict ||
                 (!dirty && !!postID)
               }
+              variant="primary"
             >
+              {<Save size={16} />}
               {postID
                 ? "发布更新"
                 : draft.is_hidden
-                ? "保存帖子"
-                : "保存并公开"}
+                  ? "保存帖子"
+                  : "保存并公开"}
             </Button>
-          </Group>
+          </div>
         </div>
-      </form>
+      </Form>
       {scheduling && (
         <ScheduleDialog
           title={draft.title}
@@ -1001,11 +1133,10 @@ export function PostEditor({
         />
       )}
       <Drawer
-        opened={!!current}
         onClose={() => setEditing(null)}
         title="编辑图片信息"
-        position="right"
         size={440}
+        open={!!current}
       >
         {current && (
           <PhotoDetails
@@ -1026,23 +1157,34 @@ export function PostEditor({
           />
         )}
       </Drawer>
-      <Modal
-        opened={adding}
+      <Dialog
+        open={adding}
         onClose={() => setAdding(false)}
         title="通过地址添加照片"
-        centered
       >
-        <Stack>
-          <Text size="sm" c="dimmed">
+        <div
+          className="ui-stack"
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: 16,
+          }}
+        >
+          <p
+            className="ui-text"
+            style={{
+              fontSize: 13,
+              color: "var(--muted)",
+            }}
+          >
             每行一个图片地址，可以一次添加多张。
-          </Text>
+          </p>
           <Textarea
             label="图片地址"
             placeholder={
               "https://example.com/photo-1.jpg\nhttps://example.com/photo-2.jpg"
             }
-            minRows={5}
-            autosize
+            rows={5}
             value={urls}
             error={urlError}
             onChange={(e) => {
@@ -1050,47 +1192,98 @@ export function PostEditor({
               setUrlError("");
             }}
           />
-          <Group justify="flex-end">
-            <Button variant="default" onClick={() => setAdding(false)}>
+          <div
+            className="ui-row"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              flexWrap: "wrap",
+              gap: 10,
+              justifyContent: "flex-end",
+            }}
+          >
+            <Button onClick={() => setAdding(false)} variant="secondary">
               取消
             </Button>
-            <Button onClick={addURLs} leftSection={<Plus size={15} />}>
+            <Button onClick={addURLs} variant="primary">
+              {<Plus size={15} />}
               添加到帖子
             </Button>
-          </Group>
-        </Stack>
-      </Modal>
-      <Modal
-        opened={preview}
+          </div>
+        </div>
+      </Dialog>
+      <Dialog
+        open={preview}
         onClose={() => setPreview(false)}
         title="相册内容预览"
-        size="xl"
+        size="large"
       >
-        <Stack>
-          <Title order={2}>{draft.title || "未命名帖子"}</Title>
-          <Text size="sm" c="dimmed">
+        <div
+          className="ui-stack"
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: 16,
+          }}
+        >
+          <h2 className="ui-title">{draft.title || "未命名帖子"}</h2>
+          <p
+            className="ui-text"
+            style={{
+              fontSize: 13,
+              color: "var(--muted)",
+            }}
+          >
             {draft.location} {draft.time.replace("T", " ")}
-          </Text>
-          <Text style={{ whiteSpace: "pre-wrap" }}>{draft.desc}</Text>
+          </p>
+          <p
+            className="ui-text"
+            style={{
+              ...{ whiteSpace: "pre-wrap" },
+            }}
+          >
+            {draft.desc}
+          </p>
           {photos
             .filter((photo) => !photo.is_hidden)
             .map((photo) => (
-              <Stack key={photo._key} gap={8}>
-                <Image
-                  src={photo.image_url}
-                  alt={photo.title || draft.title}
-                  radius="md"
-                />
-                <Text fw={500}>{photo.title || draft.title}</Text>
-                <Text size="sm" c="dimmed">
+              <div
+                key={photo._key}
+                className="ui-stack"
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 8,
+                }}
+              >
+                <img src={photo.image_url} alt={photo.title || draft.title} />
+                <p
+                  className="ui-text"
+                  style={{
+                    fontWeight: 500,
+                  }}
+                >
+                  {photo.title || draft.title}
+                </p>
+                <p
+                  className="ui-text"
+                  style={{
+                    fontSize: 13,
+                    color: "var(--muted)",
+                  }}
+                >
                   {photo.desc || draft.desc}
-                </Text>
-              </Stack>
+                </p>
+              </div>
             ))}
-          {draft.is_hidden && <Alert color="gray">这篇帖子仅自己可见。</Alert>}
-          {!visibleCount && <Alert color="gray">没有可公开展示的图片。</Alert>}
-        </Stack>
-      </Modal>
+          {draft.is_hidden && (
+            <Alert tone={tone("gray")}>这篇帖子仅自己可见。</Alert>
+          )}
+          {!visibleCount && (
+            <Alert tone={tone("gray")}>没有可公开展示的图片。</Alert>
+          )}
+        </div>
+      </Dialog>
     </>
   );
 }

@@ -1,6 +1,6 @@
 # Moment
 
-个人相册与照片故事。当前版本使用 **Go + Gin + SQLite** 提供服务，管理后台使用 **React + TypeScript + Vite + Mantine** 从零编写，视觉参考 [Share](https://github.com/Robert-Stackflow/Share)。公开相册继续使用 Vue 3，保留原有展示方式。
+个人相册与照片故事。当前版本使用 **Go + Gin + SQLite** 提供服务，管理后台使用 **React + TypeScript + Vite + OneUI**，视觉参考 [Share](https://github.com/Robert-Stackflow/Share)。公开相册继续使用 Vue 3，保留原有展示方式。
 
 ## 功能
 
@@ -35,6 +35,8 @@ go run ./cmd/moment -addr 127.0.0.1:9999
 **构建顺序是公开相册在前、后台在后。** 公开相册构建会清理 `dist`，仓库根目录的 `npm run build` 已按此顺序执行。
 
 开发时运行 Go 服务，再执行 `npm run dev:admin`（5174 端口）或 `npm run dev:gallery`（3100 端口）。前端使用同源代理连接 Go 服务；后台可通过 `MOMENT_DEV_API` 指定其他服务地址。
+
+后台直接使用 npm 包 `@robert-stackflow/oneui@0.3.0` 的蓝白主题与共享组件，包含应用框架、表单校验、设置布局、选择器、表格、弹窗、通知和加载动画。`admin/src/styles.css` 只维护照片、地图等业务布局。浅色、深色和跟随系统偏好保存在浏览器中，兼容读取原有的颜色模式偏好。地图、EXIF/GPS、串行上传、草稿、登录和会话继续使用 Moment 的业务实现。
 
 配置项：
 
@@ -99,6 +101,8 @@ npm run build
 数据库兼容测试只使用临时副本；可用环境变量 `MOMENT_TEST_DATABASE` 指向通过 SQLite 备份得到的完整快照，然后执行 `go test ./...`。检查原业务表结构与全量记录摘要、首次备份、重复启动及公开接口；不打印记录内容。
 
 自动测试覆盖旧 Argon2id 密码、会话与来源校验、事务回滚、图片 ID 保留、隐藏内容分页、凭据保留、分类层级、本地上传和使用旧配置连接模拟 S3 服务。CI 还执行前端构建和镜像构建。
+
+OneUI 迁移的浏览器验证可执行 `npm --prefix admin run test:ui`。首次运行先用 `npx --prefix admin playwright install chromium` 安装测试浏览器；Windows 也可设置 `$env:MOMENT_TEST_CHANNEL='msedge'` 使用本机 Edge。验证脚本自行启动 19998/5176 端口的临时后端与前端，创建临时账号，覆盖表单错误、分类层级、上传和图片编辑、标签、发布、分享、深浅色与移动导航；不会使用 `data` 目录。测试图片保存在忽略提交的 `admin/test-results`，临时进程和数据库在结束后清理。
 
 ## 目录
 

@@ -1,51 +1,42 @@
 import {
+  Button,
+  Card,
+  Form,
+  Input,
+  NumberInput,
+  PasswordField,
+  RadioGroup,
+  Select,
+  SettingsLayout,
+  Textarea,
+} from "@robert-stackflow/oneui";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { Archive, Code2, Database, Globe, Image, Save } from "lucide-react";
+import { lazy, useState } from "react";
+import { Navigate, useNavigate, useParams } from "react-router-dom";
+import { api, json, notifyError, notifySuccess } from "../api";
+import { Brand, brandAppleIcon, brandIcon } from "../components/Brand";
+import { ErrorState, Loading, PageTitle } from "../components/Common";
+import {
   EntryList,
-  type Entry,
   type EditableEntry,
+  type Entry,
 } from "../components/EntryList";
 import { Toggle as Switch } from "../components/Toggle";
-import { lazy, useState } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import {
-  Collapse,
-  Radio,
-  SimpleGrid,
-  Button,
-  Group,
-  NavLink,
-  NumberInput,
-  Paper,
-  PasswordInput,
-  Select,
-  Text,
-  Textarea,
-  TextInput,
-  Title,
-} from "@mantine/core";
-import { NavLink as RouterLink, Navigate, useParams } from "react-router-dom";
-import {
-  Code2,
-  Cloud,
-  HardDrive,
-  Database,
-  Globe,
-  Image,
-  Save,
-  Archive,
-} from "lucide-react";
-import { api, json, notifyError, notifySuccess } from "../api";
-import { ErrorState, Loading, PageTitle } from "../components/Common";
 import { UnsavedChanges } from "../components/UnsavedChanges";
-import { Brand, brandIcon, brandAppleIcon } from "../components/Brand";
-import { orders } from "../types";
+import { useModelForm } from "../components/useModelForm";
 import type { Section, Settings } from "../types";
-
+import { orders } from "../types";
+import { selectOptions } from "../ui-data";
 interface Field {
   key: string;
   label: string;
   description?: string;
   kind?: "text" | "textarea" | "number" | "switch" | "password" | "select";
-  options?: { value: string; label: string }[];
+  options?: {
+    value: string;
+    label: string;
+  }[];
   fallback?: unknown;
 }
 const Backups = lazy(() => import("./Backups"));
@@ -221,6 +212,7 @@ const fields: Record<Section, Field[]> = {
 };
 export default function SettingsPage() {
   const { section } = useParams();
+  const navigate = useNavigate();
   const settings = useQuery({
     queryKey: ["settings"],
     queryFn: () => api<Settings>("/settings"),
@@ -234,20 +226,20 @@ export default function SettingsPage() {
   return (
     <>
       <PageTitle title="网站设置" />
-      <div className="settings-layout">
-        <Paper withBorder p="xs" className="settings-navigation">
-          {sections.map(({ key, label, icon: Icon }) => (
-            <NavLink
-              key={key}
-              component={RouterLink}
-              to={`/settings/${key}`}
-              label={label}
-              leftSection={<Icon size={18} />}
-              active={selected === key}
-              className="studio-nav"
-            />
-          ))}
-        </Paper>
+      <SettingsLayout
+        value={selected}
+        onChange={(key) => navigate(`/settings/${key}`)}
+        groups={[
+          {
+            id: "site",
+            items: sections.map(({ key, label, icon: Icon }) => ({
+              value: key,
+              label,
+              icon: <Icon />,
+            })),
+          },
+        ]}
+      >
         {selected === "backups" ? (
           <Backups />
         ) : (
@@ -257,7 +249,7 @@ export default function SettingsPage() {
             initial={settings.data.data[selected]}
           />
         )}
-      </div>
+      </SettingsLayout>
     </>
   );
 }
@@ -277,6 +269,31 @@ function SettingsForm({
       ]),
     ),
   );
+  const sharedForm = useModelForm(
+    values,
+    Object.fromEntries(
+      fields[section]
+        .filter((field) => field.kind === "number")
+        .map((field) => [
+          field.key,
+          {
+            label: field.label,
+            min:
+              field.key === "max_size"
+                ? 0.1
+                : field.key === "timeout_time"
+                  ? 5
+                  : 1,
+            max:
+              field.key === "max_size"
+                ? 256
+                : field.key === "timeout_time"
+                  ? 600
+                  : 100,
+          },
+        ]),
+    ),
+  );
   const [entries, setEntries] = useState<EditableEntry[]>(
     (Array.isArray(initial.entries) ? (initial.entries as Entry[]) : []).map(
       (entry) => ({ ...entry, _key: crypto.randomUUID() }),
@@ -288,8 +305,7 @@ function SettingsForm({
     setValues((current) => ({ ...current, [key]: value }));
     setDirty(true);
   }
-  async function save(event: React.FormEvent) {
-    event.preventDefault();
+  async function save() {
     setBusy(true);
     try {
       await api(
@@ -321,74 +337,87 @@ function SettingsForm({
     const configured = initial[`${field.key}_configured`] === true;
     return (
       <div
-        className={`setting-row ${
-          field.kind === "textarea" ? "setting-wide" : ""
-        }`}
+        className={`setting-row ${field.kind === "textarea" ? "setting-wide" : ""}`}
         key={field.key}
       >
         <div>
-          <Text fw={500} size="sm" id={`label-${field.key}`}>
+          <p
+            id={`label-${field.key}`}
+            className="ui-text"
+            style={{
+              fontWeight: 500,
+              fontSize: 13,
+            }}
+          >
             {field.label}
-          </Text>
-          <Text size="xs" c="dimmed" mt={5}>
+          </p>
+          <p
+            className="ui-text"
+            style={{
+              fontSize: 12,
+              color: "var(--muted)",
+              marginTop: 5,
+            }}
+          >
             {isCredential && configured
               ? "已配置。留空保留当前凭据。"
               : field.description}
-          </Text>
+          </p>
         </div>
         <div>
           {field.kind === "switch" ? (
             <Switch
-              aria-labelledby={`label-${field.key}`}
+              aria-label={field.label}
               checked={value === true}
-              onChange={(e) => set(field.key, e.currentTarget.checked)}
+              onChange={(e) => set(field.key, e)}
             />
           ) : field.kind === "number" ? (
             <NumberInput
+              {...sharedForm.field(field.key)}
               aria-labelledby={`label-${field.key}`}
-              value={Number(value) || 0}
               min={
                 field.key === "max_size"
                   ? 0.1
                   : field.key === "timeout_time"
-                  ? 5
-                  : 1
+                    ? 5
+                    : 1
               }
               max={
                 field.key === "max_size"
                   ? 256
                   : field.key === "timeout_time"
-                  ? 600
-                  : 100
+                    ? 600
+                    : 100
               }
               onChange={(value) => set(field.key, Number(value || 0))}
+              label={field.label}
+              value={Number(Number(value) || 0)}
             />
           ) : field.kind === "select" ? (
             <Select
               aria-labelledby={`label-${field.key}`}
-              data={field.options}
-              value={String(value)}
-              allowDeselect={false}
+              options={selectOptions(field.options)}
               onChange={(value) => set(field.key, value)}
+              label={field.label}
+              value={String(value) ?? ""}
             />
           ) : isCredential ? (
-            <PasswordInput
+            <PasswordField
+              onChange={(value) => set(field.key, value)}
               aria-labelledby={`label-${field.key}`}
               value={String(value)}
               autoComplete="off"
               placeholder={configured ? "已配置，输入以替换" : "尚未配置"}
-              onChange={(e) => set(field.key, e.currentTarget.value)}
             />
           ) : field.kind === "textarea" ? (
             <Textarea
               aria-labelledby={`label-${field.key}`}
               value={String(value)}
-              autosize
-              minRows={field.key.startsWith("custom_") ? 6 : 3}
+              rows={field.key.startsWith("custom_") ? 6 : 3}
               onChange={(e) => set(field.key, e.currentTarget.value)}
             />
           ) : (
-            <TextInput
+            <Input
               aria-labelledby={`label-${field.key}`}
               value={String(value)}
               onChange={(e) => set(field.key, e.currentTarget.value)}
@@ -399,53 +428,35 @@ function SettingsForm({
     );
   }
   return (
-    <Paper withBorder style={{ overflow: "hidden" }}>
-      <form onSubmit={save}>
+    <Card className="moment-panel">
+      <Form controller={sharedForm} onSubmit={save}>
         <UnsavedChanges dirty={dirty} />
         {section === "storage" ? (
           <>
             <div className="storage-provider-section">
-              <Title order={4}>存储方式</Title>
-              <Text c="dimmed" size="sm" mt={6} mb={20}>
+              <h4 className="ui-title">存储方式</h4>
+              <p
+                className="ui-text"
+                style={{
+                  color: "var(--muted)",
+                  fontSize: 13,
+                  marginTop: 6,
+                  marginBottom: 20,
+                }}
+              >
                 选择新上传照片的存储方式，已有照片地址保持有效。
-              </Text>
-              <Radio.Group
+              </p>
+              <RadioGroup
                 name="storage-provider"
                 value={String(values.provider)}
                 onChange={(value) => set("provider", value)}
                 aria-label="图片存储方式"
-              >
-                <SimpleGrid cols={{ base: 1, sm: 2 }} spacing={12}>
-                  <Radio.Card value="local" className="storage-provider-card">
-                    <Group justify="space-between">
-                      <span className="storage-provider-icon">
-                        <HardDrive size={21} />
-                      </span>
-                      <Radio.Indicator />
-                    </Group>
-                    <Text fw={600} mt={14}>
-                      本地存储
-                    </Text>
-                    <Text size="xs" c="dimmed" mt={5}>
-                      照片保存在当前服务器
-                    </Text>
-                  </Radio.Card>
-                  <Radio.Card value="s3" className="storage-provider-card">
-                    <Group justify="space-between">
-                      <span className="storage-provider-icon">
-                        <Cloud size={22} />
-                      </span>
-                      <Radio.Indicator />
-                    </Group>
-                    <Text fw={600} mt={14}>
-                      S3 对象存储
-                    </Text>
-                    <Text size="xs" c="dimmed" mt={5}>
-                      连接 S3 兼容的云存储服务
-                    </Text>
-                  </Radio.Card>
-                </SimpleGrid>
-              </Radio.Group>
+                label={"\u56FE\u7247\u5B58\u50A8\u65B9\u5F0F"}
+                options={[
+                  { value: "local", label: "\u672C\u5730\u5B58\u50A8" },
+                  { value: "s3", label: "S3 \u5BF9\u8C61\u5B58\u50A8" },
+                ]}
+              />
             </div>
             <div className="storage-common-fields">
               {fields.storage
@@ -454,7 +465,7 @@ function SettingsForm({
                 )
                 .map(renderField)}
             </div>
-            <Collapse in={values.provider === "s3"} transitionDuration={200}>
+            <div hidden={!(values.provider === "s3")}>
               <div className="storage-connection">
                 {fields.storage
                   .filter((field) =>
@@ -470,7 +481,7 @@ function SettingsForm({
                   )
                   .map(renderField)}
               </div>
-            </Collapse>
+            </div>
           </>
         ) : (
           <>
@@ -478,13 +489,18 @@ function SettingsForm({
               <div className="brand-setting">
                 <Brand size={44} />
                 <div>
-                  <Text fw={600} size="sm">
+                  <p
+                    className="ui-text"
+                    style={{
+                      fontWeight: 600,
+                      fontSize: 13,
+                    }}
+                  >
                     Moment 新图标
-                  </Text>
+                  </p>
                 </div>
                 <Button
-                  variant="light"
-                  size="xs"
+                  size="small"
                   onClick={() => {
                     setValues((current) => ({
                       ...current,
@@ -494,6 +510,7 @@ function SettingsForm({
                     }));
                     setDirty(true);
                   }}
+                  variant="secondary"
                 >
                   使用新图标
                 </Button>
@@ -513,19 +530,26 @@ function SettingsForm({
           />
         )}
         <div className="save-bar">
-          <Text size="xs" c="dimmed">
+          <p
+            className="ui-text"
+            style={{
+              fontSize: 12,
+              color: "var(--muted)",
+            }}
+          >
             {dirty ? "有尚未保存的修改" : "设置已同步"}
-          </Text>
+          </p>
           <Button
             type="submit"
             loading={busy}
             disabled={!dirty}
-            leftSection={<Save size={16} />}
+            variant="primary"
           >
+            {<Save size={16} />}
             保存设置
           </Button>
         </div>
-      </form>
-    </Paper>
+      </Form>
+    </Card>
   );
 }

@@ -1,7 +1,6 @@
-import type { ReactNode } from "react";
-import { Badge, Button, Modal, Pagination, Text } from "@mantine/core";
+import { Button, Dialog, Pagination } from "@robert-stackflow/oneui";
 import type { LucideIcon } from "lucide-react";
-
+import type { ReactNode } from "react";
 export function RecordDialog({
   title,
   icon: Icon,
@@ -24,30 +23,12 @@ export function RecordDialog({
   children: ReactNode;
 }) {
   return (
-    <Modal
-      opened
+    <Dialog
+      open={true}
       onClose={() => !busy && onClose()}
-      size={620}
-      centered
-      padding={0}
-      closeOnEscape={!busy}
-      closeOnClickOutside={!busy}
-      title={
-        <div className="record-dialog-heading">
-          <Icon size={19} aria-hidden="true" />
-          <Text fw={600}>{title}</Text>
-          {total > 0 && (
-            <Badge variant="light" size="sm">
-              {total}
-            </Badge>
-          )}
-        </div>
-      }
-      classNames={{
-        content: "record-dialog",
-        header: "record-dialog-header",
-        body: "record-dialog-body",
-      }}
+      size="medium"
+      busy={busy}
+      title={title}
     >
       <div className="record-dialog-scroll" key={page}>
         {children}
@@ -55,21 +36,20 @@ export function RecordDialog({
       <div className="record-dialog-footer">
         {total > pageSize && (
           <Pagination
-            size="sm"
-            siblings={0}
-            value={page}
-            onChange={onPageChange}
+            page={page}
+            onPageChange={onPageChange}
             total={Math.ceil(total / pageSize)}
+            pageSize={1}
+            summary={null}
           />
         )}
-        <Button variant="default" disabled={busy} onClick={onClose}>
+        <Button disabled={busy} onClick={onClose} variant="secondary">
           关闭
         </Button>
       </div>
-    </Modal>
+    </Dialog>
   );
 }
-
 export function RecordEmpty({
   icon: Icon,
   title,
@@ -84,13 +64,25 @@ export function RecordEmpty({
       <span className="record-empty-icon" aria-hidden="true">
         <Icon size={27} strokeWidth={1.6} />
       </span>
-      <Text fw={600} size="md">
+      <p
+        className="ui-text"
+        style={{
+          fontWeight: 600,
+          fontSize: 14,
+        }}
+      >
         {title}
-      </Text>
+      </p>
       {description && (
-        <Text size="sm" c="dimmed">
+        <p
+          className="ui-text"
+          style={{
+            fontSize: 13,
+            color: "var(--muted)",
+          }}
+        >
           {description}
-        </Text>
+        </p>
       )}
     </div>
   );

@@ -1,12 +1,12 @@
-import { createContext, useContext, useEffect } from "react";
-import type { ReactNode } from "react";
+import { Alert, Button, Spinner } from "@robert-stackflow/oneui";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import type { ReactNode } from "react";
+import { createContext, useContext, useEffect } from "react";
 import { Navigate, Outlet, useLocation } from "react-router-dom";
-import { Alert, Button, Center, Loader, Stack } from "@mantine/core";
 import { api, ApiError, json } from "./api";
-import type { User } from "./types";
 import { authenticatePasskey } from "./passkeys";
-
+import type { User } from "./types";
+import { tone } from "./ui-data";
 interface Auth {
   user?: User;
   loading: boolean;
@@ -78,21 +78,46 @@ export function RequireAuth() {
   const location = useLocation();
   if (auth.loading)
     return (
-      <Center mih={400}>
-        <Loader aria-label="正在验证登录" />
-      </Center>
+      <div
+        className="ui-center"
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          minHeight: 400,
+        }}
+      >
+        <Spinner aria-label="正在验证登录" />
+      </div>
     );
   if (
     auth.error &&
     !(auth.error instanceof ApiError && auth.error.status === 401)
   )
     return (
-      <Center mih={400}>
-        <Stack>
-          <Alert color="red">无法连接后台，请确认服务正在运行。</Alert>
-          <Button onClick={() => void auth.refresh()}>重新连接</Button>
-        </Stack>
-      </Center>
+      <div
+        className="ui-center"
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          minHeight: 400,
+        }}
+      >
+        <div
+          className="ui-stack"
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: 16,
+          }}
+        >
+          <Alert tone={tone("red")}>无法连接后台，请确认服务正在运行。</Alert>
+          <Button onClick={() => void auth.refresh()} variant="primary">
+            重新连接
+          </Button>
+        </div>
+      </div>
     );
   if (
     !auth.user ||
