@@ -862,8 +862,8 @@ export default function SmartTags() {
           <Pagination
             page={page}
             onPageChange={setPage}
-            total={Math.ceil(photos.data!.total! / pageSize)}
-            pageSize={1}
+            total={photos.data!.total!}
+            pageSize={pageSize}
             summary={null}
           />
         </div>
@@ -973,8 +973,8 @@ export default function SmartTags() {
                     setReviewPage(value);
                     reviewScroll.current?.scrollTo({ top: 0 });
                   }}
-                  total={Math.ceil(reviews.length / 6)}
-                  pageSize={1}
+                  total={reviews.length}
+                  pageSize={6}
                   summary={null}
                 />
               </div>

@@ -10,7 +10,7 @@ import {
 } from "@robert-stackflow/oneui";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { CalendarClock, FilePenLine, RefreshCw, Search } from "lucide-react";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { api, json, notifyError, notifySuccess } from "../api";
 import { Empty, ErrorState, Loading, PageTitle } from "../components/Common";
 import { ScheduleDialog, scheduleTime } from "../components/ScheduleDialog";
@@ -46,6 +46,13 @@ export default function Schedules() {
   } | null>(null);
   const [cancelling, setCancelling] = useState<PublishSchedule | null>(null);
   const [busy, setBusy] = useState(false);
+  const editTrigger = useRef<HTMLButtonElement | null>(null);
+  function closeEditor() {
+    setEditing(null);
+    requestAnimationFrame(() =>
+      editTrigger.current?.focus({ preventScroll: true }),
+    );
+  }
   const settings = useQuery({
     queryKey: ["settings"],
     queryFn: () => api<Settings>("/settings"),
@@ -98,7 +105,7 @@ export default function Schedules() {
         publish_at: publishAt,
       }),
     );
-    setEditing(null);
+    closeEditor();
     notifySuccess("发布计划已保存");
     await invalidate();
   }
@@ -318,7 +325,10 @@ export default function Schedules() {
                     <Button
                       size="small"
                       disabled={busy}
-                      onClick={() => void edit(plan)}
+                      onClick={(event) => {
+                        editTrigger.current = event.currentTarget;
+                        void edit(plan);
+                      }}
                       variant="secondary"
                     >
                       {plan.status === "pending" ? "修改时间" : "重新安排"}
@@ -353,8 +363,8 @@ export default function Schedules() {
               <Pagination
                 page={page}
                 onPageChange={setPage}
-                total={Math.ceil((plans.data.total || 0) / 20)}
-                pageSize={1}
+                total={plans.data.total || 0}
+                pageSize={20}
                 summary={null}
               />
             </div>
@@ -369,7 +379,7 @@ export default function Schedules() {
               ? editing.schedule.publish_at
               : undefined
           }
-          onClose={() => setEditing(null)}
+          onClose={closeEditor}
           onConfirm={save}
         />
       )}

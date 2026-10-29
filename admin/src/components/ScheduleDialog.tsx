@@ -1,6 +1,7 @@
 import { Alert, Button, Dialog } from "@robert-stackflow/oneui";
 import { CalendarClock } from "lucide-react";
 import { useState } from "react";
+import { useRestoreFocusOnUnmount } from "../hooks";
 import { tone } from "../ui-data";
 import { DateTimePicker } from "./DateTimePicker";
 import { UnsavedChanges } from "./UnsavedChanges";
@@ -26,6 +27,7 @@ export function ScheduleDialog({
   onClose: () => void;
   onConfirm: (publishAt: number) => Promise<void>;
 }) {
+  useRestoreFocusOnUnmount();
   const [initial] = useState(() =>
     shanghaiDate(initialTime ? initialTime * 1000 : Date.now() + 3600000),
   );

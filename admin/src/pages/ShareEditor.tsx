@@ -673,8 +673,8 @@ function ShareForm({
                       <Pagination
                         page={page}
                         onPageChange={setPage}
-                        total={Math.ceil((posts.data?.total || 0) / 12)}
-                        pageSize={1}
+                        total={posts.data?.total || 0}
+                        pageSize={12}
                         summary={null}
                       />
                     </div>

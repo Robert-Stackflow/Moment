@@ -28,6 +28,7 @@ import {
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { api, ApiError, json, notifyError, notifySuccess } from "../api";
+import { useRestoreFocusOnUnmount } from "../hooks";
 import { Empty, ErrorState, Loading, PageTitle } from "../components/Common";
 import { OrganizeTabs } from "../components/OrganizeTabs";
 import { PhotoHistory } from "../components/PhotoHistory";
@@ -631,8 +632,8 @@ export default function Duplicates() {
               <Pagination
                 page={page}
                 onPageChange={setPage}
-                total={Math.ceil(groups.data!.total! / 8)}
-                pageSize={1}
+                total={groups.data!.total!}
+                pageSize={8}
                 summary={null}
               />
             </div>
@@ -761,6 +762,7 @@ function DuplicateGroup({
   onClose: () => void;
   onDirty: (dirty: boolean) => void;
 }) {
+  useRestoreFocusOnUnmount();
   const client = useQueryClient();
   const [page, setPage] = useState(1);
   const [selected, setSelected] = useState<ScanPhoto[]>([]);
@@ -1068,8 +1070,8 @@ function DuplicateGroup({
               <Pagination
                 page={page}
                 onPageChange={setPage}
-                total={Math.ceil(group.data!.data.total / 12)}
-                pageSize={1}
+                total={group.data!.data.total}
+                pageSize={12}
                 summary={null}
               />
             </div>

@@ -213,8 +213,8 @@ export default function Drafts() {
               <Pagination
                 page={page}
                 onPageChange={setPage}
-                total={Math.ceil((drafts.data.total || 0) / 20)}
-                pageSize={1}
+                total={drafts.data.total || 0}
+                pageSize={20}
                 summary={null}
               />
             </div>

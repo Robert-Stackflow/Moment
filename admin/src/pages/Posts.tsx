@@ -664,13 +664,13 @@ export default function Posts() {
           }}
         >
           <Pagination
-            total={Math.ceil((posts.data.total || 0) / 20)}
+            total={posts.data.total || 0}
             page={page}
             onPageChange={(value) => {
               setPage(value);
               setSelected([]);
             }}
-            pageSize={1}
+            pageSize={20}
             summary={null}
           />
         </div>

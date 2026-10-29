@@ -6,6 +6,7 @@ import {
 } from "@robert-stackflow/oneui";
 import type { LucideIcon } from "lucide-react";
 import type { ReactNode } from "react";
+import { useRestoreFocusOnUnmount } from "../hooks";
 export function RecordDialog({
   title,
   icon: Icon,
@@ -27,6 +28,7 @@ export function RecordDialog({
   busy?: boolean;
   children: ReactNode;
 }) {
+  useRestoreFocusOnUnmount();
   return (
     <Dialog
       open={true}
@@ -37,13 +39,14 @@ export function RecordDialog({
       footer={
         <>
           {total > pageSize && (
-            <Pagination
-              page={page}
-              onPageChange={onPageChange}
-              total={Math.ceil(total / pageSize)}
-              pageSize={1}
-              summary={null}
-            />
+            <div className="record-dialog-pagination">
+              <Pagination
+                page={page}
+                onPageChange={onPageChange}
+                total={total}
+                pageSize={pageSize}
+              />
+            </div>
           )}
           <Button disabled={busy} onClick={onClose} variant="secondary">
             关闭

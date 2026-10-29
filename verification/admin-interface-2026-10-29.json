@@ -1,27 +1,42 @@
 {
   "date": "2026-10-29",
-  "baseline": "a1d266f",
+  "baseline": "c9d3191",
   "dependency": "@robert-stackflow/oneui@0.4.0",
   "source": {
     "tsxFiles": 42,
-    "sharedImports": 42,
+    "sharedImports": 40,
     "nativeControls": 0,
     "dialogs": 36,
     "drawers": 1,
     "popovers": 1,
     "sharedFooters": 29,
-    "fixedRadii": []
+    "fixedRadii": [],
+    "paginationCalls": 11
   },
   "matrix": {
-    "pageChecks": 96,
-    "dialogChecks": 178,
+    "pageChecks": 190,
+    "dialogChecks": 276,
     "modes": [
       "light",
       "dark"
     ],
     "viewports": [
-      1280,
-      390
+      {
+        "width": 1280,
+        "height": 900
+      },
+      {
+        "width": 390,
+        "height": 844
+      },
+      {
+        "width": 320,
+        "height": 844
+      },
+      {
+        "width": 844,
+        "height": 390
+      }
     ],
     "routes": [
       "workbench",
@@ -29,7 +44,7 @@
       "posts/new",
       "posts/1",
       "drafts",
-      "drafts/c24ce2cb-fea6-47c5-9116-8c0344802d0b",
+      "drafts/38ab8ac9-f8c6-4e81-b731-880be67b757d",
       "schedules",
       "organize/duplicates",
       "organize/tags",
@@ -96,55 +111,36 @@
       "恢复完成"
     ]
   },
-  "loginDivider": [
-    {
-      "mode": "light",
-      "width": 1280,
-      "offsets": [
-        0,
-        0
-      ]
-    },
-    {
-      "mode": "light",
-      "width": 390,
-      "offsets": [
-        0,
-        0
-      ]
-    },
-    {
-      "mode": "dark",
-      "width": 1280,
-      "offsets": [
-        0,
-        0
-      ]
-    },
-    {
-      "mode": "dark",
-      "width": 390,
-      "offsets": [
-        0,
-        0
-      ]
-    }
-  ],
+  "loginDivider": {
+    "checkedModes": [
+      "light",
+      "dark"
+    ],
+    "checkedWidths": [
+      1280,
+      390,
+      320
+    ],
+    "maxAllowedOffsetPx": 1,
+    "passed": true
+  },
   "checks": {
     "productionBuild": true,
     "browserRuntimeErrors": 0,
     "realLoginUploadAndPostPublish": true,
     "freshTestDataOnly": true,
-    "finalNormalTestExit": 0
+    "finalNormalTestExit": 0,
+    "unitTestsPassed": 3,
+    "systemThemeFollowsDevice": true,
+    "explicitThemeOverridesDevice": true,
+    "dialogVerticalBounds": true,
+    "focusRestoration": true,
+    "realHistoryPagination": true
   },
   "fixes": [
-    "Shared Dialog footer, external submit/form association and pending-state locks",
-    "Card body layout and image button minimum height in photo tag review; single-column mobile cards",
-    "Shared EmptyState, map zoom IconButton and loading animation",
-    "Theme tokens for save status, overlays and shadows",
-    "OneUI Web login composition with Logo + Moment and no capability description",
-    "Login divider align-self center",
-    "Restore completion close action returns to login"
+    "Pass actual item totals and page sizes to all 11 shared Pagination instances",
+    "Return focus after conditional record/group/schedule panel removal and async schedule loading",
+    "Use shared small control sizing and compact responsive layout for record pagination; wrap long page controls"
   ],
   "faultFixtures": [
     "Share/passkey stale revision responses (409)",
@@ -156,6 +152,61 @@
   ],
   "cleanup": {
     "retained": "%TEMP%/moment-oneui-ui-OPQBqu",
-    "reason": "Automatic approval policy rejected recursive removal; associated processes stopped; no retry"
-  }
+    "reason": "Automatic approval policy rejected recursive removal; associated processes stopped; no retry",
+    "currentRunCompleted": true
+  },
+  "supplemental": [
+    {
+      "mode": "light",
+      "width": 320,
+      "popup": "分类",
+      "overflow": 0
+    },
+    {
+      "mode": "light",
+      "width": 320,
+      "popup": "拍摄时间",
+      "overflow": 0
+    },
+    {
+      "mode": "dark",
+      "width": 320,
+      "popup": "分类",
+      "overflow": 0
+    },
+    {
+      "mode": "dark",
+      "width": 320,
+      "popup": "拍摄时间",
+      "overflow": 0
+    },
+    {
+      "compactHistory": {
+        "footerHeight": 145,
+        "buttonRows": 1,
+        "overflow": 0
+      }
+    },
+    {
+      "fixtureHistoryPages": 35,
+      "page": 18,
+      "overflow": 0
+    },
+    {
+      "mode": "light",
+      "width": 844,
+      "height": 390,
+      "route": "login",
+      "overflow": 0,
+      "headingTop": 48.453125
+    },
+    {
+      "mode": "dark",
+      "width": 844,
+      "height": 390,
+      "route": "login",
+      "overflow": 0,
+      "headingTop": 48.453125
+    }
+  ]
 }

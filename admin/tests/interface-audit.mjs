@@ -78,6 +78,20 @@ export async function auditInterface({
       },
     ],
   });
+  // Exercise real multi-page history, rather than only its single-record state.
+  for (let i = 0; i < 10; i++) {
+    const current = (await api("/photo-tags/photos?untagged=false&page_size=20"))[0];
+    await mutate("/photo-tags/apply", "POST", {
+      id: crypto.randomUUID().replaceAll("-", ""),
+      confirm: true,
+      targets: [{
+        id: current.id,
+        revision: current.revision,
+        image_url: current.image_url,
+        tags: [`分页检查${i}`],
+      }],
+    });
+  }
   await mutate("/backups", "POST", {});
   const share = (await api("/shares"))[0];
   const routes = [
@@ -122,7 +136,7 @@ export async function auditInterface({
       const rect = el.getBoundingClientRect(),
         footer = el.querySelector(":scope > footer");
       const buttons = footer
-        ? [...footer.querySelectorAll("button")].filter(
+        ? [...footer.children].filter(
             (b) => b.getBoundingClientRect().width > 0,
           )
         : [];
@@ -134,6 +148,9 @@ export async function auditInterface({
         overflow: el.scrollWidth - el.clientWidth,
         left: rect.left,
         right: rect.right,
+        top: rect.top,
+        bottom: rect.bottom,
+        height: innerHeight,
         width: innerWidth,
         forms,
         footer: !!footer,
@@ -152,6 +169,8 @@ export async function auditInterface({
       geometry.left >= 0 && geometry.right <= geometry.width + 1,
       `${currentCase}: outside viewport ${JSON.stringify(geometry)}`,
     );
+    assert.ok(geometry.top >= 0 && geometry.bottom <= geometry.height + 1,
+      `${currentCase}: outside vertical viewport ${JSON.stringify(geometry)}`);
     assert.ok(
       geometry.forms,
       `${currentCase}: submit lost its form association`,
@@ -174,17 +193,18 @@ export async function auditInterface({
     await page.waitForFunction((el) => !el.isConnected || !el.open, handle);
     await handle.dispose();
   };
-  const open = async (button, title) => {
+  const open = async (button, title, returnTo = button) => {
     await button.click();
     const dialog = await inspect(title);
     await dismiss(dialog);
+    await expect(returnTo).toBeFocused();
   };
   try {
     for (mode of ["light", "dark"])
-      for (width of [1280, 390]) {
+      for (width of [1280, 390, 320]) {
         await page.setViewportSize({
           width,
-          height: width === 390 ? 844 : 900,
+          height: width < 768 ? 844 : 900,
         });
         await page.evaluate(
           (mode) => localStorage.setItem("moment.admin.color-mode", mode),
@@ -311,6 +331,7 @@ export async function auditInterface({
           await open(
             page.getByRole("menuitem", { name: label, exact: true }),
             (label === "停用分享" ? "撤销分享" : label) + "？",
+            page.getByRole("button", { name: "分享操作", exact: true }).first(),
           );
         }
         await page.evaluate(() =>
@@ -356,7 +377,7 @@ export async function auditInterface({
           page.getByRole("button", { name: "加载最新相册", exact: true }),
           "加载最新相册？",
         );
-        if (width === 390)
+        if (width < 768)
           await page
             .getByRole("button", { name: "打开导航", exact: true })
             .click();
@@ -428,6 +449,20 @@ export async function auditInterface({
           .getByRole("button", { name: "处理记录", exact: true })
           .click();
         dialog = await inspect("处理记录");
+        const pagination = dialog.getByRole("navigation", { name: "分页" });
+        await expect(pagination).toBeVisible();
+        const historyResponse = await page.request.get(origin + "/api/admin/photo-actions?page=1&page_size=10");
+        const historyTotal = (await historyResponse.json()).total;
+        assert.ok(Number.isFinite(historyTotal) && historyTotal > 10);
+        await expect(pagination).toContainText(`1–10 / ${historyTotal} 项`);
+        if (mode === "light" && width === 320)
+          await dialog.screenshot({ path: path.join(output, "audit-history-light-narrow.png") });
+        await pagination.getByRole("button", { name: "下一页", exact: true }).click();
+        await expect(pagination.getByRole("button", { name: "第 2 页", exact: true }))
+          .toHaveAttribute("aria-current", "page");
+        await expect(pagination).toContainText(`11–${historyTotal} / ${historyTotal} 项`);
+        await inspect("处理记录");
+        await pagination.getByRole("button", { name: "上一页", exact: true }).click();
         await dialog
           .getByRole("button", { name: "撤销", exact: true })
           .first()
@@ -608,6 +643,34 @@ export async function auditInterface({
           JSON.stringify({ pages, dialogs: results }, null, 2),
         );
       }
+    // A short landscape viewport exercises scrollable dialogs as well as columns.
+    width = 844;
+    await page.setViewportSize({ width, height: 390 });
+    for (mode of ["light", "dark"]) {
+      await page.evaluate((value) => localStorage.setItem("moment.admin.color-mode", value), mode);
+      for (const route of routes) {
+        await visit(route);
+        pages.push({ mode, width, height: 390, route });
+      }
+      await visit("categories");
+      await open(page.getByRole("button", { name: "新建分类", exact: true }), "新建分类");
+      await visit("account/security");
+      await open(page.getByRole("button", { name: "添加通行密钥", exact: true }), "添加通行密钥");
+    }
+    await page.evaluate(() => localStorage.setItem("moment.admin.color-mode", "system"));
+    await visit("workbench");
+    for (const colorScheme of ["dark", "light"]) {
+      await page.emulateMedia({ colorScheme });
+      await expect(page.locator("html")).toHaveAttribute("data-theme", colorScheme);
+    }
+    // Explicit selection must still take precedence over the device theme.
+    await page.evaluate(() => localStorage.setItem("moment.admin.color-mode", "dark"));
+    await visit("workbench");
+    await page.emulateMedia({ colorScheme: "light" });
+    await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
+    await page.setViewportSize({ width: 320, height: 844 });
+    width = 320;
+    mode = "dark";
     await visit("settings/backups");
     await page
       .getByRole("button", { name: "恢复", exact: true })

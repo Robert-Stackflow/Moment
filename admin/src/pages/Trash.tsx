@@ -392,13 +392,13 @@ export default function Trash() {
               }}
             >
               <Pagination
-                total={Math.ceil((trash.data?.total || 0) / 20)}
+                total={trash.data?.total || 0}
                 page={page}
                 onPageChange={(value) => {
                   setPage(value);
                   setSelected([]);
                 }}
-                pageSize={1}
+                pageSize={20}
                 summary={null}
               />
             </div>

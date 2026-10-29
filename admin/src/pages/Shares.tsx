@@ -308,8 +308,8 @@ export default function Shares() {
               <Pagination
                 page={page}
                 onPageChange={setPage}
-                total={Math.ceil((list.data.total || 0) / 12)}
-                pageSize={1}
+                total={list.data.total || 0}
+                pageSize={12}
                 summary={null}
               />
             </div>
