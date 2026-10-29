@@ -6,6 +6,8 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { chromium } from "playwright";
 import { auditInterface } from "./interface-audit.mjs";
+import { auditEntryIcons } from "./entry-icons.browser.mjs";
+import { auditOrganize } from "./organize.browser.mjs";
 
 const admin = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const root = path.dirname(admin);
@@ -50,6 +52,11 @@ async function ready(url, process) {
   throw new Error("Server did not start: " + process.log().slice(-600));
 }
 async function check(label, action) {
+  if (
+    process.env.MOMENT_UI_CHECK &&
+    !new RegExp(process.env.MOMENT_UI_CHECK).test(label)
+  )
+    return;
   activeCheck = label;
   await action();
   console.log("PASS " + label);
@@ -592,7 +599,7 @@ try {
       await noOverflow();
       assert.equal(
         await page
-          .getByRole("tablist", { name: "照片整理方式", exact: true })
+          .getByRole("group", { name: "照片整理方式", exact: true })
           .count(),
         1,
       );
@@ -685,6 +692,22 @@ try {
       await page.waitForURL("**/workbench");
     },
   );
+  await check("shared built-in entry icon catalog", async () => {
+    console.log(
+      "ICONS " +
+        JSON.stringify(
+          await auditEntryIcons({ page, base, api, output, noOverflow }),
+        ),
+    );
+  });
+  await check("shared organize layout and animated navigation", async () => {
+    console.log(
+      "ORGANIZE " +
+        JSON.stringify(
+          await auditOrganize({ page, base, api, output, noOverflow }),
+        ),
+    );
+  });
   await check("page and dialog light/dark desktop/mobile matrix", async () => {
     const results = await auditInterface({
       page,

@@ -950,28 +950,8 @@ h4.ui-title {
 .duplicate-group-card {
   min-width: 0;
 }
-.duplicate-scan-actions {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 12px;
-  margin-top: 20px;
-  padding-top: 18px;
-  border-top: 1px solid var(--moment-border);
-}
-.duplicate-scan-actions:empty {
-  display: none;
-}
 .duplicate-scan-start {
   margin-left: auto;
-}
-.duplicate-view-switch {
-  height: 44px;
-  padding: 4px;
-  border: 1px solid var(--moment-border);
-  border-radius: var(--card-radius);
-  background: var(--moment-input);
 }
 .duplicate-view-option {
   display: flex;
@@ -981,15 +961,7 @@ h4.ui-title {
 }
 .duplicate-type-filter {
   width: 180px;
-}
-@media (max-width: 600px) {
-  .duplicate-filters {
-    gap: 12px;
-  }
-  .duplicate-view-switch,
-  .duplicate-type-filter {
-    width: 100%;
-  }
+  --select-width: 100%;
 }
 .duplicate-selection {
   padding: 12px 0;
@@ -1030,8 +1002,67 @@ h4.ui-title {
 .duplicate-photo-copy {
   padding: 14px;
 }
-.tag-selection {
-  min-height: 36px;
+.organize-actions,
+.organize-summary,
+.organize-tools {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.organize-summary {
+  min-width: 0;
+  gap: 16px;
+}
+.organize-tools {
+  margin-left: auto;
+}
+.organize-controls {
+  display: grid;
+  gap: 20px;
+}
+.organize-filters {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 16px;
+}
+.organize-resultbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.organize-meta {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.6;
+}
+.organize-panel {
+  margin-bottom: 24px;
+}
+@media (max-width: 600px) {
+  .organize-actions {
+    flex-basis: 100%;
+  }
+  .organize-actions > button {
+    flex: 1;
+  }
+  .duplicate-scan-start {
+    margin-left: 0;
+  }
+  .organize-filters {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .duplicate-type-filter {
+    width: 100%;
+  }
+  .organize-resultbar {
+    display: grid;
+    gap: 12px;
+  }
 }
 .tag-photo {
   min-width: 0;
@@ -1052,6 +1083,9 @@ h4.ui-title {
 .tag-photo-image img {
   width: 100%;
   height: 100%;
+}
+.tag-photo-select {
+  flex-shrink: 0;
 }
 .record-dialog-scroll {
   min-height: 0;

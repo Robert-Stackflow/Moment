@@ -3,11 +3,12 @@ import {
   Button,
   Card,
   IconButton,
+  IconPicker,
   Input,
 } from "@robert-stackflow/oneui";
 import { ArrowDown, ArrowUp, GripVertical, Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
-import { IconPicker } from "./IconPicker";
+import { entryIconValue } from "../ui-data";
 export interface Entry {
   name: string;
   icon: string;
@@ -133,8 +134,9 @@ export function EntryList({
             </div>
             <div className="entry-icon-control">
               <IconPicker
-                value={entry.icon}
-                name={entry.name || String(index + 1)}
+                value={entryIconValue(entry.icon)}
+                valuePrefix="lucide:"
+                label={"入口图标 " + (entry.name || String(index + 1))}
                 onChange={(icon) => edit(index, { icon })}
               />
             </div>

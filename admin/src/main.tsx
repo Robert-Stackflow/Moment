@@ -21,6 +21,7 @@ import {
 import { AppearanceProvider } from "./appearance";
 import { PendingChangesProvider } from "./components/PendingChanges";
 import { Shell } from "./components/Shell";
+import { OrganizeLayout } from "./components/OrganizeLayout";
 import { notifications } from "./notifications";
 import { Login } from "./pages/Login";
 import { AuthProvider, RequireAuth } from "./session";
@@ -75,12 +76,11 @@ const router = createBrowserRouter(
           <Route path="posts/:id" element={<Editor />} />
           <Route path="drafts" element={<Drafts />} />
           <Route path="schedules" element={<Schedules />} />
-          <Route
-            path="organize"
-            element={<Navigate to="/organize/duplicates" replace />}
-          />
-          <Route path="organize/duplicates" element={<Duplicates />} />
-          <Route path="organize/tags" element={<SmartTags />} />
+          <Route path="organize" element={<OrganizeLayout />}>
+            <Route index element={<Navigate to="duplicates" replace />} />
+            <Route path="duplicates" element={<Duplicates />} />
+            <Route path="tags" element={<SmartTags />} />
+          </Route>
           <Route path="trash" element={<Trash />} />
           <Route path="shares" element={<Shares />} />
           <Route path="shares/new" element={<ShareEditor />} />

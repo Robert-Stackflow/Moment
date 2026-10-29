@@ -1,4 +1,4 @@
-import { BlockedTab } from "@robert-stackflow/oneui";
+import { Segmented } from "@robert-stackflow/oneui";
 import { ScanSearch, Tags } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 export function OrganizeTabs() {
@@ -6,7 +6,7 @@ export function OrganizeTabs() {
     navigate = useNavigate();
   return (
     <div className="organize-navigation">
-      <BlockedTab
+      <Segmented
         label="照片整理方式"
         value={pathname.includes("/tags") ? "tags" : "duplicates"}
         onChange={(value) => navigate("/organize/" + value)}

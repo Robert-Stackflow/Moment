@@ -1,4 +1,9 @@
 import type { CSSProperties, ReactNode } from "react";
+// Adapt stored legacy names for display; only a new selection changes storage.
+export function entryIconValue(value: string) {
+  const name = value.split(":").pop() || "link";
+  return "lucide:" + (name === "blog" ? "book-open" : name);
+}
 export function selectOptions(
   values: readonly (
     | string

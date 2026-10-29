@@ -17,7 +17,6 @@ import {
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Check,
-  History,
   Maximize2,
   RefreshCw,
   Search,
@@ -26,11 +25,11 @@ import {
   Trash2,
   X,
 } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { api, ApiError, json, notifyError, notifySuccess } from "../api";
-import { Empty, ErrorState, Loading, PageTitle } from "../components/Common";
-import { OrganizeTabs } from "../components/OrganizeTabs";
-import { PhotoHistory } from "../components/PhotoHistory";
+import { useOrganizeTools } from "../components/OrganizeLayout";
+import { OrganizePanel } from "../components/OrganizePanel";
+import { Empty, ErrorState, Loading } from "../components/Common";
 import { Toggle } from "../components/Toggle";
 import { UnsavedChanges } from "../components/UnsavedChanges";
 import { useDebouncedValue } from "../hooks";
@@ -106,7 +105,6 @@ export default function SmartTags() {
   const [saving, setSaving] = useState(false);
   const [confirm, setConfirm] = useState(false);
   const [discard, setDiscard] = useState(false);
-  const [history, setHistory] = useState(false);
   const [cacheDialog, setCacheDialog] = useState(false);
   const [cacheBusy, setCacheBusy] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
@@ -163,6 +161,26 @@ export default function SmartTags() {
   const rows = photos.data?.data || [];
   const selectedCount = Object.keys(selected).length;
   const locked = running || saving || refreshing;
+  const organizeTools = useMemo(
+    () => [
+      {
+        label: "刷新照片列表",
+        icon: <RefreshCw size={16} />,
+        disabled: locked || photos.isFetching,
+        action: () => {
+          void photos.refetch();
+        },
+      },
+      {
+        label: "清除识别模型缓存",
+        icon: <Trash2 size={16} />,
+        disabled: locked,
+        action: () => setCacheDialog(true),
+      },
+    ],
+    [locked, photos.isFetching, photos.refetch],
+  );
+  useOrganizeTools(organizeTools, locked);
   const targets = reviews
     .filter((r) => !r.blocked && r.tags.length)
     .map((r) => ({
@@ -491,92 +509,12 @@ export default function SmartTags() {
         dirty={!!selectedCount || !!reviews.length || running || saving}
         message="候选标签尚未保存，离开会清空选择并停止识别；已经保存的标签不受影响。"
       />
-      <PageTitle title="智能标签">
-        <Button
-          onClick={() => setHistory(true)}
-          disabled={locked}
-          variant="secondary"
-        >
-          {<History size={16} />}
-          处理记录
-        </Button>
-      </PageTitle>
-      <OrganizeTabs />
-      <Card className="moment-panel">
-        <div
-          className="ui-row"
-          style={{
-            display: "flex",
-            alignItems: "flex-start",
-            flexWrap: "nowrap",
-            gap: 10,
-            justifyContent: "space-between",
-          }}
-        >
-          <div
-            style={{
-              ...{ flex: 1, minWidth: 0 },
-            }}
-          >
-            <p
-              className="ui-text"
-              style={{
-                fontWeight: 600,
-              }}
-            >
-              用标签整理照片
-            </p>
-            <p
-              className="ui-text"
-              style={{
-                fontSize: 13,
-                color: "var(--muted)",
-                marginTop: 5,
-              }}
-            >
-              本地识别后逐项确认。标签仅用于后台搜索，不会公开展示。
-            </p>
-          </div>
-          <IconButton
-            label={"清除识别模型缓存"}
-            disabled={locked}
-            onClick={() => setCacheDialog(true)}
-            variant="ghost"
-          >
-            <Trash2 size={17} />
-          </IconButton>
-        </div>
-        <div
-          className="ui-row"
-          style={{
-            display: "flex",
-            alignItems: "center",
-            flexWrap: "wrap",
-            gap: 10,
-            marginTop: 24,
-            justifyContent: "space-between",
-          }}
-        >
-          <p
-            className="ui-text"
-            style={{
-              fontSize: 13,
-              color: "var(--muted)",
-            }}
-          >
-            {reviews.length
-              ? `${reviews.length} 张待核对 · ${targets.length} 张已选标签`
-              : `已选择 ${selectedCount} / 50 张`}
-          </p>
-          <div
-            className="ui-row"
-            style={{
-              display: "flex",
-              alignItems: "center",
-              flexWrap: "wrap",
-              gap: 6,
-            }}
-          >
+
+      <OrganizePanel
+        title="用标签整理照片"
+        description="标签仅用于后台搜索，不会公开展示。"
+        actions={
+          <div className="organize-actions">
             {reviews.length ? (
               <>
                 <Button
@@ -610,129 +548,92 @@ export default function SmartTags() {
               </>
             )}
           </div>
-        </div>
-        {running && !reviewOpen && (
-          <div
-            style={{
-              ...{ marginTop: 14 },
-            }}
-          >
-            {progressView}
-          </div>
-        )}
-      </Card>
-      <div
-        className="ui-row"
-        style={{
-          display: "flex",
-          alignItems: "center",
-          flexWrap: "wrap",
-          gap: 10,
-          marginBottom: 16,
-        }}
+        }
+        filters={
+          <>
+            <Input
+              aria-label="搜索待整理照片"
+              placeholder="搜索帖子、图片标题或标签"
+              leading={<Search size={16} />}
+              value={search}
+              onChange={(e) => {
+                setSearch(e.currentTarget.value);
+                setPage(1);
+              }}
+            />
+            <Checkbox
+              label="只看未设置标签"
+              checked={untagged}
+              onChange={(checked) => {
+                setUntagged(checked);
+                setPage(1);
+              }}
+            />
+          </>
+        }
+        summary={
+          rows.length || reviews.length ? (
+            <>
+              {rows.length > 0 && (
+                <Checkbox
+                  onChange={(checked) => {
+                    if (
+                      checked &&
+                      new Set([
+                        ...Object.keys(selected).map(Number),
+                        ...rows.map((p) => p.id),
+                      ]).size > 50
+                    ) {
+                      notifyError(new Error("每次最多选择 50 张照片"));
+                      return;
+                    }
+                    setSelected((current) => {
+                      const next = { ...current };
+                      rows.forEach((p) => {
+                        if (checked) next[p.id] = p;
+                        else delete next[p.id];
+                      });
+                      return next;
+                    });
+                  }}
+                  label="选择本页"
+                  disabled={!rows.length || !!reviews.length || locked}
+                  checked={
+                    rows.length > 0 && rows.every((p) => !!selected[p.id])
+                  }
+                  indeterminate={
+                    rows.some((p) => !!selected[p.id]) &&
+                    !rows.every((p) => !!selected[p.id])
+                  }
+                />
+              )}
+              <p className="organize-meta" role="status">
+                {reviews.length
+                  ? reviews.length + " 张待核对"
+                  : (selectedCount ? "已选 " + selectedCount + "/50 · " : "") +
+                    "共 " +
+                    (photos.data?.total || 0) +
+                    " 张"}
+              </p>
+            </>
+          ) : undefined
+        }
+        footerActions={
+          selectedCount > 0 && !reviews.length ? (
+            <Button
+              size="small"
+              disabled={locked}
+              onClick={() => setSelected({})}
+              variant="ghost"
+            >
+              清空选择
+            </Button>
+          ) : undefined
+        }
       >
-        <div
-          style={{
-            ...{ flex: 1, minWidth: 220 },
-          }}
-        >
-          <Input
-            aria-label="搜索待整理照片"
-            placeholder="搜索帖子、图片标题或标签"
-            leading={<Search size={16} />}
-            value={search}
-            onChange={(e) => {
-              setSearch(e.currentTarget.value);
-              setPage(1);
-            }}
-          />
-        </div>
-        <Checkbox
-          onChange={(checked) => {
-            setUntagged(checked);
-            setPage(1);
-          }}
-          label="只看未设置标签"
-          checked={untagged}
-        />
-      </div>
-      <div
-        className={"ui-row " + "tag-selection"}
-        style={{
-          display: "flex",
-          alignItems: "center",
-          flexWrap: "wrap",
-          gap: 10,
-          justifyContent: "space-between",
-          marginBottom: 16,
-        }}
-      >
-        <Checkbox
-          onChange={(checked) => {
-            if (
-              checked &&
-              new Set([
-                ...Object.keys(selected).map(Number),
-                ...rows.map((p) => p.id),
-              ]).size > 50
-            ) {
-              notifyError(new Error("每次最多选择 50 张照片"));
-              return;
-            }
-            setSelected((current) => {
-              const next = { ...current };
-              rows.forEach((p) => {
-                if (checked) next[p.id] = p;
-                else delete next[p.id];
-              });
-              return next;
-            });
-          }}
-          label="选择本页"
-          disabled={!rows.length || !!reviews.length || locked}
-          checked={rows.length > 0 && rows.every((p) => !!selected[p.id])}
-          indeterminate={
-            rows.some((p) => !!selected[p.id]) &&
-            !rows.every((p) => !!selected[p.id])
-          }
-        />
-        <div
-          className="ui-row"
-          style={{
-            display: "flex",
-            alignItems: "center",
-            flexWrap: "wrap",
-            gap: 6,
-          }}
-        >
-          <p
-            className="ui-text"
-            style={{
-              fontSize: 13,
-              color: "var(--muted)",
-            }}
-          >
-            共 {photos.data?.total || 0} 张
-          </p>
-          <IconButton
-            label={"刷新照片列表"}
-            disabled={locked}
-            onClick={() => void photos.refetch()}
-            loading={photos.isFetching}
-            variant="ghost"
-          >
-            <RefreshCw size={16} />
-          </IconButton>
-          <Button
-            size="small"
-            disabled={!selectedCount || !!reviews.length || locked}
-            onClick={() => setSelected({})}
-            variant="ghost"
-          >
-            清空选择
-          </Button>
-        </div>
-      </div>
+        {running && !reviewOpen ? progressView : undefined}
+      </OrganizePanel>
+
       {photos.isPending ? (
         <Loading />
       ) : photos.error ? (
@@ -763,12 +664,6 @@ export default function SmartTags() {
                   alt={photo.post_title}
                   loading="lazy"
                 />
-                <Checkbox
-                  onChange={(checked) => choose(photo, checked)}
-                  label={`选择照片 ${photo.id}`}
-                  checked={!!selected[photo.id]}
-                  disabled={!!reviews.length || locked}
-                />
               </div>
               <div
                 className="ui-stack"
@@ -792,6 +687,8 @@ export default function SmartTags() {
                   <p
                     className="ui-text"
                     style={{
+                      minWidth: 0,
+                      flex: 1,
                       fontWeight: 600,
                       fontSize: 13,
                       display: "-webkit-box",
@@ -805,6 +702,14 @@ export default function SmartTags() {
                   {(photo.is_hidden || photo.post_hidden) && (
                     <Badge tone={badgeTone("gray")}>隐藏</Badge>
                   )}
+                  <div className="tag-photo-select">
+                    <Checkbox
+                      onChange={(checked) => choose(photo, checked)}
+                      label={`选择照片 ${photo.id}`}
+                      checked={!!selected[photo.id]}
+                      disabled={!!reviews.length || locked}
+                    />
+                  </div>
                 </div>
                 <div
                   className="ui-row"
@@ -1347,7 +1252,6 @@ export default function SmartTags() {
           仅清除本浏览器为智能标签下载的模型文件，照片与已保存标签不会改变。下次识别需重新下载。
         </p>
       </Dialog>
-      {history && <PhotoHistory onClose={() => setHistory(false)} />}
     </>
   );
 }

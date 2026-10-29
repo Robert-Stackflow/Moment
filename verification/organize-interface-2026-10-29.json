@@ -1,0 +1,43 @@
+{
+  "date": "2026-10-29",
+  "baseline": "9ca2634",
+  "dependency": "@robert-stackflow/oneui@0.4.2",
+  "package": {
+    "payloadMismatches": 0,
+    "integrity": "sha512-IauvwbEwumN1OSxvON8ieYyZVY313BaNT2x/3qZFtey5LrlIjBbNxcRIs8aoCt/7yMSsEbf3CKoUonnY2bDSXA==",
+    "verifiedPayloadFiles": 395,
+    "resolved": "https://registry.npmjs.org/@robert-stackflow/oneui/-/oneui-0.4.2.tgz"
+  },
+  "build": true,
+  "fullMatrix": {
+    "browserRuntimeErrors": 0,
+    "pageChecks": 190,
+    "dialogChecks": 276
+  },
+  "finalFocusedChecks": {
+    "legacyIconDataPreserved": true,
+    "catalogIcons": 1891,
+    "iconCatalogCases": 4,
+    "filterAlignedToPanelEdge": true,
+    "animated": true,
+    "documentReloads": 0,
+    "organizeLayoutCases": 4,
+    "themes": [
+      "light",
+      "dark"
+    ],
+    "persistentSegmented": true,
+    "photoSelectionDoesNotOverlap": true,
+    "widths": [
+      1280,
+      390
+    ]
+  },
+  "changes": [
+    "Shared persistent OrganizeLayout with child-only Suspense",
+    "Shared Card-based OrganizePanel for actions, filters and selection",
+    "Secondary actions in shared Menu; hide empty controls",
+    "Use full built-in OneUI IconPicker without local option catalog",
+    "Full matrix preceded final photo checkbox placement fix; focused checks repeated afterward against formal npm dependency"
+  ]
+}

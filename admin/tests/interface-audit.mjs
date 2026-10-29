@@ -80,16 +80,20 @@ export async function auditInterface({
   });
   // Exercise real multi-page history, rather than only its single-record state.
   for (let i = 0; i < 10; i++) {
-    const current = (await api("/photo-tags/photos?untagged=false&page_size=20"))[0];
+    const current = (
+      await api("/photo-tags/photos?untagged=false&page_size=20")
+    )[0];
     await mutate("/photo-tags/apply", "POST", {
       id: crypto.randomUUID().replaceAll("-", ""),
       confirm: true,
-      targets: [{
-        id: current.id,
-        revision: current.revision,
-        image_url: current.image_url,
-        tags: [`分页检查${i}`],
-      }],
+      targets: [
+        {
+          id: current.id,
+          revision: current.revision,
+          image_url: current.image_url,
+          tags: [`分页检查${i}`],
+        },
+      ],
     });
   }
   await mutate("/backups", "POST", {});
@@ -169,8 +173,10 @@ export async function auditInterface({
       geometry.left >= 0 && geometry.right <= geometry.width + 1,
       `${currentCase}: outside viewport ${JSON.stringify(geometry)}`,
     );
-    assert.ok(geometry.top >= 0 && geometry.bottom <= geometry.height + 1,
-      `${currentCase}: outside vertical viewport ${JSON.stringify(geometry)}`);
+    assert.ok(
+      geometry.top >= 0 && geometry.bottom <= geometry.height + 1,
+      `${currentCase}: outside vertical viewport ${JSON.stringify(geometry)}`,
+    );
     assert.ok(
       geometry.forms,
       `${currentCase}: submit lost its form association`,
@@ -451,18 +457,29 @@ export async function auditInterface({
         dialog = await inspect("处理记录");
         const pagination = dialog.getByRole("navigation", { name: "分页" });
         await expect(pagination).toBeVisible();
-        const historyResponse = await page.request.get(origin + "/api/admin/photo-actions?page=1&page_size=10");
+        const historyResponse = await page.request.get(
+          origin + "/api/admin/photo-actions?page=1&page_size=10",
+        );
         const historyTotal = (await historyResponse.json()).total;
         assert.ok(Number.isFinite(historyTotal) && historyTotal > 10);
         await expect(pagination).toContainText(`1–10 / ${historyTotal} 项`);
         if (mode === "light" && width === 320)
-          await dialog.screenshot({ path: path.join(output, "audit-history-light-narrow.png") });
-        await pagination.getByRole("button", { name: "下一页", exact: true }).click();
-        await expect(pagination.getByRole("button", { name: "第 2 页", exact: true }))
-          .toHaveAttribute("aria-current", "page");
-        await expect(pagination).toContainText(`11–${historyTotal} / ${historyTotal} 项`);
+          await dialog.screenshot({
+            path: path.join(output, "audit-history-light-narrow.png"),
+          });
+        await pagination
+          .getByRole("button", { name: "下一页", exact: true })
+          .click();
+        await expect(
+          pagination.getByRole("button", { name: "第 2 页", exact: true }),
+        ).toHaveAttribute("aria-current", "page");
+        await expect(pagination).toContainText(
+          `11–${historyTotal} / ${historyTotal} 项`,
+        );
         await inspect("处理记录");
-        await pagination.getByRole("button", { name: "上一页", exact: true }).click();
+        await pagination
+          .getByRole("button", { name: "上一页", exact: true })
+          .click();
         await dialog
           .getByRole("button", { name: "撤销", exact: true })
           .first()
@@ -470,12 +487,14 @@ export async function auditInterface({
         let undo = await inspect("撤销这次标签整理？");
         await dismiss(undo);
         await dismiss(dialog);
+        await page.getByRole("button", { name: "更多", exact: true }).click();
         await open(
-          page.getByRole("button", {
+          page.getByRole("menuitem", {
             name: "读取说明与未完成图片",
             exact: true,
           }),
           "读取说明",
+          page.getByRole("button", { name: "更多", exact: true }),
         );
         await open(
           page.getByRole("button", {
@@ -548,9 +567,11 @@ export async function auditInterface({
           exact: true,
         });
         if (await untagged.isChecked()) await untagged.uncheck();
+        await page.getByRole("button", { name: "更多", exact: true }).click();
         await open(
-          page.getByRole("button", { name: "清除识别模型缓存", exact: true }),
+          page.getByRole("menuitem", { name: "清除识别模型缓存", exact: true }),
           "清除模型缓存？",
+          page.getByRole("button", { name: "更多", exact: true }),
         );
         await page
           .getByRole("checkbox", { name: /^选择照片 / })
@@ -647,24 +668,40 @@ export async function auditInterface({
     width = 844;
     await page.setViewportSize({ width, height: 390 });
     for (mode of ["light", "dark"]) {
-      await page.evaluate((value) => localStorage.setItem("moment.admin.color-mode", value), mode);
+      await page.evaluate(
+        (value) => localStorage.setItem("moment.admin.color-mode", value),
+        mode,
+      );
       for (const route of routes) {
         await visit(route);
         pages.push({ mode, width, height: 390, route });
       }
       await visit("categories");
-      await open(page.getByRole("button", { name: "新建分类", exact: true }), "新建分类");
+      await open(
+        page.getByRole("button", { name: "新建分类", exact: true }),
+        "新建分类",
+      );
       await visit("account/security");
-      await open(page.getByRole("button", { name: "添加通行密钥", exact: true }), "添加通行密钥");
+      await open(
+        page.getByRole("button", { name: "添加通行密钥", exact: true }),
+        "添加通行密钥",
+      );
     }
-    await page.evaluate(() => localStorage.setItem("moment.admin.color-mode", "system"));
+    await page.evaluate(() =>
+      localStorage.setItem("moment.admin.color-mode", "system"),
+    );
     await visit("workbench");
     for (const colorScheme of ["dark", "light"]) {
       await page.emulateMedia({ colorScheme });
-      await expect(page.locator("html")).toHaveAttribute("data-theme", colorScheme);
+      await expect(page.locator("html")).toHaveAttribute(
+        "data-theme",
+        colorScheme,
+      );
     }
     // Explicit selection must still take precedence over the device theme.
-    await page.evaluate(() => localStorage.setItem("moment.admin.color-mode", "dark"));
+    await page.evaluate(() =>
+      localStorage.setItem("moment.admin.color-mode", "dark"),
+    );
     await visit("workbench");
     await page.emulateMedia({ colorScheme: "light" });
     await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");

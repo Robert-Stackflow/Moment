@@ -17,7 +17,6 @@ import {
   CheckCircle2,
   Copy,
   EyeOff,
-  History,
   ImageOff,
   Inbox,
   Info,
@@ -26,11 +25,11 @@ import {
   RefreshCw,
   ScanSearch,
 } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { api, ApiError, json, notifyError, notifySuccess } from "../api";
-import { Empty, ErrorState, Loading, PageTitle } from "../components/Common";
-import { OrganizeTabs } from "../components/OrganizeTabs";
-import { PhotoHistory } from "../components/PhotoHistory";
+import { OrganizePanel } from "../components/OrganizePanel";
+import { useOrganizeTools } from "../components/OrganizeLayout";
+import { Empty, ErrorState, Loading } from "../components/Common";
 import { RecordDialog, RecordEmpty } from "../components/RecordDialog";
 import { Toggle } from "../components/Toggle";
 import { UnsavedChanges } from "../components/UnsavedChanges";
@@ -109,7 +108,6 @@ export default function Duplicates() {
   const [view, setView] = useState("pending");
   const [group, setGroup] = useState<GroupSummary | null>(null);
   const [selected, setSelected] = useState(false);
-  const [history, setHistory] = useState(false);
   const [issues, setIssues] = useState(false);
   const controller = useRef<AbortController | null>(null);
   useEffect(() => () => controller.current?.abort(), []);
@@ -140,6 +138,29 @@ export default function Duplicates() {
     queryKey: ["settings"],
     queryFn: () => api<Settings>("/settings"),
   });
+  const organizeTools = useMemo(
+    () => [
+      {
+        label: "刷新扫描进度",
+        icon: <RefreshCw size={16} />,
+        disabled: running || latest.isFetching,
+        action: () => {
+          void latest.refetch();
+        },
+      },
+      ...(scan && scan.done > 0
+        ? [
+            {
+              label: "读取说明与未完成图片",
+              icon: <Info size={16} />,
+              action: () => setIssues(true),
+            },
+          ]
+        : []),
+    ],
+    [running, latest.isFetching, latest.refetch, scan?.done],
+  );
+  useOrganizeTools(organizeTools);
   async function run(value: Scan) {
     if (controller.current) return;
     const control = new AbortController();
@@ -246,216 +267,31 @@ export default function Duplicates() {
             : "尚未处理所选图片，离开将清空选择。"
         }
       />
-      <PageTitle title="重复图片">
-        <div
-          className="ui-row"
-          style={{
-            display: "flex",
-            alignItems: "center",
-            flexWrap: "wrap",
-            gap: 6,
-          }}
-        >
-          <Button onClick={() => setHistory(true)} variant="secondary">
-            {<History size={16} />}
-            处理记录
-          </Button>
-        </div>
-      </PageTitle>
-      <OrganizeTabs />
-      <Card className={"moment-panel " + "duplicate-scan-card"}>
-        <div
-          className="ui-row"
-          style={{
-            display: "flex",
-            alignItems: "flex-start",
-            flexWrap: "wrap",
-            gap: 10,
-            justifyContent: "space-between",
-          }}
-        >
-          <div>
-            <p
-              className="ui-text"
-              style={{
-                fontWeight: 600,
-              }}
-            >
-              {scan
-                ? scan.status === "ready"
-                  ? `已扫描 ${scan.done} 张照片`
-                  : scan.status === "cancelled"
-                    ? "扫描已停止"
-                    : running
-                      ? scan.done >= scan.total
-                        ? "正在比较图片…"
-                        : "正在读取图片…"
-                      : "扫描已暂停，可继续"
-                : "找出重复与相似照片"}
-            </p>
-            <p
-              className="ui-text"
-              style={{
-                fontSize: 13,
-                color: "var(--muted)",
-                marginTop: 5,
-              }}
-            >
-              {scan
-                ? `开始于 ${scan.created_at}${scan.remote ? " · 包含远程图片" : " · 本地图片与相同链接"}`
-                : "比较现有帖子中的照片，再由你选择保留或隐藏。"}
-            </p>
-          </div>
-          {scan && (
-            <IconButton
-              label={"刷新扫描进度"}
-              disabled={running}
-              loading={latest.isFetching}
-              onClick={() => void latest.refetch()}
-              variant="ghost"
-            >
-              <RefreshCw size={17} />
-            </IconButton>
-          )}
-        </div>
-        {scan?.status === "scanning" && (
-          <>
-            <div
-              style={{
-                marginTop: 24,
-              }}
-            >
-              <Progress
-                value={scan.total ? (scan.done / scan.total) * 100 : 100}
-                label={"扫描进度"}
-              />
-            </div>
-            <div
-              className="ui-row"
-              style={{
-                display: "flex",
-                alignItems: "center",
-                flexWrap: "wrap",
-                gap: 10,
-                justifyContent: "space-between",
-                marginTop: 16,
-              }}
-            >
-              <p
-                role="status"
-                className="ui-text"
-                style={{
-                  fontSize: 13,
-                  color: "var(--muted)",
-                }}
-              >
-                {scan.done} / {scan.total} 张{note ? ` · ${note}` : ""}
-              </p>
-              <div
-                className="ui-row"
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  flexWrap: "wrap",
-                  gap: 6,
-                }}
-              >
-                {running ? (
-                  <Button
-                    size="small"
-                    onClick={() => controller.current?.abort()}
-                    variant="secondary"
-                  >
-                    {<Pause size={14} />}
-                    暂停
-                  </Button>
-                ) : (
-                  <Button
-                    size="small"
-                    onClick={() => void run(scan)}
-                    variant="primary"
-                  >
-                    {<Play size={14} />}
-                    继续扫描
-                  </Button>
-                )}
-                <Button
-                  size="small"
-                  onClick={() => setCancelDialog(true)}
-                  variant="ghost"
-                >
-                  取消扫描
-                </Button>
-              </div>
-            </div>
-          </>
-        )}
-        {scan?.message && (
-          <p
-            className="ui-text"
-            style={{
-              fontSize: 13,
-              color: "var(--muted)",
-              marginTop: 10,
-            }}
-          >
-            {scan.message}
-          </p>
-        )}
-        <div className="duplicate-scan-actions">
-          {scan && scan.done > 0 && (
-            <Button
-              size="small"
-              onClick={() => setIssues(true)}
-              variant="secondary"
-            >
-              {<Info size={16} />}
-              读取说明与未完成图片
-            </Button>
-          )}
-          {scan?.status !== "scanning" && (
-            <Button
-              className="duplicate-scan-start"
-              disabled={running || latest.isPending}
-              onClick={() => {
-                setError("");
-                setStartDialog(true);
-              }}
-              variant="primary"
-            >
-              {<ScanSearch size={17} />}
-              {scan ? "重新扫描" : "开始扫描"}
-            </Button>
-          )}
-        </div>
-        {error && !startDialog && (
-          <div
-            style={{
-              marginTop: 16,
-            }}
-          >
-            <Alert tone={tone("red")}>{error}</Alert>
-          </div>
-        )}
-      </Card>
-      {latest.isPending ? (
-        <Loading />
-      ) : latest.error ? (
-        <ErrorState error={latest.error} retry={() => latest.refetch()} />
-      ) : scan?.status === "ready" ? (
-        <>
-          <div
-            className={"ui-row " + "duplicate-filters"}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              flexWrap: "wrap",
-              gap: 10,
-              justifyContent: "space-between",
-              marginBottom: 24,
-            }}
-          >
-            <div className="duplicate-view-switch">
+
+      <OrganizePanel
+        title={
+          scan
+            ? scan.status === "ready"
+              ? "已扫描 " + scan.done + " 张照片"
+              : scan.status === "cancelled"
+                ? "扫描已停止"
+                : running
+                  ? scan.done >= scan.total
+                    ? "正在比较图片…"
+                    : "正在读取图片…"
+                  : "扫描已暂停，可继续"
+            : "找出重复与相似照片"
+        }
+        description={
+          scan
+            ? "开始于 " +
+              scan.created_at +
+              (scan.remote ? " · 包含远程图片" : " · 本地图片与相同链接")
+            : "比较现有帖子中的照片，再由你选择保留或隐藏。"
+        }
+        filters={
+          scan?.status === "ready" ? (
+            <>
               <Segmented
                 aria-label="重复分组状态"
                 value={view}
@@ -485,27 +321,159 @@ export default function Duplicates() {
                 ])}
                 label={"重复分组状态"}
               />
-            </div>
-            <div className="duplicate-type-filter">
-              <Select
-                aria-label="重复类型"
-                placeholder="全部类型"
-                onChange={(value) => {
-                  setKind(value);
-                  setPage(1);
+              <div className="duplicate-type-filter">
+                <Select
+                  aria-label="重复类型"
+                  placeholder="全部类型"
+                  onChange={(value) => {
+                    setKind(value);
+                    setPage(1);
+                  }}
+                  options={selectOptions([
+                    { value: "", label: "全部类型" },
+                    ...Object.entries(kinds).map(([value, label]) => ({
+                      value,
+                      label,
+                    })),
+                  ])}
+                  label={"重复类型"}
+                  value={kind ?? ""}
+                />
+              </div>
+            </>
+          ) : undefined
+        }
+        summary={
+          scan?.status === "ready" && groups.data?.total ? (
+            <p className="organize-meta">共 {groups.data.total} 个分组</p>
+          ) : undefined
+        }
+        actions={
+          <div className="organize-actions">
+            {scan?.status !== "scanning" && (
+              <Button
+                className="duplicate-scan-start"
+                disabled={running || latest.isPending}
+                onClick={() => {
+                  setError("");
+                  setStartDialog(true);
                 }}
-                options={selectOptions([
-                  { value: "", label: "全部类型" },
-                  ...Object.entries(kinds).map(([value, label]) => ({
-                    value,
-                    label,
-                  })),
-                ])}
-                label={"重复类型"}
-                value={kind ?? ""}
-              />
-            </div>
+                variant="primary"
+              >
+                <ScanSearch size={17} />
+                {scan ? "重新扫描" : "开始扫描"}
+              </Button>
+            )}
           </div>
+        }
+      >
+        {scan?.status === "scanning" ||
+        scan?.message ||
+        (error && !startDialog) ? (
+          <div>
+            {" "}
+            {scan?.status === "scanning" && (
+              <>
+                <div
+                  style={{
+                    marginTop: 24,
+                  }}
+                >
+                  <Progress
+                    value={scan.total ? (scan.done / scan.total) * 100 : 100}
+                    label={"扫描进度"}
+                  />
+                </div>
+                <div
+                  className="ui-row"
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    flexWrap: "wrap",
+                    gap: 10,
+                    justifyContent: "space-between",
+                    marginTop: 16,
+                  }}
+                >
+                  <p
+                    role="status"
+                    className="ui-text"
+                    style={{
+                      fontSize: 13,
+                      color: "var(--muted)",
+                    }}
+                  >
+                    {scan.done} / {scan.total} 张{note ? ` · ${note}` : ""}
+                  </p>
+                  <div
+                    className="ui-row"
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      flexWrap: "wrap",
+                      gap: 6,
+                    }}
+                  >
+                    {running ? (
+                      <Button
+                        size="small"
+                        onClick={() => controller.current?.abort()}
+                        variant="secondary"
+                      >
+                        {<Pause size={14} />}
+                        暂停
+                      </Button>
+                    ) : (
+                      <Button
+                        size="small"
+                        onClick={() => void run(scan)}
+                        variant="primary"
+                      >
+                        {<Play size={14} />}
+                        继续扫描
+                      </Button>
+                    )}
+                    <Button
+                      size="small"
+                      onClick={() => setCancelDialog(true)}
+                      variant="ghost"
+                    >
+                      取消扫描
+                    </Button>
+                  </div>
+                </div>
+              </>
+            )}
+            {scan?.message && (
+              <p
+                className="ui-text"
+                style={{
+                  fontSize: 13,
+                  color: "var(--muted)",
+                  marginTop: 10,
+                }}
+              >
+                {scan.message}
+              </p>
+            )}
+            {error && !startDialog && (
+              <div
+                style={{
+                  marginTop: 16,
+                }}
+              >
+                <Alert tone={tone("red")}>{error}</Alert>
+              </div>
+            )}
+          </div>
+        ) : undefined}
+      </OrganizePanel>
+      {latest.isPending ? (
+        <Loading />
+      ) : latest.error ? (
+        <ErrorState error={latest.error} retry={() => latest.refetch()} />
+      ) : scan?.status === "ready" ? (
+        <>
           {groups.isPending ? (
             <Loading />
           ) : groups.error ? (
@@ -744,7 +712,6 @@ export default function Duplicates() {
       {scan && issues && (
         <ScanIssues scan={scan.id} onClose={() => setIssues(false)} />
       )}
-      {history && <PhotoHistory onClose={() => setHistory(false)} />}
     </>
   );
 }
