@@ -1,3 +1,4 @@
+import { MediaCard } from "../components/MediaCard";
 import {
   Alert,
   Badge,
@@ -17,7 +18,6 @@ import {
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Check,
-  Circle,
   Maximize2,
   RefreshCw,
   Search,
@@ -657,89 +657,37 @@ export default function SmartTags() {
           }}
         >
           {rows.map((photo) => (
-            <Card
+            <MediaCard
               key={photo.id}
-              className={
-                "moment-panel " +
-                `tag-photo ${selected[photo.id] ? "is-selected" : ""}`
+              className="tag-photo"
+              title={photo.post_title}
+              src={thumbnail(photo.image_url, settings.data?.data, 320)}
+              selection={{
+                selected: !!selected[photo.id],
+                label: `选择照片 ${photo.id}`,
+                disabled: !!reviews.length || locked,
+                onChange: (checked) => choose(photo, checked),
+              }}
+              status={
+                photo.is_hidden || photo.post_hidden ? (
+                  <Badge tone={badgeTone("gray")}>隐藏</Badge>
+                ) : undefined
               }
-            >
-              <div className="tag-photo-image">
-                <IconButton
-                  className="tag-photo-toggle"
-                  label={`选择照片 ${photo.id}`}
-                  aria-pressed={!!selected[photo.id]}
-                  disabled={!!reviews.length || locked}
-                  onClick={() => choose(photo, !selected[photo.id])}
-                >
-                  <img
-                    src={thumbnail(photo.image_url, settings.data?.data, 320)}
-                    alt={photo.post_title}
-                    loading="lazy"
-                  />
-                  <span className="tag-photo-check" aria-hidden="true">
-                    {selected[photo.id] ? (
-                      <Check size={15} />
-                    ) : (
-                      <Circle size={15} />
+              metadata={
+                photo.tags.length ? (
+                  <>
+                    {photo.tags.slice(0, 4).map((tag) => (
+                      <Badge key={tag}>{tag}</Badge>
+                    ))}
+                    {photo.tags.length > 4 && (
+                      <span>+{photo.tags.length - 4}</span>
                     )}
-                  </span>
-                </IconButton>
-              </div>
-              <div className="tag-photo-copy">
-                <div
-                  className="ui-row"
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    flexWrap: "nowrap",
-                    gap: 10,
-                    justifyContent: "space-between",
-                  }}
-                >
-                  <p className="tag-photo-title">{photo.post_title}</p>
-                  {(photo.is_hidden || photo.post_hidden) && (
-                    <Badge tone={badgeTone("gray")}>隐藏</Badge>
-                  )}
-                </div>
-                <div
-                  className="ui-row"
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    flexWrap: "wrap",
-                    gap: 5,
-                  }}
-                >
-                  {photo.tags.length ? (
-                    photo.tags
-                      .slice(0, 4)
-                      .map((tag) => <Badge key={tag}>{tag}</Badge>)
-                  ) : (
-                    <p
-                      className="ui-text"
-                      style={{
-                        fontSize: 12,
-                        color: "var(--muted)",
-                      }}
-                    >
-                      未设置标签
-                    </p>
-                  )}
-                  {photo.tags.length > 4 && (
-                    <p
-                      className="ui-text"
-                      style={{
-                        fontSize: 12,
-                        color: "var(--muted)",
-                      }}
-                    >
-                      +{photo.tags.length - 4}
-                    </p>
-                  )}
-                </div>
-              </div>
-            </Card>
+                  </>
+                ) : (
+                  "未设置标签"
+                )
+              }
+            />
           ))}
         </div>
       )}

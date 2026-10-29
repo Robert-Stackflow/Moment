@@ -8,6 +8,7 @@ import { chromium } from "playwright";
 import { auditInterface } from "./interface-audit.mjs";
 import { auditEntryIcons } from "./entry-icons.browser.mjs";
 import { auditOrganize } from "./organize.browser.mjs";
+import { auditMediaCards } from "./media-cards.browser.mjs";
 import { auditPhotoLayout } from "./photo-layout.browser.mjs";
 
 const admin = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -725,6 +726,14 @@ try {
       );
     },
   );
+  await check("shared media cards and post detail levels", async () => {
+    console.log(
+      "MEDIA_CARDS " +
+        JSON.stringify(
+          await auditMediaCards({ page, base, postId, output, noOverflow }),
+        ),
+    );
+  });
   await check("page and dialog light/dark desktop/mobile matrix", async () => {
     const results = await auditInterface({
       page,

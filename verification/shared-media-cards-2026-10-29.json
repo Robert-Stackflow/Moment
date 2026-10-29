@@ -1,0 +1,45 @@
+{
+  "date": "2026-10-29",
+  "scope": "Moment admin shared media cards",
+  "oneui": "0.5.0 (npm)",
+  "components": {
+    "MediaCard": "OneUI Card/IconButton composition; optional metadata/status/tags/actions/selection/link renderer",
+    "PostCard": "compact/full post information, consistent visible cover and focus"
+  },
+  "consumers": [
+    "Dashboard recent posts (compact)",
+    "Posts grid (full)",
+    "SmartTags (photo selection)"
+  ],
+  "checks": {
+    "themes": [
+      "light",
+      "dark"
+    ],
+    "viewportWidths": [
+      1440,
+      390,
+      320
+    ],
+    "sharedCardCases": 6,
+    "photoEditorRegressionCases": 6,
+    "organizeNavigationCases": 4,
+    "horizontalOverflow": 0,
+    "runtimeErrors": 0,
+    "stableSelectionGeometry": true,
+    "clientSideNavigation": true,
+    "failedImagePlaceholder": true,
+    "adminTypecheckAndProductionBuild": "passed"
+  },
+  "visualReview": [
+    "admin/test-results/shared-post-card.png",
+    "admin/test-results/tag-selection-layout.png"
+  ],
+  "fixes": [
+    "one cover/typography/selection style across consumers",
+    "remove repeated card markup and CSS",
+    "keep batch action layout space on narrow screens",
+    "omit unnecessary missing-location/date labels"
+  ],
+  "deployment": "source and build verified locally; current changes not deployed"
+}

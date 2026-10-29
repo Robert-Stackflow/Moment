@@ -1,3 +1,4 @@
+import { PostCard } from "../components/PostCard";
 import {
   Alert,
   Badge,
@@ -396,143 +397,16 @@ export default function Posts() {
       ) : view === "grid" ? (
         <div className="post-grid view-enter">
           {rows.map((post) => (
-            <Card key={post.id} className={"moment-panel " + "post-card"}>
-              <div className="post-cover">
-                <Checkbox
-                  onChange={(checked) => choose(post.id, checked)}
-                  label={`选择 ${post.title}`}
-                  checked={selected.includes(post.id)}
-                  disabled={busy}
-                />
-                <Link to={`/posts/${post.id}`}>
-                  <img
-                    onError={(event) => {
-                      if (
-                        !event.currentTarget.src.endsWith("/assets/loading.gif")
-                      )
-                        event.currentTarget.src = "/assets/loading.gif";
-                    }}
-                    className="photo-cover"
-                    src={thumbnail(
-                      (
-                        post.images.find((photo) => !photo.is_hidden) ||
-                        post.images[0]
-                      )?.image_url || "",
-                      settings.data?.data,
-                    )}
-                    alt={post.title}
-                    loading="lazy"
-                    style={{
-                      ...{ objectPosition: coverPosition(post) },
-                    }}
-                  />
-                </Link>
-              </div>
-              <div
-                className="ui-stack"
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: 8,
-                  padding: 8,
-                  paddingTop: 14,
-                }}
-              >
-                <div
-                  className="ui-row"
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    flexWrap: "nowrap",
-                    gap: 10,
-                    justifyContent: "space-between",
-                  }}
-                >
-                  <Link
-                    to={`/posts/${post.id}`}
-                    className="ui-text"
-                    style={{
-                      fontWeight: 600,
-                      display: "-webkit-box",
-                      WebkitLineClamp: 1,
-                      WebkitBoxOrient: "vertical",
-                      overflow: "hidden",
-                    }}
-                  >
-                    {post.title}
-                  </Link>
-                  <Badge tone={badgeTone(post.is_hidden ? "gray" : "victoria")}>
-                    {post.is_hidden ? "隐藏" : "公开"}
-                  </Badge>
-                </div>
-                <p
-                  className="ui-text"
-                  style={{
-                    fontSize: 12,
-                    color: "var(--muted)",
-                    display: "-webkit-box",
-                    WebkitLineClamp: 1,
-                    WebkitBoxOrient: "vertical",
-                    overflow: "hidden",
-                  }}
-                >
-                  {post.location || "未设置地点"} · {post.images.length} 张 ·{" "}
-                  {post.time?.slice(0, 10) || "未设置时间"}
-                </p>
-                <div
-                  className="ui-row"
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    flexWrap: "wrap",
-                    gap: 10,
-                    justifyContent: "space-between",
-                    marginTop: 4,
-                  }}
-                >
-                  <div
-                    className="ui-row"
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      flexWrap: "wrap",
-                      gap: 5,
-                    }}
-                  >
-                    {post.categories.slice(0, 2).map((cat) => (
-                      <Badge key={cat.id} tone={badgeTone("gray")}>
-                        {cat.name}
-                      </Badge>
-                    ))}
-                  </div>
-                  <div
-                    className="ui-row"
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      flexWrap: "wrap",
-                      gap: 4,
-                    }}
-                  >
-                    <Button
-                      href={adminHref(`/posts/${post.id}`)}
-                      aria-label={`编辑 ${post.title}`}
-                      variant="ghost"
-                    >
-                      <Pencil size={16} />
-                    </Button>
-                    <IconButton
-                      label={`删除 ${post.title}`}
-                      disabled={busy}
-                      onClick={() => setDeleting([post.id])}
-                      variant="danger"
-                    >
-                      <Trash2 size={16} />
-                    </IconButton>
-                  </div>
-                </div>
-              </div>
-            </Card>
+            <PostCard
+              key={post.id}
+              post={post}
+              settings={settings.data?.data}
+              detail="full"
+              selected={selected.includes(post.id)}
+              disabled={busy}
+              onSelect={(checked) => choose(post.id, checked)}
+              onDelete={() => setDeleting([post.id])}
+            />
           ))}
         </div>
       ) : (

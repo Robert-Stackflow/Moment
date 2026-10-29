@@ -1,4 +1,5 @@
-import { Badge, Button, Card } from "@robert-stackflow/oneui";
+import { PostCard } from "../components/PostCard";
+import { Button, Card } from "@robert-stackflow/oneui";
 import { useQuery } from "@tanstack/react-query";
 import {
   Aperture,
@@ -8,12 +9,10 @@ import {
   Images,
   Plus,
 } from "lucide-react";
-import { Link } from "react-router-dom";
 import { api } from "../api";
 import { Empty, ErrorState, Loading, PageTitle } from "../components/Common";
 import type { Post, Settings } from "../types";
-import { thumbnail } from "../types";
-import { adminHref, badgeTone, gridStyle } from "../ui-data";
+import { adminHref, gridStyle } from "../ui-data";
 export default function Dashboard() {
   const stats = useQuery({
     queryKey: ["stats"],
@@ -130,71 +129,12 @@ export default function Dashboard() {
       ) : (
         <div className="post-grid">
           {recent.data.data.map((post) => (
-            <Link key={post.id} to={`/posts/${post.id}`}>
-              <Card className="moment-panel">
-                <img
-                  onError={(event) => {
-                    if (
-                      !event.currentTarget.src.endsWith("/assets/loading.gif")
-                    )
-                      event.currentTarget.src = "/assets/loading.gif";
-                  }}
-                  className="photo-cover"
-                  src={thumbnail(
-                    post.images[0]?.image_url || "",
-                    settings.data?.data,
-                  )}
-                  alt={post.title}
-                />
-                <div
-                  className="ui-stack"
-                  style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: 8,
-                    padding: 8,
-                    paddingTop: 16,
-                  }}
-                >
-                  <div
-                    className="ui-row"
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      flexWrap: "wrap",
-                      gap: 10,
-                      justifyContent: "space-between",
-                    }}
-                  >
-                    <p
-                      className="ui-text"
-                      style={{
-                        fontWeight: 600,
-                        display: "-webkit-box",
-                        WebkitLineClamp: 1,
-                        WebkitBoxOrient: "vertical",
-                        overflow: "hidden",
-                      }}
-                    >
-                      {post.title}
-                    </p>
-                    {post.is_hidden ? (
-                      <Badge tone={badgeTone("gray")}>隐藏</Badge>
-                    ) : null}
-                  </div>
-                  <p
-                    className="ui-text"
-                    style={{
-                      fontSize: 12,
-                      color: "var(--muted)",
-                    }}
-                  >
-                    {post.location || "未设置地点"} · {post.images.length}{" "}
-                    张图片
-                  </p>
-                </div>
-              </Card>
-            </Link>
+            <PostCard
+              key={post.id}
+              post={post}
+              settings={settings.data?.data}
+              detail="compact"
+            />
           ))}
         </div>
       )}

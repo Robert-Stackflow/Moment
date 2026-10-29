@@ -77,12 +77,12 @@ export async function auditOrganize({ page, base, api, output, noOverflow }) {
       if (await photo.count()) {
         const geometry = await photo.evaluate((el) => {
           const image = el
-            .querySelector(".tag-photo-image")
+            .querySelector("[data-media-frame]")
             .getBoundingClientRect();
           const checkbox = el
-            .querySelector(".tag-photo-check")
+            .querySelector("[data-media-selection]")
             .getBoundingClientRect();
-          const title = el.querySelector("p").getBoundingClientRect();
+          const title = el.querySelector("h3").getBoundingClientRect();
           return {
             markerInsideImage:
               checkbox.top >= image.top && checkbox.right <= image.right,

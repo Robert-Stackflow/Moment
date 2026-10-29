@@ -1,0 +1,147 @@
+.card {
+  min-width: 0;
+  height: 100%;
+  transition:
+    border-color var(--motion-hover),
+    background var(--motion-hover);
+}
+.card > [data-card-body] {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 12px;
+}
+.selected {
+  border-color: color-mix(in srgb, var(--accent) 50%, var(--line));
+  background: color-mix(in srgb, var(--selected) 45%, var(--surface));
+}
+.frame {
+  position: relative;
+  display: grid;
+  flex: none;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  border-radius: var(--radius);
+  background: var(--field);
+}
+.image {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.imageLink {
+  display: block;
+  min-width: 0;
+  border-radius: inherit;
+}
+.imageLink:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -3px;
+}
+.placeholder {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: var(--muted);
+}
+.card .imageToggle {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  padding: 0;
+  border-radius: inherit;
+  background: var(--field);
+}
+.marker,
+.selection {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+}
+.marker,
+.card .selectButton {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  color: var(--muted);
+  background: var(--surface);
+}
+.imageToggle[aria-pressed="true"] .marker,
+.card .selectButton[aria-pressed="true"] {
+  border-color: transparent;
+  background: var(--accent-fill, var(--accent));
+  color: var(--on-accent-fill, var(--on-accent));
+}
+.details {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+  padding: 12px 2px 4px;
+}
+.heading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.title {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  color: var(--fg);
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.5;
+}
+.titleLink {
+  color: inherit;
+  text-decoration: none;
+}
+.titleLink:hover {
+  color: var(--accent);
+}
+.metadata {
+  min-height: 20px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 20px;
+}
+.metadata > * + * {
+  margin-left: 4px;
+}
+.footer,
+.tags,
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+.footer {
+  margin-top: auto;
+  padding-top: 4px;
+  gap: 8px;
+}
+.tags {
+  flex: 1;
+  flex-wrap: wrap;
+}
+.actions {
+  flex: none;
+  margin-left: auto;
+}

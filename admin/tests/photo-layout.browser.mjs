@@ -139,7 +139,7 @@ export async function auditPhotoLayout({
         exact: true,
       });
       if (await onlyUntagged.isChecked()) await onlyUntagged.uncheck();
-      const image = page.locator(".tag-photo-image img").first();
+      const image = page.locator(".tag-photo [data-media-frame] img").first();
       await expect(image).toBeVisible();
       await image.evaluate((el) => el.decode());
       const photo = await image.evaluate((el) => {

@@ -259,8 +259,8 @@ export async function auditInterface({
 
         await visit("posts");
         await page
-          .getByRole("checkbox", { name: "选择 OneUI 迁移验证", exact: true })
-          .check();
+          .getByRole("button", { name: "选择 OneUI 迁移验证", exact: true })
+          .click();
         await open(
           page.getByRole("button", { name: "分类", exact: true }),
           "批量分类 · 1 篇帖子",
