@@ -3,7 +3,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    image: moment:go
+    image: ruida/moment:dev
     container_name: moment
     restart: always
     volumes:
