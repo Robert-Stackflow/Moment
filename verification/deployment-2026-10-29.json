@@ -1,0 +1,79 @@
+{
+  "date": "2026-10-29",
+  "release": "20261029-164514-e64dbdf-working",
+  "server": "43.156.71.44",
+  "directory": "/home/apps/moment",
+  "url": "https://moment.cloudchewie.com",
+  "source": {
+    "commit": "e64dbdfd3c07f232c0b232e7b8ab4ca7c7950696",
+    "workingTreeIncluded": [
+      " M README.md",
+      " M docker-compose.yml",
+      " M web/src/styles/global.scss",
+      " M web/src/views/home/components/Footer.vue",
+      " M web/src/views/home/components/GalleryLightbox.vue",
+      " M web/src/views/home/components/Image.vue",
+      "?? deploy/",
+      "?? web/src/utils/scroll-lock.js"
+    ],
+    "files": 233,
+    "archiveSha256": "95b47ab21531f19dad687da92740fdcf3c5d4f9a0a94b7ffc4e89be833e5311d"
+  },
+  "image": {
+    "health": "healthy",
+    "id": "sha256:ef79d50d7b62a972583af0cb3e3c4d6e58811bcc5215d1d1a1c49b47033b73ea",
+    "registryPush": false,
+    "tag": "ruida/moment:20261029-164514-e64dbdf-working",
+    "status": "running"
+  },
+  "backup": "/home/apps/moment/backups/20261029-164514-e64dbdf-working",
+  "configuration": {
+    "secureCookies": true,
+    "bind": "127.0.0.1:3010:9999",
+    "model": "/home/models/moment/clip-vit-base-patch32-d15189d7028b",
+    "data": "/home/apps/moment/data"
+  },
+  "checks": {
+    "publicAndAdminBuilds": true,
+    "goTests": true,
+    "browser": {
+      "checks": [
+        {
+          "width": 1280,
+          "mode": "light",
+          "gallery": true,
+          "lightbox": true,
+          "login": true,
+          "accountSetupPreserved": true,
+          "validationWithoutLoginRequest": true
+        },
+        {
+          "width": 390,
+          "mode": "dark",
+          "gallery": true,
+          "lightbox": true,
+          "login": true,
+          "accountSetupPreserved": true,
+          "validationWithoutLoginRequest": true
+        }
+      ],
+      "errors": [],
+      "failedAssets": []
+    },
+    "coreTableCounts": {
+      "user": 1,
+      "blog": 45,
+      "blog_image": 57,
+      "category": 13
+    },
+    "adminTypecheck": true,
+    "canonicalDockerBuild": true,
+    "publicHealthHttps": true,
+    "candidateOnConsistentDataCopy": true,
+    "accountAndContentFingerprintsPreserved": true,
+    "adminUnitTests": 3
+  },
+  "cleanup": {
+    "historicalReleaseRetained": "20261001-41c7118 contains validation and compatibility SQLite snapshots; preserved rather than deleting pre-existing data."
+  }
+}

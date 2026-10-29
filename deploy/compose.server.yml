@@ -1,0 +1,15 @@
+name: moment
+services:
+  moment:
+    image: ${MOMENT_IMAGE:?Set MOMENT_IMAGE to a verified release image}
+    pull_policy: never
+    container_name: moment
+    restart: always
+    volumes:
+      - ${MOMENT_HOST_DATA:-./data}:/app/data
+      - ${MOMENT_HOST_MODEL:-/home/models/moment/clip-vit-base-patch32-d15189d7028b}:/app/dist/admin/tag-model/local:ro
+    ports:
+      - "127.0.0.1:${MOMENT_PORT:-3010}:9999"
+    environment:
+      TZ: Asia/Shanghai
+      MOMENT_COOKIE_SECURE: "true"

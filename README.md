@@ -57,6 +57,8 @@ docker compose up -d --build
 
 默认将 `.moment` 挂载到 `/app/data`，开放 9999 端口。HTTPS 反向代理部署时设置 `MOMENT_COOKIE_SECURE=true`；代理需保留原始 `Host` 并把 `/api`、`/uploads`、`/thumbnails`、`/avatars`、`/assets`、`/admin` 路径统一转发到此服务。
 
+现有服务器的目录、只读模型、生产端口和更新/回退流程见 [部署说明](deploy/README.md)。服务器配置使用明确版本镜像和仅监听本机的端口，保留原有数据与反向代理。
+
 ## 从 Python 版本迁移
 
 1. 停止原服务及写入，备份完整数据目录，包含 `db.sqlite3` 和存在的 WAL/SHM 文件。数据库备份与图片存储备份分别保留。
