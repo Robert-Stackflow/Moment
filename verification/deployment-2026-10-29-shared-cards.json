@@ -1,0 +1,135 @@
+{
+  "date": "2026-10-29",
+  "release": "20261029-191302-sharedcards",
+  "server": "43.156.71.44",
+  "directory": "/home/apps/moment",
+  "url": "https://moment.cloudchewie.com",
+  "source": {
+    "release": "20261029-191302-sharedcards",
+    "sourceCommit": "5d57456d3fc7761ecd3a20118ea9adb65d65aa0f",
+    "workingTreeFiles": [
+      " M docker-compose.yml",
+      " M web/src/styles/global.scss",
+      " M web/src/views/home/components/Footer.vue",
+      " M web/src/views/home/components/GalleryLightbox.vue",
+      " M web/src/views/home/components/Image.vue",
+      "?? web/src/utils/scroll-lock.js"
+    ],
+    "sourceArchiveSha256": "fc87b2242bdccc602da7811764ffb2b49865b28d41c408f87b0bc3ff148527a8",
+    "sourceFiles": 254,
+    "oneui": "0.5.0",
+    "image": "ruida/moment:dev",
+    "target": "/home/apps/moment",
+    "server": "43.156.71.44"
+  },
+  "runtime": {
+    "image": "ruida/moment:dev",
+    "imageId": "sha256:85966a073da6e20b1f48b48c0bb1c58343bf5113a4c41625a1f4edcda6a0845c",
+    "health": "healthy",
+    "sourceCommit": "5d57456d3fc7761ecd3a20118ea9adb65d65aa0f",
+    "release": "20261029-191302-sharedcards",
+    "ports": {
+      "9999/tcp": [
+        {
+          "HostIp": "127.0.0.1",
+          "HostPort": "3010"
+        }
+      ]
+    },
+    "memory": 805306368,
+    "memorySwap": 805306368,
+    "nanoCpus": 1000000000,
+    "pids": 256,
+    "logging": {
+      "Type": "json-file",
+      "Config": {
+        "max-file": "3",
+        "max-size": "10m"
+      }
+    }
+  },
+  "previousRelease": "20261029-182244-oneui050",
+  "backup": "/home/apps/moment/backups/20261029-191302-sharedcards",
+  "changes": [
+    "shared compact/full media cards",
+    "consistent post and smart-tag selection",
+    "compact publishing form and standard editor title typography"
+  ],
+  "checks": {
+    "candidateOnDataCopy": true,
+    "accountAndContentFingerprintsPreserved": true,
+    "coreTableCounts": {
+      "blog": 45,
+      "blog_image": 57,
+      "category": 13,
+      "user": 1
+    },
+    "https": true,
+    "browser": {
+      "checks": [
+        {
+          "width": 1280,
+          "mode": "light",
+          "galleryLightbox": true,
+          "loginValidation": true,
+          "noOverflow": true,
+          "deployedCoverAndCropFix": true,
+          "sharedMultilineLabelFix": true,
+          "compactEditor": true,
+          "deployedSharedCards": true
+        },
+        {
+          "width": 390,
+          "mode": "dark",
+          "galleryLightbox": true,
+          "loginValidation": true,
+          "noOverflow": true,
+          "deployedCoverAndCropFix": true,
+          "sharedMultilineLabelFix": true,
+          "compactEditor": true,
+          "deployedSharedCards": true
+        }
+      ],
+      "errors": [],
+      "failedAssets": []
+    },
+    "deployedAssetHashes": [
+      {
+        "path": "/admin/assets/Dashboard-CC9Iowod.js",
+        "sha256": "b75083137d5993aeb01578a724abe51024aa952f174417077e8cb48452197c9a"
+      },
+      {
+        "path": "/admin/assets/MediaCard-9-SF4B1e.js",
+        "sha256": "474a9d3cdb86ebb91c33543873828bf558d301c0cb5bc5cc1bbb326205b75cd1"
+      },
+      {
+        "path": "/admin/assets/MediaCard-BQWR9pac.css",
+        "sha256": "ffb65d2e9b996b91c53d9b923d50ea968da0c1eabe1b402b22e620f58ad777d7"
+      },
+      {
+        "path": "/admin/assets/PostCard-98uk4Sco.js",
+        "sha256": "ab52a16220a96f9a32d6ec3b72572a012de00baa6f9f43d036896e88a7d1df4e"
+      },
+      {
+        "path": "/admin/assets/Posts-DTzohzPF.css",
+        "sha256": "f2177c2ca68d8ba8838fdfd0fceb355843c1ab17c466b73e332e5bf6dd071523"
+      },
+      {
+        "path": "/admin/assets/Posts-DYI3NWh6.js",
+        "sha256": "0bbbc4c62b9e0a6d7c0b27cc4c3ca138f49c4ba596e4d75823a0453166f8da04"
+      },
+      {
+        "path": "/admin/assets/SmartTags-BxVLxZJC.js",
+        "sha256": "d8276344cc468807128ab906463a551f4f9825183ee56ddb15e4435960d6ae9d"
+      }
+    ]
+  },
+  "builder": {
+    "name": "apps-limited",
+    "memoryBytes": 2147483648,
+    "memorySwapBytes": 2147483648,
+    "cpuQuota": 100000,
+    "cpuPeriod": 100000,
+    "parallelism": 1
+  }
+}
