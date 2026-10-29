@@ -3,6 +3,7 @@ import react from "@vitejs/plugin-react";
 
 export default defineConfig({
   base: "/admin/",
+  cacheDir: process.env.MOMENT_UI_TEST_CACHE || undefined,
   plugins: [react()],
   worker: { format: "es" },
   server: {

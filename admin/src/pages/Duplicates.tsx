@@ -28,7 +28,6 @@ import {
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { api, ApiError, json, notifyError, notifySuccess } from "../api";
-import { useRestoreFocusOnUnmount } from "../hooks";
 import { Empty, ErrorState, Loading, PageTitle } from "../components/Common";
 import { OrganizeTabs } from "../components/OrganizeTabs";
 import { PhotoHistory } from "../components/PhotoHistory";
@@ -762,7 +761,6 @@ function DuplicateGroup({
   onClose: () => void;
   onDirty: (dirty: boolean) => void;
 }) {
-  useRestoreFocusOnUnmount();
   const client = useQueryClient();
   const [page, setPage] = useState(1);
   const [selected, setSelected] = useState<ScanPhoto[]>([]);

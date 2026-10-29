@@ -47,12 +47,6 @@ export default function Schedules() {
   const [cancelling, setCancelling] = useState<PublishSchedule | null>(null);
   const [busy, setBusy] = useState(false);
   const editTrigger = useRef<HTMLButtonElement | null>(null);
-  function closeEditor() {
-    setEditing(null);
-    requestAnimationFrame(() =>
-      editTrigger.current?.focus({ preventScroll: true }),
-    );
-  }
   const settings = useQuery({
     queryKey: ["settings"],
     queryFn: () => api<Settings>("/settings"),
@@ -105,7 +99,7 @@ export default function Schedules() {
         publish_at: publishAt,
       }),
     );
-    closeEditor();
+    setEditing(null);
     notifySuccess("发布计划已保存");
     await invalidate();
   }
@@ -379,7 +373,8 @@ export default function Schedules() {
               ? editing.schedule.publish_at
               : undefined
           }
-          onClose={closeEditor}
+          onClose={() => setEditing(null)}
+          returnFocus={editTrigger}
           onConfirm={save}
         />
       )}

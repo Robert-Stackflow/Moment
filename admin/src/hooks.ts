@@ -1,28 +1,4 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-// Conditional panels unmount instead of sending open=false to the shared surface.
-// Restore their trigger after removal, without stealing focus from another modal.
-export function useRestoreFocusOnUnmount() {
-  const opener = useRef(
-    document.activeElement instanceof HTMLElement &&
-      document.activeElement !== document.body
-      ? document.activeElement
-      : null,
-  );
-  useEffect(() => {
-    return () => {
-      requestAnimationFrame(() => {
-        const target = opener.current;
-        const modal = [...document.querySelectorAll("dialog:modal")].at(-1);
-        if (
-          target?.isConnected &&
-          !target.matches(":disabled") &&
-          (!modal || modal.contains(target))
-        )
-          target.focus({ preventScroll: true });
-      });
-    };
-  }, []);
-}
 export function useDebouncedValue<T>(value: T, delay: number) {
   const [result, setResult] = useState(value);
   useEffect(() => {

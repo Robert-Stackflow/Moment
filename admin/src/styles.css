@@ -1060,46 +1060,6 @@ h4.ui-title {
   padding: 0;
   max-height: min(55dvh, 520px);
 }
-/* Arrange the shared paginator without replacing its controls or theme. */
-nav[aria-label="分页"],
-nav[aria-label="分页"] > div {
-  min-width: 0;
-  max-width: 100%;
-}
-nav[aria-label="分页"] > div > div {
-  flex-wrap: wrap;
-}
-.record-dialog-pagination {
-  --control-height: var(--control-small);
-  width: 100%;
-  min-width: 0;
-}
-.record-dialog-pagination > nav {
-  padding: 0;
-}
-@media (max-width: 600px) {
-  .record-dialog-pagination > nav {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    gap: 8px;
-  }
-  .record-dialog-pagination > nav > div {
-    display: contents;
-  }
-  .record-dialog-pagination > nav > div > div {
-    grid-column: 1 / -1;
-    grid-row: 1;
-    justify-content: center;
-  }
-  .record-dialog-pagination > nav > span {
-    grid-column: 1;
-    grid-row: 2;
-  }
-  .record-dialog-pagination > nav > div > form {
-    grid-column: 2;
-    grid-row: 2;
-  }
-}
 .record-dialog-note {
   padding: 12px 14px;
   border-radius: var(--radius);

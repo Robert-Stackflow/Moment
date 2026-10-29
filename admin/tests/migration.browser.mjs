@@ -115,7 +115,10 @@ try {
       "--strictPort",
     ],
     admin,
-    { MOMENT_DEV_API: `http://127.0.0.1:${apiPort}` },
+    {
+      MOMENT_DEV_API: `http://127.0.0.1:${apiPort}`,
+      MOMENT_UI_TEST_CACHE: path.join(data, "vite-cache"),
+    },
   );
   await Promise.all([
     ready(`http://127.0.0.1:${apiPort}/api/admin/setup`, server),

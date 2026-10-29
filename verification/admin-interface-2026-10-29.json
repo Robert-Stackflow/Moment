@@ -1,7 +1,7 @@
 {
   "date": "2026-10-29",
-  "baseline": "c9d3191",
-  "dependency": "@robert-stackflow/oneui@0.4.0",
+  "baseline": "1567c01",
+  "dependency": "@robert-stackflow/oneui@0.4.1",
   "source": {
     "tsxFiles": 42,
     "sharedImports": 40,
@@ -44,7 +44,7 @@
       "posts/new",
       "posts/1",
       "drafts",
-      "drafts/38ab8ac9-f8c6-4e81-b731-880be67b757d",
+      "drafts/4b1194a0-41ca-4445-84de-f12f47532084",
       "schedules",
       "organize/duplicates",
       "organize/tags",
@@ -135,12 +135,15 @@
     "explicitThemeOverridesDevice": true,
     "dialogVerticalBounds": true,
     "focusRestoration": true,
-    "realHistoryPagination": true
+    "realHistoryPagination": true,
+    "isolatedViteCache": true,
+    "localModalFocusPatch": false,
+    "localPaginationDOMOverrides": false
   },
   "fixes": [
-    "Pass actual item totals and page sizes to all 11 shared Pagination instances",
-    "Return focus after conditional record/group/schedule panel removal and async schedule loading",
-    "Use shared small control sizing and compact responsive layout for record pagination; wrap long page controls"
+    "Use OneUI 0.4.1 modal lifecycle and returnFocus instead of local hook and requestAnimationFrame",
+    "Use shared Pagination compact/small instead of application CSS targeting internal DOM",
+    "Use an isolated Vite cache for each browser regression run"
   ],
   "faultFixtures": [
     "Share/passkey stale revision responses (409)",
@@ -155,58 +158,19 @@
     "reason": "Automatic approval policy rejected recursive removal; associated processes stopped; no retry",
     "currentRunCompleted": true
   },
-  "supplemental": [
-    {
-      "mode": "light",
-      "width": 320,
-      "popup": "分类",
-      "overflow": 0
-    },
-    {
-      "mode": "light",
-      "width": 320,
-      "popup": "拍摄时间",
-      "overflow": 0
-    },
-    {
-      "mode": "dark",
-      "width": 320,
-      "popup": "分类",
-      "overflow": 0
-    },
-    {
-      "mode": "dark",
-      "width": 320,
-      "popup": "拍摄时间",
-      "overflow": 0
-    },
-    {
-      "compactHistory": {
-        "footerHeight": 145,
-        "buttonRows": 1,
-        "overflow": 0
-      }
-    },
-    {
-      "fixtureHistoryPages": 35,
-      "page": 18,
-      "overflow": 0
-    },
-    {
-      "mode": "light",
-      "width": 844,
-      "height": 390,
-      "route": "login",
-      "overflow": 0,
-      "headingTop": 48.453125
-    },
-    {
-      "mode": "dark",
-      "width": 844,
-      "height": 390,
-      "route": "login",
-      "overflow": 0,
-      "headingTop": 48.453125
-    }
-  ]
+  "registryDependency": {
+    "version": "0.4.1",
+    "resolved": "https://registry.npmjs.org/@robert-stackflow/oneui/-/oneui-0.4.1.tgz",
+    "integrity": "sha512-PkuGGxOMskQm1yN0MdsXDCPv/V7fnKKbV8ueqKmp4hS8w1+DJW8+qW7ObbWVv60bc3VnQ2iF2iiyM1URPEq76Q==",
+    "payloadFiles": 395,
+    "payloadSha256": "e643802b14bf0661deb49bf1a5ced350d70ef90c1e7293981d55c1c83967ab81",
+    "formalInstallMatchesTestedCandidate": true
+  },
+  "libraryChecks": {
+    "modalPaginationCases": 12,
+    "accountFormCases": 8,
+    "types": true,
+    "desktopAndWebBuilds": true,
+    "tarballConsumer": true
+  }
 }
