@@ -1,0 +1,102 @@
+{
+  "date": "2026-10-29",
+  "release": "20261029-182244-oneui050",
+  "server": "43.156.71.44",
+  "directory": "/home/apps/moment",
+  "url": "https://moment.cloudchewie.com",
+  "fixCommit": "22234a9195935302eb0b7b7015ebc2559b47f6a7",
+  "source": {
+    "release": "20261029-182244-oneui050",
+    "sourceCommit": "eefcd502b129f4647dc46c74a9bbcded017559e2",
+    "workingTreeFiles": [
+      " M docker-compose.yml",
+      " M web/src/styles/global.scss",
+      " M web/src/views/home/components/Footer.vue",
+      " M web/src/views/home/components/GalleryLightbox.vue",
+      " M web/src/views/home/components/Image.vue",
+      "?? web/src/utils/scroll-lock.js"
+    ],
+    "sourceArchiveSha256": "c48373ac3766505cd08cbc9962f95e07a093aaa91186b4064b7619ba4299545e",
+    "sourceFiles": 236,
+    "oneui": "0.5.0",
+    "image": "ruida/moment:dev",
+    "target": "/home/apps/moment",
+    "server": "43.156.71.44"
+  },
+  "image": {
+    "tag": "ruida/moment:dev",
+    "health": "healthy",
+    "id": "sha256:32925bc0a769cca8bea2425de03f85c8f07bab136e0d0565a2316c9bc207375a"
+  },
+  "previousRelease": "20261029-164514-e64dbdf-working",
+  "backup": "/home/apps/moment/backups/20261029-182244-oneui050",
+  "builder": {
+    "memorySwapBytes": 2147483648,
+    "memoryBytes": 2147483648,
+    "name": "apps-limited",
+    "parallelism": 1,
+    "cpuQuota": 100000,
+    "cpuPeriod": 100000
+  },
+  "runtime": {
+    "memorySwapBytes": 805306368,
+    "memoryBytes": 805306368,
+    "logging": {
+      "Type": "json-file",
+      "Config": {
+        "max-file": "3",
+        "max-size": "10m"
+      }
+    },
+    "nanoCpus": 1000000000,
+    "binding": "127.0.0.1:3010:9999",
+    "pids": 256
+  },
+  "checks": {
+    "coreTableCounts": {
+      "user": 1,
+      "blog": 45,
+      "blog_image": 57,
+      "category": 13
+    },
+    "oldStyles": {
+      "path": "/admin/assets/index-Dj8mVwOh.css",
+      "sha256": "ef73b6fed6c1bd4f631c768222085f59f03da9a523c34869b81b5b4591aebc35",
+      "coverFix": false
+    },
+    "browser": {
+      "checks": [
+        {
+          "width": 1280,
+          "mode": "light",
+          "galleryLightbox": true,
+          "loginValidation": true,
+          "noOverflow": true,
+          "deployedCoverAndCropFix": true,
+          "sharedMultilineLabelFix": true
+        },
+        {
+          "width": 390,
+          "mode": "dark",
+          "galleryLightbox": true,
+          "loginValidation": true,
+          "noOverflow": true,
+          "deployedCoverAndCropFix": true,
+          "sharedMultilineLabelFix": true
+        }
+      ],
+      "errors": [],
+      "failedAssets": []
+    },
+    "deployedStyles": [
+      {
+        "path": "/admin/assets/index-DjRgxUll.css",
+        "sha256": "34e583d41698096e98ef32f744a2ecb9c12385fce5eafebec290c1c6bf3ae4ee",
+        "coverFix": true
+      }
+    ],
+    "accountAndContentFingerprintsPreserved": true,
+    "candidateOnDataCopy": true,
+    "httpsHealth": true
+  }
+}
