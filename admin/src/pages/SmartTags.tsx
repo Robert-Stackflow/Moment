@@ -17,6 +17,7 @@ import {
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Check,
+  Circle,
   Maximize2,
   RefreshCw,
   Search,
@@ -511,6 +512,7 @@ export default function SmartTags() {
       />
 
       <OrganizePanel
+        className="tag-controls-panel"
         title="用标签整理照片"
         description="标签仅用于后台搜索，不会公开展示。"
         actions={
@@ -575,42 +577,46 @@ export default function SmartTags() {
           rows.length || reviews.length ? (
             <>
               {rows.length > 0 && (
-                <Checkbox
-                  onChange={(checked) => {
-                    if (
-                      checked &&
-                      new Set([
-                        ...Object.keys(selected).map(Number),
-                        ...rows.map((p) => p.id),
-                      ]).size > 50
-                    ) {
-                      notifyError(new Error("每次最多选择 50 张照片"));
-                      return;
-                    }
-                    setSelected((current) => {
-                      const next = { ...current };
-                      rows.forEach((p) => {
-                        if (checked) next[p.id] = p;
-                        else delete next[p.id];
+                <div className="tag-select-all">
+                  <Checkbox
+                    onChange={(checked) => {
+                      if (
+                        checked &&
+                        new Set([
+                          ...Object.keys(selected).map(Number),
+                          ...rows.map((p) => p.id),
+                        ]).size > 50
+                      ) {
+                        notifyError(new Error("每次最多选择 50 张照片"));
+                        return;
+                      }
+                      setSelected((current) => {
+                        const next = { ...current };
+                        rows.forEach((p) => {
+                          if (checked) next[p.id] = p;
+                          else delete next[p.id];
+                        });
+                        return next;
                       });
-                      return next;
-                    });
-                  }}
-                  label="选择本页"
-                  disabled={!rows.length || !!reviews.length || locked}
-                  checked={
-                    rows.length > 0 && rows.every((p) => !!selected[p.id])
-                  }
-                  indeterminate={
-                    rows.some((p) => !!selected[p.id]) &&
-                    !rows.every((p) => !!selected[p.id])
-                  }
-                />
+                    }}
+                    label="选择本页"
+                    disabled={!rows.length || !!reviews.length || locked}
+                    checked={
+                      rows.length > 0 && rows.every((p) => !!selected[p.id])
+                    }
+                    indeterminate={
+                      rows.some((p) => !!selected[p.id]) &&
+                      !rows.every((p) => !!selected[p.id])
+                    }
+                  />
+                </div>
               )}
-              <p className="organize-meta" role="status">
+              <p className="organize-meta tag-selection-count" role="status">
                 {reviews.length
                   ? reviews.length + " 张待核对"
-                  : (selectedCount ? "已选 " + selectedCount + "/50 · " : "") +
+                  : "已选 " +
+                    selectedCount +
+                    "/50 · " +
                     "共 " +
                     (photos.data?.total || 0) +
                     " 张"}
@@ -659,21 +665,28 @@ export default function SmartTags() {
               }
             >
               <div className="tag-photo-image">
-                <img
-                  src={thumbnail(photo.image_url, settings.data?.data, 320)}
-                  alt={photo.post_title}
-                  loading="lazy"
-                />
+                <IconButton
+                  className="tag-photo-toggle"
+                  label={`选择照片 ${photo.id}`}
+                  aria-pressed={!!selected[photo.id]}
+                  disabled={!!reviews.length || locked}
+                  onClick={() => choose(photo, !selected[photo.id])}
+                >
+                  <img
+                    src={thumbnail(photo.image_url, settings.data?.data, 320)}
+                    alt={photo.post_title}
+                    loading="lazy"
+                  />
+                  <span className="tag-photo-check" aria-hidden="true">
+                    {selected[photo.id] ? (
+                      <Check size={15} />
+                    ) : (
+                      <Circle size={15} />
+                    )}
+                  </span>
+                </IconButton>
               </div>
-              <div
-                className="ui-stack"
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: 8,
-                  padding: 16,
-                }}
-              >
+              <div className="tag-photo-copy">
                 <div
                   className="ui-row"
                   style={{
@@ -684,32 +697,10 @@ export default function SmartTags() {
                     justifyContent: "space-between",
                   }}
                 >
-                  <p
-                    className="ui-text"
-                    style={{
-                      minWidth: 0,
-                      flex: 1,
-                      fontWeight: 600,
-                      fontSize: 13,
-                      display: "-webkit-box",
-                      WebkitLineClamp: 1,
-                      WebkitBoxOrient: "vertical",
-                      overflow: "hidden",
-                    }}
-                  >
-                    {photo.post_title}
-                  </p>
+                  <p className="tag-photo-title">{photo.post_title}</p>
                   {(photo.is_hidden || photo.post_hidden) && (
                     <Badge tone={badgeTone("gray")}>隐藏</Badge>
                   )}
-                  <div className="tag-photo-select">
-                    <Checkbox
-                      onChange={(checked) => choose(photo, checked)}
-                      label={`选择照片 ${photo.id}`}
-                      checked={!!selected[photo.id]}
-                      disabled={!!reviews.length || locked}
-                    />
-                  </div>
                 </div>
                 <div
                   className="ui-row"

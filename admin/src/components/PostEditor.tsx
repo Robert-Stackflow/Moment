@@ -886,60 +886,33 @@ export function PostEditor({
                   <span className="editor-step">03</span>
                   <h4 className="ui-title">整理与发布</h4>
                 </div>
-                <div
-                  className="ui-stack"
-                  style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: 32,
-                  }}
-                >
+                <div className="editor-meta-form">
                   <div className="editor-visibility">
-                    <div>
-                      <p
-                        className="ui-text"
-                        style={{
-                          fontWeight: 600,
-                          fontSize: 13,
-                        }}
-                      >
-                        公开到相册
-                      </p>
-                      <p
-                        className="ui-text"
-                        style={{
-                          fontSize: 12,
-                          color: "var(--muted)",
-                          marginTop: 4,
-                        }}
-                      >
-                        {draft.is_hidden
-                          ? "当前仅自己可见"
-                          : "发布后，访客可以看到这组照片"}
-                      </p>
-                    </div>
+                    <p className="editor-visibility-label">公开到相册</p>
                     <Switch
                       aria-label="公开到相册"
                       checked={!draft.is_hidden}
                       onChange={(e) => field("is_hidden", !e)}
                     />
                   </div>
-                  <DateTimePicker
-                    label="拍摄时间"
-                    value={draft.time}
-                    onChange={(value) => field("time", value)}
-                  />
-                  <Input
-                    label="拍摄地点"
-                    placeholder="这组照片在哪里拍摄？"
-                    value={draft.location}
-                    onChange={(e) => field("location", e.currentTarget.value)}
-                  />
-                  <CategoryMultiSelect
-                    categories={categories}
-                    value={draft.category_ids}
-                    onChange={(value) => field("category_ids", value)}
-                  />
+                  <div className="editor-meta-fields">
+                    <DateTimePicker
+                      label="拍摄时间"
+                      value={draft.time}
+                      onChange={(value) => field("time", value)}
+                    />
+                    <Input
+                      label="拍摄地点"
+                      placeholder="这组照片在哪里拍摄？"
+                      value={draft.location}
+                      onChange={(e) => field("location", e.currentTarget.value)}
+                    />
+                    <CategoryMultiSelect
+                      categories={categories}
+                      value={draft.category_ids}
+                      onChange={(value) => field("category_ids", value)}
+                    />
+                  </div>
                   <DiscoveryEditor
                     value={draft.discovery}
                     onChange={(value) => field("discovery", value)}

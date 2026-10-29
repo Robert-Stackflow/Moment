@@ -80,17 +80,18 @@ export async function auditOrganize({ page, base, api, output, noOverflow }) {
             .querySelector(".tag-photo-image")
             .getBoundingClientRect();
           const checkbox = el
-            .querySelector(".tag-photo-select")
+            .querySelector(".tag-photo-check")
             .getBoundingClientRect();
           const title = el.querySelector("p").getBoundingClientRect();
           return {
-            belowImage: checkbox.top >= image.bottom,
-            besideTitle: checkbox.left >= title.right,
+            markerInsideImage:
+              checkbox.top >= image.top && checkbox.right <= image.right,
+            titleBelowImage: title.top >= image.bottom,
           };
         });
         assert.ok(
-          geometry.belowImage && geometry.besideTitle,
-          "photo selection must not overlap the image or title",
+          geometry.markerInsideImage && geometry.titleBelowImage,
+          "photo selection belongs inside the image; title belongs below it",
         );
       }
       assert.ok(

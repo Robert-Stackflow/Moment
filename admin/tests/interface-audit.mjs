@@ -574,9 +574,9 @@ export async function auditInterface({
           page.getByRole("button", { name: "更多", exact: true }),
         );
         await page
-          .getByRole("checkbox", { name: /^选择照片 / })
+          .getByRole("button", { name: /^选择照片 / })
           .first()
-          .check();
+          .click();
         await open(
           page.getByRole("button", { name: "识别所选照片", exact: true }),
           "识别照片标签",

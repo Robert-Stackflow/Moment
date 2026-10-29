@@ -1,0 +1,91 @@
+{
+  "date": "2026-10-29",
+  "baseline": "88da7e8",
+  "oneui": "0.5.0",
+  "checks": [
+    {
+      "mode": "light",
+      "width": 1440,
+      "coverBounded": true,
+      "photoCrop": true,
+      "textareaLabelAligned": true,
+      "sheetToEditor": true,
+      "stableSelectionGeometry": true,
+      "standardTitleTypography": true,
+      "compactPublishingFields": true,
+      "uploadAligned": true
+    },
+    {
+      "mode": "light",
+      "width": 390,
+      "coverBounded": true,
+      "photoCrop": true,
+      "textareaLabelAligned": true,
+      "sheetToEditor": true,
+      "stableSelectionGeometry": true,
+      "standardTitleTypography": true,
+      "compactPublishingFields": true,
+      "uploadAligned": true
+    },
+    {
+      "mode": "light",
+      "width": 320,
+      "coverBounded": true,
+      "photoCrop": true,
+      "textareaLabelAligned": true,
+      "sheetToEditor": true,
+      "stableSelectionGeometry": true,
+      "standardTitleTypography": true,
+      "compactPublishingFields": true,
+      "uploadAligned": true
+    },
+    {
+      "mode": "dark",
+      "width": 1440,
+      "coverBounded": true,
+      "photoCrop": true,
+      "textareaLabelAligned": true,
+      "sheetToEditor": true,
+      "stableSelectionGeometry": true,
+      "standardTitleTypography": true,
+      "compactPublishingFields": true,
+      "uploadAligned": true
+    },
+    {
+      "mode": "dark",
+      "width": 390,
+      "coverBounded": true,
+      "photoCrop": true,
+      "textareaLabelAligned": true,
+      "sheetToEditor": true,
+      "stableSelectionGeometry": true,
+      "standardTitleTypography": true,
+      "compactPublishingFields": true,
+      "uploadAligned": true
+    },
+    {
+      "mode": "dark",
+      "width": 320,
+      "coverBounded": true,
+      "photoCrop": true,
+      "textareaLabelAligned": true,
+      "sheetToEditor": true,
+      "stableSelectionGeometry": true,
+      "standardTitleTypography": true,
+      "compactPublishingFields": true,
+      "uploadAligned": true
+    }
+  ],
+  "selectionStates": [
+    "none",
+    "single",
+    "keyboard-clear",
+    "all",
+    "clear"
+  ],
+  "selectionGeometryShift": "less than 1 CSS pixel",
+  "organizeNavigationCases": 4,
+  "build": true,
+  "browserRuntimeErrors": 0,
+  "productionDeployment": "not deployed"
+}

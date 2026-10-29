@@ -21,6 +21,33 @@ export async function auditPhotoLayout({
       await page.goto(base + `/posts/${postId}`);
       const cover = page.locator(".editor-cover-thumb");
       await expect(cover).toBeVisible();
+      const editor = await page.evaluate(() => {
+        const title = getComputedStyle(
+          document.querySelector(".editor-title-input"),
+        );
+        const location = getComputedStyle(
+          document.querySelector(".editor-meta-fields input"),
+        );
+        const fields = [
+          ...document.querySelector(".editor-meta-fields").children,
+        ].map((el) => el.getBoundingClientRect());
+        return {
+          titleSize: title.fontSize,
+          fieldSize: location.fontSize,
+          titleWeight: Number(title.fontWeight),
+          gaps: fields.slice(1).map((r, i) => r.top - fields[i].bottom),
+        };
+      });
+      assert.equal(
+        editor.titleSize,
+        editor.fieldSize,
+        "title uses standard input typography",
+      );
+      assert.ok(editor.titleWeight < 600);
+      assert.ok(
+        editor.gaps.every((gap) => gap >= 14 && gap <= 18),
+        "publishing fields use compact consistent spacing",
+      );
       const imageBounds = await cover.evaluate((el) => {
         const image = el.getBoundingClientRect(),
           card = el.closest("section").getBoundingClientRect();
@@ -130,6 +157,62 @@ export async function auditPhotoLayout({
         "fixture needs a different aspect ratio to expose stretching",
       );
       await noOverflow();
+      const selectionGeometry = () =>
+        page.evaluate(() => {
+          const panel = document
+            .querySelector(".tag-controls-panel")
+            .getBoundingClientRect();
+          const bar = document
+            .querySelector(".organize-resultbar")
+            .getBoundingClientRect();
+          const card = document
+            .querySelector(".tag-photo")
+            .getBoundingClientRect();
+          return {
+            panelHeight: panel.height,
+            barHeight: bar.height,
+            cardTop: card.top,
+            cardHeight: card.height,
+            cardWidth: card.width,
+          };
+        });
+      const initial = await selectionGeometry();
+      const stable = async () => {
+        const current = await selectionGeometry();
+        for (const key of Object.keys(initial))
+          assert.ok(
+            Math.abs(current[key] - initial[key]) < 1,
+            `selection must not move ${key}`,
+          );
+      };
+      const toggle = page.getByRole("button", { name: /^选择照片 / }).first();
+      await toggle.click();
+      await expect(toggle).toHaveAttribute("aria-pressed", "true");
+      await stable();
+      await toggle.press("Space");
+      await expect(toggle).toHaveAttribute("aria-pressed", "false");
+      await stable();
+      await page
+        .getByRole("checkbox", { name: "选择本页", exact: true })
+        .check();
+      await stable();
+      if (mode === "light" && width === 1440) {
+        await page.locator(".tag-controls-panel").scrollIntoViewIfNeeded();
+        const panel = await page.locator(".tag-controls-panel").boundingBox();
+        const left = panel.x;
+        await page.screenshot({
+          path: path.join(output, "tag-selection-layout.png"),
+          clip: {
+            x: left,
+            y: Math.max(0, panel.y),
+            width: Math.min(1280, width - left),
+            height: Math.min(700, 900 - Math.max(0, panel.y)),
+          },
+        });
+      }
+      await page.getByRole("button", { name: "清空选择", exact: true }).click();
+      await expect(toggle).toHaveAttribute("aria-pressed", "false");
+      await stable();
       if (mode === "light" && width === 1440)
         await page
           .locator(".tag-photo")
@@ -142,6 +225,9 @@ export async function auditPhotoLayout({
         photoCrop: true,
         textareaLabelAligned: true,
         sheetToEditor: true,
+        stableSelectionGeometry: true,
+        standardTitleTypography: true,
+        compactPublishingFields: true,
         uploadAligned: true,
       });
     }

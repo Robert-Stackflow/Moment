@@ -9,6 +9,7 @@ export function OrganizePanel({
   summary,
   footerActions,
   children,
+  className = "",
 }: {
   title: string;
   description: ReactNode;
@@ -17,11 +18,12 @@ export function OrganizePanel({
   summary?: ReactNode;
   footerActions?: ReactNode;
   children?: ReactNode;
+  className?: string;
 }) {
   const content = filters || summary || footerActions || children;
   return (
     <Card
-      className="moment-panel organize-panel"
+      className={`moment-panel organize-panel ${className}`}
       title={title}
       description={description}
       action={actions}
