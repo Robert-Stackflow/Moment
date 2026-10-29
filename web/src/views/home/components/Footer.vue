@@ -5,6 +5,7 @@ import { createStyle } from '@/utils'
 import TheIcon from '@/components/icon/TheIcon.vue'
 import GalleryButton from './GalleryButton.vue'
 import { versionedBrandIcon } from '@/utils/common/brand'
+import { lockPageScroll } from '@/utils/scroll-lock'
 const props = defineProps({ open: Boolean })
 const emit = defineEmits(['close'])
 const meta = useSettingStore().metaSetting
@@ -14,15 +15,13 @@ const icon = versionedBrandIcon(meta?.bottom_icon || import.meta.env.VITE_ICON)
 const entries = meta?.entries || []
 const panel = ref(null)
 let focused,
-  overflow,
-  padding,
+  releaseScroll,
   locked = false,
   background = []
 function unlock() {
   if (!locked) return
   locked = false
-  document.body.style.overflow = overflow
-  document.body.style.paddingRight = padding
+  releaseScroll?.()
   for (const [element, inert] of background) element.inert = inert
   if (focused?.isConnected) focused.focus({ preventScroll: true })
 }
@@ -34,11 +33,7 @@ watch(
       return
     }
     focused = document.activeElement
-    overflow = document.body.style.overflow
-    padding = document.body.style.paddingRight
-    const scrollbar = innerWidth - document.documentElement.clientWidth
-    document.body.style.overflow = 'hidden'
-    if (scrollbar) document.body.style.paddingRight = scrollbar + 'px'
+    releaseScroll = lockPageScroll()
     background = [...document.querySelectorAll('#blog-main,#header,.gallery-sentinel')].map(
       (element) => [element, element.inert],
     )
@@ -159,10 +154,7 @@ createStyle(
   visibility: hidden;
   pointer-events: none;
   outline: none;
-  transition:
-    transform 0.22s cubic-bezier(0.2, 0.8, 0.2, 1),
-    opacity 0.18s,
-    visibility 0.22s;
+  transition: transform 0.22s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.18s, visibility 0.22s;
 }
 #footer.about-panel.active {
   transform: translate(-50%, 0);
@@ -225,9 +217,7 @@ createStyle(
   background: #ffffff04;
   color: #d4d7dd;
   min-height: 46px;
-  transition:
-    background 0.16s,
-    border-color 0.16s;
+  transition: background 0.16s, border-color 0.16s;
   font-size: 12px;
 }
 .about-link-list a span {

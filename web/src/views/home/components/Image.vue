@@ -1,14 +1,44 @@
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, ref, onMounted, onBeforeUnmount } from 'vue'
 import { useSettingStore } from '@/store'
 import { imageURL, thumbnailSources, focusPosition, photoPath, photoDate } from './gallery'
-const props = defineProps({ data: Object, index: Number, contained: Boolean, pathFor: { type: Function, default: photoPath } })
+const props = defineProps({
+  data: Object,
+  index: Number,
+  contained: Boolean,
+  pathFor: { type: Function, default: photoPath },
+})
 const emit = defineEmits(['open'])
 const content = useSettingStore().contentSetting
 const cover = computed(() => props.data.images[0])
+const item = ref(null),
+  visible = ref(false)
 const loaded = ref(false),
   failed = ref(false),
   attempt = ref(0)
+let observer
+onMounted(() => {
+  observer = new IntersectionObserver(
+    (entries) => {
+      if (entries.some((entry) => entry.isIntersecting)) {
+        visible.value = true
+        observer.disconnect()
+      }
+    },
+    { threshold: 0.01 },
+  )
+  observer.observe(item.value)
+})
+onBeforeUnmount(() => observer?.disconnect())
+async function imageLoaded(event) {
+  const image = event.currentTarget
+  try {
+    await image.decode()
+  } catch {
+    /* A loaded image can still be displayed. */
+  }
+  if (image.isConnected) loaded.value = true
+}
 function open(event) {
   if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button) return
   event.preventDefault()
@@ -21,7 +51,16 @@ function retry() {
 }
 </script>
 <template>
-  <article class="thumb img-area" :class="{ 'is-loaded': loaded, 'is-failed': failed }">
+  <article
+    ref="item"
+    class="thumb img-area"
+    :class="{
+      'is-loaded': loaded,
+      'is-failed': failed,
+      'is-revealed': visible && (loaded || failed),
+    }"
+    :style="{ '--entrance-delay': ((index || 0) % 4) * 45 + 'ms' }"
+  >
     <a
       class="thumb-a my-photo"
       :href="pathFor(data)"
@@ -39,24 +78,19 @@ function retry() {
         :fetchpriority="index === 0 ? 'high' : 'auto'"
         decoding="async"
         :style="{ objectPosition: focusPosition(cover) }"
-        @load="loaded = true"
+        @load="imageLoaded"
         @error="failed = true"
       />
       <h2 class="thumb-title">{{ data.title }}</h2>
       <span v-if="data.images.length > 1" class="thumb-count">{{ data.images.length }} 张</span>
     </a>
     <div v-if="failed" class="thumb-error">
-      <span>照片暂时无法加载</span
-      ><button
-        type="button"
-        @click="retry"
-      >
-        重试
-      </button>
+      <span>照片暂时无法加载</span><button type="button" @click="retry">重试</button>
     </div>
     <ul class="tags">
       <li class="tag-categories">
-        <component :is="contained ? 'span' : 'router-link'"
+        <component
+          :is="contained ? 'span' : 'router-link'"
           v-if="content.thumbnail_show_location !== false && data.location"
           :to="'/location/' + encodeURIComponent(data.location)"
           >{{ data.location }}</component
@@ -64,7 +98,8 @@ function retry() {
         <span v-if="content.thumbnail_show_time && data.time">{{
           photoDate(data.time, content.thumbnail_time_format || 'YYYY年M月D日')
         }}</span>
-        <component :is="contained ? 'span' : 'router-link'"
+        <component
+          :is="contained ? 'span' : 'router-link'"
           v-for="category in data.categories"
           :key="category.id"
           :to="'/category/' + encodeURIComponent(category.alias)"
@@ -89,14 +124,27 @@ function retry() {
   display: block;
   border: 0;
 }
+#blog-main .img-area {
+  opacity: 0;
+  transform: translate3d(0, 12px, 0);
+  transition: opacity 0.6s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.78s cubic-bezier(0.22, 1, 0.36, 1);
+  transition-delay: var(--entrance-delay, 0ms);
+}
+#blog-main .img-area.is-revealed,
+#blog-main .img-area:focus-within {
+  opacity: 1;
+  transform: translate3d(0, 0, 0);
+}
+#blog-main .img-area:focus-within {
+  transition-delay: 0ms;
+}
 .thumb-image {
   width: 100%;
   height: 100%;
   object-fit: cover;
   opacity: 0;
-  transition:
-    opacity 0.24s ease,
-    transform 0.35s ease;
+  transition: opacity 0.24s ease, transform 0.35s ease;
 }
 .is-loaded .thumb-image {
   opacity: 1;
@@ -217,6 +265,11 @@ function retry() {
   }
 }
 @media (prefers-reduced-motion: reduce) {
+  #blog-main .img-area {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
   .thumb-image {
     transition: none;
   }

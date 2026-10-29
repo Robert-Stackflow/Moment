@@ -2,17 +2,28 @@
 import { ref, computed, watch, nextTick, onMounted, onBeforeUnmount } from 'vue'
 import { useSettingStore } from '@/store'
 import GalleryButton from './GalleryButton.vue'
+import { lockPageScroll } from '@/utils/scroll-lock'
 import { imageURL, photoPath, photoDate, clamp, fitImage, boundedPan } from './gallery'
-const props = defineProps({ post: Object, index: Number, previous: Object, following: Object, contained: Boolean, pathFor: { type: Function, default: photoPath } })
+const props = defineProps({
+  post: Object,
+  index: Number,
+  previous: Object,
+  following: Object,
+  contained: Boolean,
+  pathFor: { type: Function, default: photoPath },
+})
 const emit = defineEmits(['choose', 'post', 'close'])
 const content = useSettingStore().contentSetting
 const photo = computed(() => props.post.images[props.index])
 const dialog = ref(null),
   stage = ref(null),
+  frame = ref(null),
+  imageElement = ref(null),
   thumbStrip = ref(null)
 const loaded = ref(false),
   failed = ref(false),
   displayURL = ref(''),
+  ambientURL = ref(''),
   natural = ref({ width: 0, height: 0 })
 const loadingShown = ref(false),
   caption = ref(null)
@@ -59,8 +70,7 @@ let generation = 0,
   loadingTimer,
   focused,
   app,
-  previousOverflow,
-  previousPadding,
+  releaseScroll,
   previousInert
 let start,
   pinch,
@@ -81,6 +91,7 @@ function centerPoint(clientX, clientY) {
   return { x: clientX - rect.left - rect.width / 2, y: clientY - rect.top - rect.height / 2 }
 }
 function zoomTo(value, anchor = { x: 0, y: 0 }) {
+  if (!loaded.value) return
   const next = clamp(value, 1, 4),
     ratio = next / scale.value
   pan.value = constrain(
@@ -187,27 +198,39 @@ function doubleClick(event) {
   // Touch browsers also synthesize dblclick after our pointer-based double tap.
   if (performance.now() - lastTouchAt > 500) toggleZoom(event)
 }
+async function finishMotion(element, token) {
+  // Read the actual transitions, including interrupted/reversed ones and the
+  // reduced-motion override, rather than guessing when a timer has finished.
+  while (token === generation && element?.isConnected) {
+    const animations = element
+      .getAnimations()
+      .filter((animation) => animation.playState !== 'finished' && animation.playState !== 'idle')
+    if (!animations.length) return
+    await Promise.all(animations.map((animation) => animation.finished.catch(() => {})))
+  }
+}
 function load() {
   const token = ++generation
   if (pending) {
     pending.onload = null
     pending.onerror = null
   }
-  // Retain the previous rectangle while loading. Only a decoded image can
-  // supply the next dimensions, so slow requests never cause a placeholder jump.
+  // Prepare the image while the old one fades out. Keep the old rectangle
+  // until its successor is decoded, then morph the empty frame before reveal.
   loaded.value = false
   failed.value = false
   clearTimeout(loadingTimer)
   loadingShown.value = false
   loadingTimer = setTimeout(() => {
     loadingShown.value = true
-  }, 180)
+  }, 500)
   resetZoom()
   pointers.clear()
   start = null
   pinch = null
   lastTap = null
   dragging.value = false
+  const faded = nextTick().then(() => finishMotion(imageElement.value, token))
   const request = new window.Image()
   pending = request
   request.onload = async () => {
@@ -219,7 +242,12 @@ function load() {
     if (token !== generation) return
     clearTimeout(loadingTimer)
     loadingShown.value = false
+    await faded
+    if (token !== generation) return
     natural.value = { width: request.naturalWidth, height: request.naturalHeight }
+    await nextTick()
+    await finishMotion(frame.value, token)
+    if (token !== generation) return
     displayURL.value = request.src
     caption.value = {
       title: title.value,
@@ -229,6 +257,16 @@ function load() {
       metadata: photo.value.metadata,
       categories: props.post.categories,
     }
+    await nextTick()
+    // Keep the newly assigned DOM image hidden until it too is ready to paint.
+    try {
+      await imageElement.value?.decode()
+    } catch {
+      /* The preload already succeeded. */
+    }
+    if (token !== generation) return
+    if (imageElement.value) getComputedStyle(imageElement.value).opacity
+    ambientURL.value = imageURL(photo.value, content, 'thumbnail')
     loaded.value = true
     if (!navigator.connection?.saveData) {
       for (const index of [props.index - 1, props.index + 1]) {
@@ -353,11 +391,7 @@ onMounted(() => {
   app = document.getElementById('app')
   previousInert = app.inert
   app.inert = true
-  previousOverflow = document.body.style.overflow
-  previousPadding = document.body.style.paddingRight
-  const scrollbar = innerWidth - document.documentElement.clientWidth
-  document.body.style.overflow = 'hidden'
-  if (scrollbar) document.body.style.paddingRight = scrollbar + 'px'
+  releaseScroll = lockPageScroll()
   document.body.classList.add('viewer-open')
   dialog.value.focus({ preventScroll: true })
   resizeObserver = new ResizeObserver(() => {
@@ -377,8 +411,7 @@ onBeforeUnmount(() => {
   clearTimeout(notificationTimer)
   clearTimeout(loadingTimer)
   document.removeEventListener('keydown', keydown)
-  document.body.style.overflow = previousOverflow
-  document.body.style.paddingRight = previousPadding
+  releaseScroll?.()
   document.body.classList.remove('viewer-open')
   if (app) app.inert = previousInert
   if (focused?.isConnected) focused.focus({ preventScroll: true })
@@ -393,13 +426,15 @@ onBeforeUnmount(() => {
     aria-label="照片浏览"
     tabindex="-1"
   >
-    <div
-      class="viewer-ambient"
-      :style="{
-        backgroundImage: 'url(' + JSON.stringify(imageURL(photo, content, 'thumbnail')) + ')',
-      }"
-      aria-hidden="true"
-    />
+    <Transition name="viewer-ambient-swap">
+      <div
+        v-if="ambientURL"
+        :key="ambientURL"
+        class="viewer-ambient"
+        :style="{ backgroundImage: 'url(' + JSON.stringify(ambientURL) + ')' }"
+        aria-hidden="true"
+      />
+    </Transition>
     <header class="viewer-toolbar">
       <div class="viewer-heading">
         <span class="viewer-post-title">{{ post.title }}</span
@@ -445,27 +480,19 @@ onBeforeUnmount(() => {
         @wheel.prevent="wheel"
         @contextmenu.prevent
       >
-        <div class="viewer-frame" :style="frameStyle">
+        <div ref="frame" class="viewer-frame" :style="frameStyle" :aria-busy="!loaded && !failed">
+          <div class="viewer-transition-surface" aria-hidden="true" />
           <img
-            v-if="!displayURL && !failed"
-            class="viewer-placeholder"
-            :src="imageURL(photo, content, 'thumbnail')"
-            alt=""
-            aria-hidden="true"
+            v-if="displayURL"
+            ref="imageElement"
+            class="viewer-photo"
+            :class="{ 'is-pending': !loaded }"
+            :src="displayURL"
+            :alt="loaded ? title : ''"
+            :aria-hidden="!loaded"
+            :style="imageStyle"
+            draggable="false"
           />
-          <Transition name="viewer-photo-swap">
-            <img
-              v-if="displayURL"
-              :key="displayURL"
-              class="viewer-photo"
-              :class="{ 'is-pending': !loaded }"
-              :src="displayURL"
-              :alt="loaded ? title : ''"
-              :aria-hidden="!loaded"
-              :style="imageStyle"
-              draggable="false"
-            />
-          </Transition>
           <div v-if="!loaded && loadingShown" class="viewer-loading" @pointerdown.stop>
             <template v-if="failed"
               ><span>图片暂时无法加载</span><button @click="load">重新加载</button></template
@@ -474,7 +501,7 @@ onBeforeUnmount(() => {
           </div>
           <Transition name="viewer-info">
             <div
-              v-if="showInfo && caption && scale === 1"
+              v-if="showInfo && caption && loaded && scale === 1"
               :key="displayURL"
               class="viewer-caption"
               @pointerdown.stop
@@ -484,7 +511,8 @@ onBeforeUnmount(() => {
               <h2>{{ caption.title }}</h2>
               <p v-if="caption.description" class="viewer-description">{{ caption.description }}</p>
               <div class="viewer-meta">
-                <component :is="contained ? 'span' : 'router-link'"
+                <component
+                  :is="contained ? 'span' : 'router-link'"
                   v-if="content.detail_show_location !== false && caption.location"
                   :to="'/location/' + encodeURIComponent(caption.location)"
                   >{{ caption.location }}</component
@@ -495,7 +523,8 @@ onBeforeUnmount(() => {
                 <span v-if="caption.metadata">{{ caption.metadata }}</span>
               </div>
               <div v-if="caption.categories.length" class="viewer-categories">
-                <component :is="contained ? 'span' : 'router-link'"
+                <component
+                  :is="contained ? 'span' : 'router-link'"
                   v-for="category in caption.categories"
                   :key="category.id"
                   :to="'/category/' + encodeURIComponent(category.alias)"
@@ -527,12 +556,7 @@ onBeforeUnmount(() => {
       </button>
     </div>
     <footer class="viewer-footer">
-      <div
-        v-if="showThumbs"
-        ref="thumbStrip"
-        class="viewer-thumbnails"
-        aria-label="本帖照片"
-      >
+      <div v-if="showThumbs" ref="thumbStrip" class="viewer-thumbnails" aria-label="本帖照片">
         <button
           v-for="(item, i) in post.images.length > 1 ? post.images : []"
           :key="item.id"
@@ -596,6 +620,14 @@ onBeforeUnmount(() => {
   filter: blur(60px);
   opacity: 0.15;
   pointer-events: none;
+}
+.viewer-ambient-swap-enter-active,
+.viewer-ambient-swap-leave-active {
+  transition: opacity 0.6s ease;
+}
+.viewer-ambient-swap-enter-from,
+.viewer-ambient-swap-leave-to {
+  opacity: 0;
 }
 .viewer-toolbar {
   position: relative;
@@ -667,14 +699,22 @@ onBeforeUnmount(() => {
   border-radius: 8px;
   overflow: hidden;
   transform: translateZ(0);
-  transition:
-    width 0.46s cubic-bezier(0.4, 0, 0.2, 1),
-    height 0.46s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: width 0.72s cubic-bezier(0.4, 0, 0.2, 1), height 0.72s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.viewer-transition-surface {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at 28% 15%, #59616c40, transparent 70%),
+    linear-gradient(145deg, #282d35, #191c22 75%);
+  pointer-events: none;
 }
 .viewer-stage.is-zoomed .viewer-frame {
   overflow: visible;
   background: transparent;
   transition: none;
+}
+.viewer-stage.is-zoomed .viewer-transition-surface {
+  visibility: hidden;
 }
 .viewer-photo {
   position: absolute;
@@ -686,27 +726,15 @@ onBeforeUnmount(() => {
   transform-origin: center;
   will-change: transform, opacity;
   border-radius: 0;
-  transition: opacity 0.36s ease;
+  opacity: 1;
+  transition: opacity 0.42s cubic-bezier(0.2, 0, 0.2, 1);
 }
 .viewer-stage:not(.is-dragging) .viewer-photo {
-  transition:
-    transform 0.16s ease,
-    opacity 0.2s ease;
+  transition: transform 0.16s ease, opacity 0.42s cubic-bezier(0.2, 0, 0.2, 1);
 }
-.viewer-photo-swap-enter-active,
-.viewer-photo-swap-leave-active {
-  transition: opacity 0.36s ease 0.06s !important;
-}
-.viewer-photo-swap-enter-from,
-.viewer-photo-swap-leave-to {
+.viewer-stage .viewer-photo.is-pending {
   opacity: 0;
-}
-.viewer-placeholder {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-  filter: blur(8px);
-  opacity: 0.35;
+  transition: opacity 0.18s ease;
 }
 .viewer-loading {
   position: absolute;
@@ -847,9 +875,7 @@ onBeforeUnmount(() => {
   flex-shrink: 0;
   cursor: pointer;
   background: #222;
-  transition:
-    opacity 0.16s,
-    border-color 0.16s;
+  transition: opacity 0.16s, border-color 0.16s;
 }
 .viewer-thumbnails button[aria-current='true'] {
   opacity: 1;
@@ -953,7 +979,9 @@ onBeforeUnmount(() => {
   outline: 2px solid #fff;
   outline-offset: 2px;
 }
-.viewer-info-enter-active,
+.viewer-info-enter-active {
+  transition: opacity 0.28s ease 0.1s;
+}
 .viewer-info-leave-active {
   transition: opacity 0.16s;
 }
@@ -1043,8 +1071,8 @@ onBeforeUnmount(() => {
   .viewer-thumbnails button,
   .viewer-info-enter-active,
   .viewer-info-leave-active,
-  .viewer-photo-swap-enter-active,
-  .viewer-photo-swap-leave-active {
+  .viewer-ambient-swap-enter-active,
+  .viewer-ambient-swap-leave-active {
     transition: none !important;
   }
 }
