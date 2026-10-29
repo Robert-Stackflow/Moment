@@ -36,7 +36,7 @@ go run ./cmd/moment -addr 127.0.0.1:9999
 
 开发时运行 Go 服务，再执行 `npm run dev:admin`（5174 端口）或 `npm run dev:gallery`（3100 端口）。前端使用同源代理连接 Go 服务；后台可通过 `MOMENT_DEV_API` 指定其他服务地址。
 
-后台直接使用 npm 包 `@robert-stackflow/oneui@0.4.2` 的蓝白主题与共享组件，包含应用框架、表单校验、设置布局、选择器、表格、弹窗、通知和加载动画。弹窗关闭/卸载后的焦点恢复与紧凑分页直接由 OneUI 管理，Moment 仅传递 `returnFocus`、`compact` 和尺寸参数。菜单入口直接使用 OneUI 内置的完整图标目录，旧图标名称只做显示兼容，未编辑时不会改写已保存的数据。`admin/src/styles.css` 只维护照片、地图等业务布局。浅色、深色和跟随系统偏好保存在浏览器中，兼容读取原有的颜色模式偏好。地图、EXIF/GPS、串行上传、草稿、登录和会话继续使用 Moment 的业务实现。
+后台直接使用 npm 包 `@robert-stackflow/oneui@0.5.0` 的蓝白主题与共享组件，包含应用框架、表单校验、设置布局、选择器、表格、弹窗、通知和加载动画。弹窗关闭/卸载后的焦点恢复与紧凑分页直接由 OneUI 管理，Moment 仅传递 `returnFocus`、`compact` 和尺寸参数。图片操作使用共享 ActionSheet，关闭后再打开图片编辑弹窗；横向多行表单的标签对齐由共享 FormField 处理。菜单入口直接使用 OneUI 内置的完整图标目录，旧图标名称只做显示兼容，未编辑时不会改写已保存的数据。`admin/src/styles.css` 只维护照片、地图等业务布局。浅色、深色和跟随系统偏好保存在浏览器中，兼容读取原有的颜色模式偏好。地图、EXIF/GPS、串行上传、草稿、登录和会话继续使用 Moment 的业务实现。
 
 配置项：
 

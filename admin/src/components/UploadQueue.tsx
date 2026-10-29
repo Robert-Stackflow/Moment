@@ -187,18 +187,13 @@ export function UploadQueue({
         accept={"image/*"}
         onFiles={enqueue}
       >
-        <div
-          className="ui-row"
-          style={{
-            display: "flex",
-            alignItems: "center",
-            flexWrap: "wrap",
-            gap: 16,
-            justifyContent: "center",
-            ...{ pointerEvents: "none" },
-          }}
-        >
-          <Upload size={28} strokeWidth={1.5} color="var(--moment-accent)" />
+        <div className="upload-zone-copy">
+          <Upload
+            size={24}
+            strokeWidth={1.5}
+            color="var(--moment-accent)"
+            aria-hidden="true"
+          />
           <div>
             <p
               className="ui-text"
@@ -209,7 +204,7 @@ export function UploadQueue({
               {enabled
                 ? compact
                   ? "继续添加照片"
-                  : "拖入照片，或点击选择文件"
+                  : "添加照片"
                 : "文件上传已关闭"}
             </p>
             <p
@@ -220,7 +215,7 @@ export function UploadQueue({
                 marginTop: 4,
               }}
             >
-              支持批量选择 · 每张最多 {limit} MB · 自动读取拍摄信息
+              可拖入多张照片 · 每张最多 {limit} MB
             </p>
           </div>
         </div>

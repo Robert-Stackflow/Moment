@@ -1,0 +1,75 @@
+{
+  "date": "2026-10-29",
+  "baseline": "852c125",
+  "dependency": "@robert-stackflow/oneui@0.5.0",
+  "package": {
+    "filesCompared": 398,
+    "mismatches": 0,
+    "resolved": "https://registry.npmjs.org/@robert-stackflow/oneui/-/oneui-0.5.0.tgz",
+    "integrity": "sha512-hxgh+JIyVkzcrDywJ+k04YXEMuN/s12CYc8dzVlvslCRhMeqHzozkhPahZMyNbuERpwngElr709I0y5boPhX4Q=="
+  },
+  "build": true,
+  "checks": [
+    {
+      "mode": "light",
+      "width": 1440,
+      "coverBounded": true,
+      "photoCrop": true,
+      "textareaLabelAligned": true,
+      "sheetToEditor": true,
+      "uploadAligned": true
+    },
+    {
+      "mode": "light",
+      "width": 390,
+      "coverBounded": true,
+      "photoCrop": true,
+      "textareaLabelAligned": true,
+      "sheetToEditor": true,
+      "uploadAligned": true
+    },
+    {
+      "mode": "light",
+      "width": 320,
+      "coverBounded": true,
+      "photoCrop": true,
+      "textareaLabelAligned": true,
+      "sheetToEditor": true,
+      "uploadAligned": true
+    },
+    {
+      "mode": "dark",
+      "width": 1440,
+      "coverBounded": true,
+      "photoCrop": true,
+      "textareaLabelAligned": true,
+      "sheetToEditor": true,
+      "uploadAligned": true
+    },
+    {
+      "mode": "dark",
+      "width": 390,
+      "coverBounded": true,
+      "photoCrop": true,
+      "textareaLabelAligned": true,
+      "sheetToEditor": true,
+      "uploadAligned": true
+    },
+    {
+      "mode": "dark",
+      "width": 320,
+      "coverBounded": true,
+      "photoCrop": true,
+      "textareaLabelAligned": true,
+      "sheetToEditor": true,
+      "uploadAligned": true
+    }
+  ],
+  "browserRuntimeErrors": 0,
+  "visualReview": [
+    "Round marker remains round under non-square image cropping",
+    "Editor cover remains 76px within sidebar; upload copy and picker aligned"
+  ],
+  "sourceScope": "Admin layout and shared UI dependency; original public gallery working tree changes preserved",
+  "productionDeployment": "Previous release remains active; these fixes have not been redeployed"
+}

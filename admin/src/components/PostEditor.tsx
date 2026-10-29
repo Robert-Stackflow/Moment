@@ -6,7 +6,7 @@ import {
   Drawer,
   Form,
   Input,
-  Menu,
+  ActionSheet,
   Textarea,
 } from "@robert-stackflow/oneui";
 import { useQueryClient } from "@tanstack/react-query";
@@ -796,8 +796,9 @@ export function PostEditor({
                             {photo.title ||
                               `照片 ${String(index + 1).padStart(2, "0")}`}
                           </p>
-                          <Menu
-                            label={"\u56FE\u7247\u64CD\u4F5C"}
+                          <ActionSheet
+                            label={`图片操作 ${index + 1}`}
+                            title="图片操作"
                             items={[
                               {
                                 label: "\u7F16\u8F91\u56FE\u7247\u4FE1\u606F",
@@ -948,10 +949,11 @@ export function PostEditor({
               {cover && (
                 <Card className={"moment-panel " + "editor-cover-summary"}>
                   <img
+                    className="editor-cover-thumb"
                     src={thumbnail(cover.image_url, settings)}
                     alt="当前封面"
                   />
-                  <div>
+                  <div className="editor-cover-copy">
                     <p
                       className="ui-text"
                       style={{

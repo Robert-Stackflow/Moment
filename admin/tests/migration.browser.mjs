@@ -8,6 +8,7 @@ import { chromium } from "playwright";
 import { auditInterface } from "./interface-audit.mjs";
 import { auditEntryIcons } from "./entry-icons.browser.mjs";
 import { auditOrganize } from "./organize.browser.mjs";
+import { auditPhotoLayout } from "./photo-layout.browser.mjs";
 
 const admin = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const root = path.dirname(admin);
@@ -200,11 +201,16 @@ try {
         .fill("OneUI 迁移验证");
       const pixels = await page.evaluate(() => {
         const canvas = document.createElement("canvas");
-        canvas.width = 192;
-        canvas.height = 128;
+        canvas.width = 1200;
+        canvas.height = 800;
         const ctx = canvas.getContext("2d");
         ctx.fillStyle = "#5067b8";
-        ctx.fillRect(0, 0, 192, 128);
+        ctx.fillRect(0, 0, 1200, 800);
+        ctx.strokeStyle = "#dce7ff";
+        ctx.lineWidth = 20;
+        ctx.beginPath();
+        ctx.arc(600, 400, 220, 0, Math.PI * 2);
+        ctx.stroke();
         return canvas.toDataURL("image/png").split(",")[1];
       });
       await page.locator('input[type="file"]').setInputFiles([
@@ -262,11 +268,11 @@ try {
     "shared date picker, independent category selection and photo menu",
     async () => {
       await page
-        .getByRole("button", { name: "图片操作", exact: true })
+        .getByRole("button", { name: /^图片操作 \d+$/ })
         .first()
         .click();
       await page
-        .getByRole("menuitem", { name: "隐藏图片", exact: true })
+        .getByRole("button", { name: "隐藏图片", exact: true })
         .waitFor();
       await page.keyboard.press("Escape");
       await page.getByRole("combobox", { name: "分类", exact: true }).click();
@@ -708,6 +714,17 @@ try {
         ),
     );
   });
+  await check(
+    "reported photo cards, editor layout and shared action sheet",
+    async () => {
+      console.log(
+        "PHOTO_LAYOUT " +
+          JSON.stringify(
+            await auditPhotoLayout({ page, base, postId, output, noOverflow }),
+          ),
+      );
+    },
+  );
   await check("page and dialog light/dark desktop/mobile matrix", async () => {
     const results = await auditInterface({
       page,
