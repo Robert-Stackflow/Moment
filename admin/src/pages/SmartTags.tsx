@@ -872,6 +872,17 @@ export default function SmartTags() {
         open={consent}
         onClose={() => setConsent(false)}
         title="识别照片标签"
+        footer={
+          <>
+            <Button onClick={() => setConsent(false)} variant="secondary">
+              取消
+            </Button>
+            <Button onClick={() => void recognize()} variant="primary">
+              开始识别
+            </Button>
+          </>
+        }
+        variant="default"
       >
         <div
           className="ui-stack"
@@ -931,30 +942,68 @@ export default function SmartTags() {
             适合粗略内容归类，可能误识别或遗漏；不识别人脸身份。单张上限 32
             MB、3200 万像素，动图可手动添加标签。
           </p>
-          <div
-            className="ui-row"
-            style={{
-              display: "flex",
-              alignItems: "center",
-              flexWrap: "wrap",
-              gap: 10,
-              justifyContent: "flex-end",
-            }}
-          >
-            <Button onClick={() => setConsent(false)} variant="secondary">
-              取消
-            </Button>
-            <Button onClick={() => void recognize()} variant="primary">
-              开始识别
-            </Button>
-          </div>
         </div>
       </Dialog>
       <Dialog
         open={reviewOpen}
         onClose={() => !saving && setReviewOpen(false)}
         size="large"
-        title={"\u6838\u5BF9\u7167\u7247\u6807\u7B7E \u5F20"}
+        title="核对照片标签"
+        busy={saving}
+        footer={
+          <div className="tag-review-actions">
+            <div className="tag-review-summary" role="status">
+              <span className="tag-review-summary-icon" aria-hidden="true">
+                <Tags size={18} />
+              </span>
+              <p
+                className="ui-text"
+                style={{
+                  fontSize: 13,
+                }}
+              >
+                <strong>{targets.length}</strong> 张照片待保存
+              </p>
+            </div>
+            {reviews.length > 6 && (
+              <div className="tag-review-pagination">
+                <Pagination
+                  page={reviewPage}
+                  onPageChange={(value) => {
+                    setReviewPage(value);
+                    reviewScroll.current?.scrollTo({ top: 0 });
+                  }}
+                  total={Math.ceil(reviews.length / 6)}
+                  pageSize={1}
+                  summary={null}
+                />
+              </div>
+            )}
+            <div className={"ui-row " + "tag-review-buttons"}>
+              {!!pending.length && (
+                <Button
+                  disabled={locked}
+                  onClick={() => setConsent(true)}
+                  variant="secondary"
+                >
+                  {<Sparkles size={16} />}
+                  {reviews.some((r) => r.state === "done")
+                    ? "继续识别剩余照片"
+                    : "识别候选标签"}
+                </Button>
+              )}
+              <Button
+                loading={saving}
+                disabled={locked || !targets.length || badTags}
+                onClick={() => setConfirm(true)}
+                variant="primary"
+              >
+                {<Check size={16} />}
+                保存标签
+              </Button>
+            </div>
+          </div>
+        }
       >
         <div className="tag-review-scroll" ref={reviewScroll}>
           <p
@@ -1172,66 +1221,6 @@ export default function SmartTags() {
             />
           )}
         </div>
-        <div className="tag-review-actions">
-          <div className="tag-review-summary" role="status">
-            <span className="tag-review-summary-icon" aria-hidden="true">
-              <Tags size={18} />
-            </span>
-            <p
-              className="ui-text"
-              style={{
-                fontSize: 13,
-              }}
-            >
-              <strong>{targets.length}</strong> 张照片待保存
-            </p>
-          </div>
-          {reviews.length > 6 && (
-            <div className="tag-review-pagination">
-              <Pagination
-                page={reviewPage}
-                onPageChange={(value) => {
-                  setReviewPage(value);
-                  reviewScroll.current?.scrollTo({ top: 0 });
-                }}
-                total={Math.ceil(reviews.length / 6)}
-                pageSize={1}
-                summary={null}
-              />
-            </div>
-          )}
-          <div
-            className={"ui-row " + "tag-review-buttons"}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              flexWrap: "wrap",
-              gap: 6,
-            }}
-          >
-            {!!pending.length && (
-              <Button
-                disabled={locked}
-                onClick={() => setConsent(true)}
-                variant="secondary"
-              >
-                {<Sparkles size={16} />}
-                {reviews.some((r) => r.state === "done")
-                  ? "继续识别剩余照片"
-                  : "识别候选标签"}
-              </Button>
-            )}
-            <Button
-              loading={saving}
-              disabled={locked || !targets.length || badTags}
-              onClick={() => setConfirm(true)}
-              variant="primary"
-            >
-              {<Check size={16} />}
-              保存标签
-            </Button>
-          </div>
-        </div>
       </Dialog>
       <Dialog
         open={!!preview}
@@ -1253,6 +1242,26 @@ export default function SmartTags() {
         open={confirm}
         onClose={() => !saving && setConfirm(false)}
         title="保存所选标签？"
+        footer={
+          <>
+            <Button
+              disabled={saving}
+              onClick={() => setConfirm(false)}
+              variant="secondary"
+            >
+              继续核对
+            </Button>
+            <Button
+              loading={saving}
+              onClick={() => void save()}
+              variant="primary"
+            >
+              确认保存标签
+            </Button>
+          </>
+        }
+        busy={!!saving}
+        variant="default"
       >
         <p
           className="ui-text"
@@ -1263,37 +1272,37 @@ export default function SmartTags() {
           为 {targets.length}{" "}
           张照片添加你选中的标签，保留已有标签。本次未选择的候选不会保存，核对列表将清空。保存后可在处理记录中撤销。
         </p>
-        <div
-          className="ui-row"
-          style={{
-            display: "flex",
-            alignItems: "center",
-            flexWrap: "wrap",
-            gap: 10,
-            justifyContent: "flex-end",
-            marginTop: 24,
-          }}
-        >
-          <Button
-            disabled={saving}
-            onClick={() => setConfirm(false)}
-            variant="secondary"
-          >
-            继续核对
-          </Button>
-          <Button
-            loading={saving}
-            onClick={() => void save()}
-            variant="primary"
-          >
-            确认保存标签
-          </Button>
-        </div>
       </Dialog>
       <Dialog
         open={discard}
         onClose={() => setDiscard(false)}
         title="放弃本次结果？"
+        footer={
+          <>
+            <Button
+              onClick={() => setDiscard(false)}
+              variant="secondary"
+              data-dialog-initial-focus
+            >
+              继续核对
+            </Button>
+            <Button
+              onClick={() => {
+                setReviews([]);
+                setSelected({});
+                setError("");
+                setConflict(false);
+                setDiscard(false);
+                setReviewOpen(false);
+                receipt.current = null;
+              }}
+              variant="danger"
+            >
+              确认放弃
+            </Button>
+          </>
+        }
+        variant="confirm"
       >
         <p
           className="ui-text"
@@ -1303,40 +1312,31 @@ export default function SmartTags() {
         >
           候选与未保存的标签将清空，已经保存的内容不会改变。
         </p>
-        <div
-          className="ui-row"
-          style={{
-            display: "flex",
-            alignItems: "center",
-            flexWrap: "wrap",
-            gap: 10,
-            justifyContent: "flex-end",
-            marginTop: 24,
-          }}
-        >
-          <Button onClick={() => setDiscard(false)} variant="secondary">
-            继续核对
-          </Button>
-          <Button
-            onClick={() => {
-              setReviews([]);
-              setSelected({});
-              setError("");
-              setConflict(false);
-              setDiscard(false);
-              setReviewOpen(false);
-              receipt.current = null;
-            }}
-            variant="danger"
-          >
-            确认放弃
-          </Button>
-        </div>
       </Dialog>
       <Dialog
         open={cacheDialog}
         onClose={() => !cacheBusy && setCacheDialog(false)}
         title="清除模型缓存？"
+        footer={
+          <>
+            <Button
+              disabled={cacheBusy}
+              onClick={() => setCacheDialog(false)}
+              variant="secondary"
+            >
+              取消
+            </Button>
+            <Button
+              loading={cacheBusy}
+              onClick={() => void clearCache()}
+              variant="primary"
+            >
+              清除缓存
+            </Button>
+          </>
+        }
+        busy={!!cacheBusy}
+        variant="default"
       >
         <p
           className="ui-text"
@@ -1346,32 +1346,6 @@ export default function SmartTags() {
         >
           仅清除本浏览器为智能标签下载的模型文件，照片与已保存标签不会改变。下次识别需重新下载。
         </p>
-        <div
-          className="ui-row"
-          style={{
-            display: "flex",
-            alignItems: "center",
-            flexWrap: "wrap",
-            gap: 10,
-            justifyContent: "flex-end",
-            marginTop: 24,
-          }}
-        >
-          <Button
-            disabled={cacheBusy}
-            onClick={() => setCacheDialog(false)}
-            variant="secondary"
-          >
-            取消
-          </Button>
-          <Button
-            loading={cacheBusy}
-            onClick={() => void clearCache()}
-            variant="primary"
-          >
-            清除缓存
-          </Button>
-        </div>
       </Dialog>
       {history && <PhotoHistory onClose={() => setHistory(false)} />}
     </>

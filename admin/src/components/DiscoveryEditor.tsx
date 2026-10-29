@@ -4,6 +4,7 @@ import {
   FormField,
   Accordion,
   NumberInput,
+  LoadingState,
   Select,
 } from "@robert-stackflow/oneui";
 import { MapPin } from "lucide-react";
@@ -168,16 +169,7 @@ export function DiscoveryEditor({
         size="large"
       >
         <Suspense
-          fallback={
-            <p
-              className="ui-text"
-              style={{
-                fontSize: 13,
-              }}
-            >
-              正在打开地图…
-            </p>
-          }
+          fallback={<LoadingState label="加载地图" showLabel={false} />}
         >
           <MapPicker
             latitude={data.latitude}

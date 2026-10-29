@@ -5,6 +5,7 @@ import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { chromium } from "playwright";
+import { auditInterface } from "./interface-audit.mjs";
 
 const admin = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const root = path.dirname(admin);
@@ -681,6 +682,18 @@ try {
       await page.waitForURL("**/workbench");
     },
   );
+  await check("page and dialog light/dark desktop/mobile matrix", async () => {
+    const results = await auditInterface({
+      page,
+      context,
+      base,
+      api,
+      postId,
+      output,
+      noOverflow,
+    });
+    console.log("AUDIT " + JSON.stringify(results));
+  });
   assert.deepEqual(consoleErrors, []);
   assert.deepEqual(failures, []);
   console.log("PASS no browser runtime errors; isolated data only");

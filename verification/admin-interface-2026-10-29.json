@@ -1,0 +1,161 @@
+{
+  "date": "2026-10-29",
+  "baseline": "a1d266f",
+  "dependency": "@robert-stackflow/oneui@0.4.0",
+  "source": {
+    "tsxFiles": 42,
+    "sharedImports": 42,
+    "nativeControls": 0,
+    "dialogs": 36,
+    "drawers": 1,
+    "popovers": 1,
+    "sharedFooters": 29,
+    "fixedRadii": []
+  },
+  "matrix": {
+    "pageChecks": 96,
+    "dialogChecks": 178,
+    "modes": [
+      "light",
+      "dark"
+    ],
+    "viewports": [
+      1280,
+      390
+    ],
+    "routes": [
+      "workbench",
+      "posts",
+      "posts/new",
+      "posts/1",
+      "drafts",
+      "drafts/c24ce2cb-fea6-47c5-9116-8c0344802d0b",
+      "schedules",
+      "organize/duplicates",
+      "organize/tags",
+      "trash",
+      "shares",
+      "shares/new",
+      "shares/1",
+      "categories",
+      "settings/meta",
+      "settings/content",
+      "settings/storage",
+      "settings/general",
+      "settings/backups",
+      "account",
+      "account/security",
+      "account/password",
+      "account/sessions",
+      "login"
+    ],
+    "dialogTitles": [
+      "新建分类",
+      "编辑分类",
+      "删除分类",
+      "批量分类 · 1 篇帖子",
+      "移入回收站",
+      "通过地址添加照片",
+      "选择拍摄位置",
+      "相册内容预览",
+      "编辑图片信息",
+      "删除这份草稿？",
+      "安排发布时间",
+      "取消发布计划？",
+      "/^永久删除 .*篇帖子？$/",
+      "已删除的帖子",
+      "撤销分享？",
+      "更换链接？",
+      "删除相册？",
+      "复制分享链接",
+      "刷新当前页面？",
+      "加载最新相册？",
+      "离开当前页面？",
+      "添加通行密钥",
+      "重命名通行密钥",
+      "移除通行密钥？",
+      "放弃当前修改并重新加载？",
+      "退出当前会话？",
+      "恢复整站备份",
+      "删除备份文件？",
+      "处理记录",
+      "撤销这次标签整理？",
+      "读取说明",
+      "扫描重复图片",
+      "取消这次扫描？",
+      "/张$/",
+      "/^原图 ·/",
+      "/^隐藏这 .*张照片？$/",
+      "清空选择并关闭？",
+      "清除模型缓存？",
+      "识别照片标签",
+      "核对照片标签",
+      "OneUI 迁移验证",
+      "保存所选标签？",
+      "放弃本次结果？",
+      "恢复完成"
+    ]
+  },
+  "loginDivider": [
+    {
+      "mode": "light",
+      "width": 1280,
+      "offsets": [
+        0,
+        0
+      ]
+    },
+    {
+      "mode": "light",
+      "width": 390,
+      "offsets": [
+        0,
+        0
+      ]
+    },
+    {
+      "mode": "dark",
+      "width": 1280,
+      "offsets": [
+        0,
+        0
+      ]
+    },
+    {
+      "mode": "dark",
+      "width": 390,
+      "offsets": [
+        0,
+        0
+      ]
+    }
+  ],
+  "checks": {
+    "productionBuild": true,
+    "browserRuntimeErrors": 0,
+    "realLoginUploadAndPostPublish": true,
+    "freshTestDataOnly": true,
+    "finalNormalTestExit": 0
+  },
+  "fixes": [
+    "Shared Dialog footer, external submit/form association and pending-state locks",
+    "Card body layout and image button minimum height in photo tag review; single-column mobile cards",
+    "Shared EmptyState, map zoom IconButton and loading animation",
+    "Theme tokens for save status, overlays and shadows",
+    "OneUI Web login composition with Logo + Moment and no capability description",
+    "Login divider align-self center",
+    "Restore completion close action returns to login"
+  ],
+  "faultFixtures": [
+    "Share/passkey stale revision responses (409)",
+    "Clipboard unavailable",
+    "Paused real duplicate-scan step"
+  ],
+  "notRun": [
+    "AI model download and inference"
+  ],
+  "cleanup": {
+    "retained": "%TEMP%/moment-oneui-ui-OPQBqu",
+    "reason": "Automatic approval policy rejected recursive removal; associated processes stopped; no retry"
+  }
+}

@@ -225,6 +225,27 @@ export default function Drafts() {
         open={!!deleting}
         onClose={() => !busy && setDeleting(null)}
         title="删除这份草稿？"
+        footer={
+          <>
+            <Button
+              disabled={busy}
+              onClick={() => setDeleting(null)}
+              variant="secondary"
+              data-dialog-initial-focus
+            >
+              取消
+            </Button>
+            <Button
+              loading={busy}
+              onClick={() => void remove()}
+              variant="danger"
+            >
+              删除草稿
+            </Button>
+          </>
+        }
+        busy={!!busy}
+        variant="confirm"
       >
         <p
           className="ui-text"
@@ -234,28 +255,6 @@ export default function Drafts() {
         >
           草稿中的未发布修改将被删除，已发布的帖子和原始图片不受影响。
         </p>
-        <div
-          className="ui-row"
-          style={{
-            display: "flex",
-            alignItems: "center",
-            flexWrap: "wrap",
-            gap: 10,
-            justifyContent: "flex-end",
-            marginTop: 32,
-          }}
-        >
-          <Button
-            disabled={busy}
-            onClick={() => setDeleting(null)}
-            variant="secondary"
-          >
-            取消
-          </Button>
-          <Button loading={busy} onClick={() => void remove()} variant="danger">
-            删除草稿
-          </Button>
-        </div>
       </Dialog>
     </>
   );

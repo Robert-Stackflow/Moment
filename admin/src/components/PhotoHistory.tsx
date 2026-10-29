@@ -179,6 +179,26 @@ export function PhotoHistory({ onClose }: { onClose: () => void }) {
         title={
           undo?.kind === "tags_add" ? "撤销这次标签整理？" : "撤销这次隐藏？"
         }
+        footer={
+          <>
+            <Button
+              disabled={busy}
+              onClick={() => setUndo(null)}
+              variant="secondary"
+            >
+              取消
+            </Button>
+            <Button
+              loading={busy}
+              onClick={() => void restore()}
+              variant="primary"
+            >
+              确认撤销
+            </Button>
+          </>
+        }
+        busy={!!busy}
+        variant="default"
       >
         <p
           className="ui-text"
@@ -200,32 +220,6 @@ export function PhotoHistory({ onClose }: { onClose: () => void }) {
             <Alert tone={tone("red")}>{error}</Alert>
           </div>
         )}
-        <div
-          className="ui-row"
-          style={{
-            display: "flex",
-            alignItems: "center",
-            flexWrap: "wrap",
-            gap: 10,
-            justifyContent: "flex-end",
-            marginTop: 24,
-          }}
-        >
-          <Button
-            disabled={busy}
-            onClick={() => setUndo(null)}
-            variant="secondary"
-          >
-            取消
-          </Button>
-          <Button
-            loading={busy}
-            onClick={() => void restore()}
-            variant="primary"
-          >
-            确认撤销
-          </Button>
-        </div>
       </Dialog>
     </>
   );

@@ -438,8 +438,42 @@ export default function Backups() {
       )}
       <Dialog
         open={!!restoring}
-        onClose={() => !busy && !restored && setRestoring(null)}
+        onClose={() => {
+          if (busy) return;
+          if (restored) window.location.assign("/admin/login");
+          else setRestoring(null);
+        }}
         title={restored ? "恢复完成" : "恢复整站备份"}
+        footer={
+          restored ? (
+            <Button href="/admin/login" variant="primary">
+              重新登录
+            </Button>
+          ) : (
+            restoring && (
+              <>
+                {" "}
+                <Button
+                  disabled={!!busy}
+                  onClick={() => setRestoring(null)}
+                  variant="secondary"
+                >
+                  取消
+                </Button>
+                <Button
+                  loading={!!busy}
+                  disabled={!password || confirm !== "恢复备份"}
+                  onClick={() => void restore()}
+                  variant="primary"
+                >
+                  确认恢复
+                </Button>{" "}
+              </>
+            )
+          )
+        }
+        busy={!!!!busy}
+        variant="default"
       >
         {restored ? (
           <div
@@ -453,9 +487,6 @@ export default function Backups() {
             <Alert tone={tone("green")}>
               内容已恢复，恢复前的数据也已自动备份。所有登录会话已失效，请使用备份中的账户重新登录。
             </Alert>
-            <Button href="/admin/login" variant="primary">
-              重新登录
-            </Button>
           </div>
         ) : (
           restoring && (
@@ -494,32 +525,6 @@ export default function Backups() {
                 disabled={!!busy}
                 onChange={(event) => setConfirm(event.currentTarget.value)}
               />
-              <div
-                className="ui-row"
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  flexWrap: "wrap",
-                  gap: 10,
-                  justifyContent: "flex-end",
-                }}
-              >
-                <Button
-                  disabled={!!busy}
-                  onClick={() => setRestoring(null)}
-                  variant="secondary"
-                >
-                  取消
-                </Button>
-                <Button
-                  loading={!!busy}
-                  disabled={!password || confirm !== "恢复备份"}
-                  onClick={() => void restore()}
-                  variant="primary"
-                >
-                  确认恢复
-                </Button>
-              </div>
             </div>
           )
         )}
@@ -528,6 +533,27 @@ export default function Backups() {
         open={!!deleting}
         onClose={() => !busy && setDeleting(null)}
         title="删除备份文件？"
+        footer={
+          <>
+            <Button
+              disabled={!!busy}
+              onClick={() => setDeleting(null)}
+              variant="secondary"
+              data-dialog-initial-focus
+            >
+              取消
+            </Button>
+            <Button
+              loading={!!busy}
+              onClick={() => void remove()}
+              variant="danger"
+            >
+              删除备份
+            </Button>
+          </>
+        }
+        busy={!!!!busy}
+        variant="confirm"
       >
         <div
           className="ui-stack"
@@ -545,31 +571,6 @@ export default function Backups() {
           >
             仅删除这份服务器备份，不影响当前网站内容。删除后无法从服务器下载或恢复这份备份。
           </p>
-          <div
-            className="ui-row"
-            style={{
-              display: "flex",
-              alignItems: "center",
-              flexWrap: "wrap",
-              gap: 10,
-              justifyContent: "flex-end",
-            }}
-          >
-            <Button
-              disabled={!!busy}
-              onClick={() => setDeleting(null)}
-              variant="secondary"
-            >
-              取消
-            </Button>
-            <Button
-              loading={!!busy}
-              onClick={() => void remove()}
-              variant="danger"
-            >
-              删除备份
-            </Button>
-          </div>
         </div>
       </Dialog>
     </div>

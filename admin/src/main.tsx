@@ -1,5 +1,7 @@
 import {
   LoadingState,
+  Button,
+  EmptyState,
   ToastProvider,
   UIProvider,
 } from "@robert-stackflow/oneui";
@@ -111,12 +113,10 @@ const router = createBrowserRouter(
           <Route
             path="*"
             element={
-              <div className="ui-center" style={{ minHeight: 300 }}>
-                <div>
-                  <h2>找不到这个页面</h2>
-                  <a href="/admin/workbench">返回工作台</a>
-                </div>
-              </div>
+              <EmptyState
+                title="找不到这个页面"
+                action={<Button href="/admin/workbench">返回工作台</Button>}
+              />
             }
           />
         </Route>

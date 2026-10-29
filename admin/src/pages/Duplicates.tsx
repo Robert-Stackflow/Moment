@@ -645,6 +645,26 @@ export default function Duplicates() {
         open={startDialog}
         onClose={() => !starting && setStartDialog(false)}
         title="扫描重复图片"
+        footer={
+          <>
+            <Button
+              onClick={() => setStartDialog(false)}
+              disabled={starting}
+              variant="secondary"
+            >
+              取消
+            </Button>
+            <Button
+              onClick={() => void start()}
+              loading={starting}
+              variant="primary"
+            >
+              开始检测
+            </Button>
+          </>
+        }
+        busy={!!starting}
+        variant="default"
       >
         <div
           className="ui-stack"
@@ -680,37 +700,27 @@ export default function Duplicates() {
             万像素或动图仅比较文件内容。远程读取仅支持公网地址。相似结果需人工核对。
           </p>
           {error && <Alert tone={tone("red")}>{error}</Alert>}
-          <div
-            className="ui-row"
-            style={{
-              display: "flex",
-              alignItems: "center",
-              flexWrap: "wrap",
-              gap: 10,
-              justifyContent: "flex-end",
-            }}
-          >
-            <Button
-              onClick={() => setStartDialog(false)}
-              disabled={starting}
-              variant="secondary"
-            >
-              取消
-            </Button>
-            <Button
-              onClick={() => void start()}
-              loading={starting}
-              variant="primary"
-            >
-              开始检测
-            </Button>
-          </div>
         </div>
       </Dialog>
       <Dialog
         open={cancelDialog}
         onClose={() => setCancelDialog(false)}
         title="取消这次扫描？"
+        footer={
+          <>
+            <Button
+              onClick={() => setCancelDialog(false)}
+              variant="secondary"
+              data-dialog-initial-focus
+            >
+              保留进度
+            </Button>
+            <Button onClick={() => void cancel()} variant="danger">
+              确认取消扫描
+            </Button>
+          </>
+        }
+        variant="confirm"
       >
         <p
           className="ui-text"
@@ -720,24 +730,6 @@ export default function Duplicates() {
         >
           取消后可以重新扫描；照片与之前的处理记录会保留。
         </p>
-        <div
-          className="ui-row"
-          style={{
-            display: "flex",
-            alignItems: "center",
-            flexWrap: "wrap",
-            gap: 10,
-            justifyContent: "flex-end",
-            marginTop: 24,
-          }}
-        >
-          <Button onClick={() => setCancelDialog(false)} variant="secondary">
-            保留进度
-          </Button>
-          <Button onClick={() => void cancel()} variant="danger">
-            确认取消扫描
-          </Button>
-        </div>
       </Dialog>
       {scan && group && (
         <DuplicateGroup
@@ -1089,6 +1081,25 @@ function DuplicateGroup({
         onClose={() => !busy && setConfirm(false)}
         title={`隐藏这 ${selected.length} 张照片？`}
         busy={busy}
+        footer={
+          <>
+            <Button
+              disabled={busy}
+              onClick={() => setConfirm(false)}
+              variant="secondary"
+            >
+              继续比较
+            </Button>
+            <Button
+              loading={busy}
+              onClick={() => void hide()}
+              variant="primary"
+            >
+              确认隐藏
+            </Button>
+          </>
+        }
+        variant="default"
       >
         <p
           className="ui-text"
@@ -1107,33 +1118,22 @@ function DuplicateGroup({
             <Alert tone={tone("red")}>{error}</Alert>
           </div>
         )}
-        <div
-          className="ui-row"
-          style={{
-            display: "flex",
-            alignItems: "center",
-            flexWrap: "wrap",
-            gap: 10,
-            justifyContent: "flex-end",
-            marginTop: 24,
-          }}
-        >
-          <Button
-            disabled={busy}
-            onClick={() => setConfirm(false)}
-            variant="secondary"
-          >
-            继续比较
-          </Button>
-          <Button loading={busy} onClick={() => void hide()} variant="primary">
-            确认隐藏
-          </Button>
-        </div>
       </Dialog>
       <Dialog
         open={closing}
         onClose={() => setClosing(false)}
         title="清空选择并关闭？"
+        footer={
+          <>
+            <Button onClick={() => setClosing(false)} variant="secondary">
+              继续比较
+            </Button>
+            <Button onClick={onClose} variant="primary">
+              清空并关闭
+            </Button>
+          </>
+        }
+        variant="default"
       >
         <p
           className="ui-text"
@@ -1143,24 +1143,6 @@ function DuplicateGroup({
         >
           尚未隐藏任何照片，关闭会清空当前选择。
         </p>
-        <div
-          className="ui-row"
-          style={{
-            display: "flex",
-            alignItems: "center",
-            flexWrap: "wrap",
-            gap: 10,
-            justifyContent: "flex-end",
-            marginTop: 24,
-          }}
-        >
-          <Button onClick={() => setClosing(false)} variant="secondary">
-            继续比较
-          </Button>
-          <Button onClick={onClose} variant="primary">
-            清空并关闭
-          </Button>
-        </div>
       </Dialog>
       <Dialog
         open={!!preview}

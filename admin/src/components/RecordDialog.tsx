@@ -1,4 +1,9 @@
-import { Button, Dialog, Pagination } from "@robert-stackflow/oneui";
+import {
+  Button,
+  Dialog,
+  Pagination,
+  EmptyState,
+} from "@robert-stackflow/oneui";
 import type { LucideIcon } from "lucide-react";
 import type { ReactNode } from "react";
 export function RecordDialog({
@@ -29,23 +34,26 @@ export function RecordDialog({
       size="medium"
       busy={busy}
       title={title}
+      footer={
+        <>
+          {total > pageSize && (
+            <Pagination
+              page={page}
+              onPageChange={onPageChange}
+              total={Math.ceil(total / pageSize)}
+              pageSize={1}
+              summary={null}
+            />
+          )}
+          <Button disabled={busy} onClick={onClose} variant="secondary">
+            关闭
+          </Button>
+        </>
+      }
+      variant="default"
     >
       <div className="record-dialog-scroll" key={page}>
         {children}
-      </div>
-      <div className="record-dialog-footer">
-        {total > pageSize && (
-          <Pagination
-            page={page}
-            onPageChange={onPageChange}
-            total={Math.ceil(total / pageSize)}
-            pageSize={1}
-            summary={null}
-          />
-        )}
-        <Button disabled={busy} onClick={onClose} variant="secondary">
-          关闭
-        </Button>
       </div>
     </Dialog>
   );
@@ -60,30 +68,12 @@ export function RecordEmpty({
   description?: string;
 }) {
   return (
-    <div className="record-empty" role="status">
-      <span className="record-empty-icon" aria-hidden="true">
-        <Icon size={27} strokeWidth={1.6} />
-      </span>
-      <p
-        className="ui-text"
-        style={{
-          fontWeight: 600,
-          fontSize: 14,
-        }}
-      >
-        {title}
-      </p>
-      {description && (
-        <p
-          className="ui-text"
-          style={{
-            fontSize: 13,
-            color: "var(--muted)",
-          }}
-        >
-          {description}
-        </p>
-      )}
+    <div role="status">
+      <EmptyState
+        icon={<Icon size={26} />}
+        title={title}
+        description={description}
+      />
     </div>
   );
 }

@@ -49,7 +49,28 @@ export function ScheduleDialog({
     }
   }
   return (
-    <Dialog open={true} onClose={() => !busy && onClose()} title="安排发布时间">
+    <Dialog
+      open={true}
+      onClose={() => !busy && onClose()}
+      title="安排发布时间"
+      footer={
+        <>
+          <Button disabled={busy} onClick={onClose} variant="secondary">
+            取消
+          </Button>
+          <Button
+            loading={busy}
+            onClick={() => void confirm()}
+            variant="primary"
+          >
+            {<CalendarClock size={16} />}
+            确认计划
+          </Button>
+        </>
+      }
+      busy={!!busy}
+      variant="default"
+    >
       <UnsavedChanges
         dirty={value !== initial || parentDirty || busy}
         message="发布计划尚未保存，离开后将丢失本次时间设置。"
@@ -115,28 +136,6 @@ export function ScheduleDialog({
           到期后公开这份草稿；现有帖子在发布前保持原样。计划期间内容锁定，修改内容需先取消计划。服务停机时将在重启后补发。
         </p>
         {error && <Alert tone={tone("red")}>{error}</Alert>}
-        <div
-          className="ui-row"
-          style={{
-            display: "flex",
-            alignItems: "center",
-            flexWrap: "wrap",
-            gap: 10,
-            justifyContent: "flex-end",
-          }}
-        >
-          <Button disabled={busy} onClick={onClose} variant="secondary">
-            取消
-          </Button>
-          <Button
-            loading={busy}
-            onClick={() => void confirm()}
-            variant="primary"
-          >
-            {<CalendarClock size={16} />}
-            确认计划
-          </Button>
-        </div>
       </div>
     </Dialog>
   );

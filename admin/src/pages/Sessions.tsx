@@ -158,6 +158,26 @@ export default function Sessions() {
               : "退出此会话？"
         }
         busy={busy}
+        footer={
+          <>
+            <Button
+              disabled={busy}
+              onClick={() => setTarget(null)}
+              variant="secondary"
+              data-dialog-initial-focus
+            >
+              取消
+            </Button>
+            <Button
+              loading={busy}
+              onClick={() => void revoke()}
+              variant="danger"
+            >
+              确认退出
+            </Button>
+          </>
+        }
+        variant="confirm"
       >
         <div
           className="ui-stack"
@@ -180,31 +200,6 @@ export default function Sessions() {
                 : `${target?.device || "该设备"} 需要重新登录才能继续操作。`}
           </p>
           {error && <Alert tone={tone("red")}>{error}</Alert>}
-          <div
-            className="ui-row"
-            style={{
-              display: "flex",
-              alignItems: "center",
-              flexWrap: "wrap",
-              gap: 10,
-              justifyContent: "flex-end",
-            }}
-          >
-            <Button
-              disabled={busy}
-              onClick={() => setTarget(null)}
-              variant="secondary"
-            >
-              取消
-            </Button>
-            <Button
-              loading={busy}
-              onClick={() => void revoke()}
-              variant="danger"
-            >
-              确认退出
-            </Button>
-          </div>
         </div>
       </Dialog>
     </>

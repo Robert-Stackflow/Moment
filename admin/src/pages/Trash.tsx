@@ -525,6 +525,28 @@ export default function Trash() {
         open={!!purging}
         onClose={() => !busy && setPurging(null)}
         title={`永久删除 ${purging?.length || 0} 篇帖子？`}
+        footer={
+          <>
+            <Button
+              disabled={busy}
+              onClick={() => setPurging(null)}
+              variant="secondary"
+              data-dialog-initial-focus
+            >
+              取消
+            </Button>
+            <Button
+              disabled={!confirmed}
+              loading={busy}
+              onClick={() => purging && void change("purge", purging)}
+              variant="danger"
+            >
+              永久删除
+            </Button>
+          </>
+        }
+        busy={!!busy}
+        variant="confirm"
       >
         <div
           className="ui-stack"
@@ -548,32 +570,6 @@ export default function Trash() {
             disabled={busy}
             label="我确认永久删除这些内容"
           />
-          <div
-            className="ui-row"
-            style={{
-              display: "flex",
-              alignItems: "center",
-              flexWrap: "wrap",
-              gap: 10,
-              justifyContent: "flex-end",
-            }}
-          >
-            <Button
-              disabled={busy}
-              onClick={() => setPurging(null)}
-              variant="secondary"
-            >
-              取消
-            </Button>
-            <Button
-              disabled={!confirmed}
-              loading={busy}
-              onClick={() => purging && void change("purge", purging)}
-              variant="danger"
-            >
-              永久删除
-            </Button>
-          </div>
         </div>
       </Dialog>
     </>

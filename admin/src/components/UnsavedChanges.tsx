@@ -17,6 +17,25 @@ export function UnsavedChanges({
       open={blocker.state === "blocked"}
       onClose={() => blocker.state === "blocked" && blocker.reset()}
       title="离开当前页面？"
+      footer={
+        <>
+          <Button
+            data-autofocus
+            onClick={() => blocker.state === "blocked" && blocker.reset()}
+            variant="secondary"
+            data-dialog-initial-focus
+          >
+            继续编辑
+          </Button>
+          <Button
+            onClick={() => blocker.state === "blocked" && blocker.proceed()}
+            variant="danger"
+          >
+            离开页面
+          </Button>
+        </>
+      }
+      variant="confirm"
     >
       <p
         className="ui-text"
@@ -29,31 +48,6 @@ export function UnsavedChanges({
             ? "照片正在上传，离开会取消上传。"
             : "当前修改尚未保存，离开后将丢失这些修改。")}
       </p>
-      <div
-        className="ui-row"
-        style={{
-          display: "flex",
-          alignItems: "center",
-          flexWrap: "wrap",
-          gap: 10,
-          justifyContent: "flex-end",
-          marginTop: 32,
-        }}
-      >
-        <Button
-          data-autofocus
-          onClick={() => blocker.state === "blocked" && blocker.reset()}
-          variant="secondary"
-        >
-          继续编辑
-        </Button>
-        <Button
-          onClick={() => blocker.state === "blocked" && blocker.proceed()}
-          variant="danger"
-        >
-          离开页面
-        </Button>
-      </div>
     </Dialog>
   );
 }

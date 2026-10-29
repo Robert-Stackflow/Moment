@@ -4,6 +4,9 @@ import {
   Card,
   Divider,
   Form,
+  FormField,
+  FormErrorSummary,
+  LoadingState,
   Input,
   PasswordField,
 } from "@robert-stackflow/oneui";
@@ -16,7 +19,6 @@ import { Brand } from "../components/Brand";
 import { useModelForm } from "../components/useModelForm";
 import { canUsePasskeys, passkeyError, type PasskeyConfig } from "../passkeys";
 import { useAuth } from "../session";
-import { tone } from "../ui-data";
 export function Login() {
   const auth = useAuth();
   const navigate = useNavigate();
@@ -104,213 +106,135 @@ export function Login() {
       setBusy(false);
     }
   }
+  if (setup.isPending)
+    return <LoadingState label="加载登录页面" showLabel={false} fullPage />;
+  const locked = busy || passkeyBusy;
   return (
-    <div
-      className={"ui-center " + "login-page"}
-      style={{
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-      }}
-    >
-      <div
-        className="ui-stack"
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          gap: 26,
-          width: "100%",
-          maxWidth: 420,
-          paddingLeft: 20,
-          paddingRight: 20,
-        }}
-      >
-        <div
-          className="ui-stack"
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            gap: 12,
-            alignItems: "center",
-          }}
-        >
-          <Brand size={58} />
-          <h1 className="ui-title">Moment</h1>
+    <main className="login-page">
+      <section className="login-form">
+        <div className="login-brand">
+          <Brand size={36} />
+          <h1>Moment</h1>
         </div>
-        <Card className="moment-panel">
-          <Form controller={sharedForm} onSubmit={submit}>
-            <div
-              className="ui-stack"
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                gap: 24,
-              }}
-            >
-              <div>
-                <h3 className="ui-title">
-                  {initializing ? "创建管理账户" : "欢迎回来"}
-                </h3>
-                <p
-                  className="ui-text"
-                  style={{
-                    color: "var(--muted)",
-                    fontSize: 13,
-                    marginTop: 6,
-                  }}
-                >
-                  {initializing
-                    ? "设置你的第一个管理员账户。"
-                    : "登录后继续整理你的相册。"}
-                </p>
-              </div>
-              {error ? <Alert tone={tone("red")}>{error}</Alert> : null}
-              {setup.error ? (
-                <Alert tone={tone("red")}>
-                  服务连接失败。
+        <Card>
+          <Form
+            controller={sharedForm}
+            onSubmit={submit}
+            className="login-fields"
+            aria-label={initializing ? "创建管理账户" : "账户登录"}
+          >
+            <FormErrorSummary
+              errors={{}}
+              submitError={error || sharedForm.submitError}
+              onFocus={sharedForm.focusField}
+            />
+            {setup.error && (
+              <Alert
+                tone="danger"
+                action={
                   <Button onClick={() => void setup.refetch()} variant="ghost">
                     重试
                   </Button>
-                </Alert>
-              ) : null}
-              {!initializing && passkeys.data?.data.enabled && (
-                <div
-                  className="ui-stack"
-                  style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: 6,
-                  }}
-                >
-                  <Button
-                    type="button"
-                    loading={passkeyBusy}
-                    disabled={busy || !correctOrigin || !canUsePasskeys()}
-                    onClick={() => void usePasskey()}
-                    variant="secondary"
-                    style={{
-                      width: "100%",
-                    }}
-                  >
-                    {<Fingerprint size={19} />}
-                    使用通行密钥登录
-                  </Button>
-                  {passkeyBusy && (
-                    <>
-                      <p
-                        role="status"
-                        className="ui-text"
-                        style={{
-                          fontSize: 12,
-                          color: "var(--muted)",
-                          textAlign: "center",
-                        }}
-                      >
-                        {finishing
-                          ? "验证成功，正在登录…"
-                          : "请在设备上完成验证"}
-                      </p>
-                      <Button
-                        type="button"
-                        size="small"
-                        disabled={finishing}
-                        onClick={() => controller.current?.abort()}
-                        variant="ghost"
-                      >
-                        取消验证
-                      </Button>
-                    </>
-                  )}
-                  {!correctOrigin ? (
-                    <p
-                      className="ui-text"
-                      style={{
-                        fontSize: 12,
-                        color: "var(--muted)",
-                        ...{ overflowWrap: "anywhere" },
-                      }}
-                    >
-                      通行密钥需在 {passkeys.data.data.origin}{" "}
-                      使用；当前可使用密码登录。
-                    </p>
-                  ) : (
-                    !canUsePasskeys() && (
-                      <p
-                        className="ui-text"
-                        style={{
-                          fontSize: 12,
-                          color: "var(--muted)",
-                        }}
-                      >
-                        此浏览器暂不支持通行密钥，请使用密码登录。
-                      </p>
-                    )
-                  )}
-                  <div
-                    style={{
-                      marginTop: 10,
-                    }}
-                  >
-                    <div className="login-divider">
-                      <Divider />
-                      <span>或使用密码</span>
-                      <Divider />
-                    </div>
-                  </div>
-                </div>
-              )}
+                }
+              >
+                服务连接失败，请重试。
+              </Alert>
+            )}
+            <FormField
+              {...sharedForm.field("username")}
+              label="用户名"
+              disabled={locked}
+            >
               <Input
-                {...sharedForm.field("username")}
-                label="用户名"
                 placeholder="输入用户名"
                 autoComplete="username"
-                required
                 maxLength={20}
                 value={username}
                 onChange={(e) => setUsername(e.currentTarget.value)}
               />
-              {initializing ? (
+            </FormField>
+            {initializing && (
+              <FormField
+                {...sharedForm.field("email")}
+                label="邮箱"
+                disabled={locked}
+              >
                 <Input
-                  {...sharedForm.field("email")}
-                  label="邮箱"
                   type="email"
-                  required
                   autoComplete="email"
                   value={email}
                   onChange={(e) => setEmail(e.currentTarget.value)}
                 />
-              ) : null}
+              </FormField>
+            )}
+            <FormField
+              {...sharedForm.field("password")}
+              label="密码"
+              disabled={locked}
+            >
               <PasswordField
-                {...sharedForm.field("password")}
-                onChange={(value) => setPassword(value)}
-                label="密码"
+                value={password}
+                onChange={setPassword}
                 placeholder={initializing ? "至少 10 位" : "输入密码"}
                 autoComplete={
                   initializing ? "new-password" : "current-password"
                 }
-                required
                 minLength={initializing ? 10 : undefined}
-                value={password}
               />
-              <Button
-                type="submit"
-                loading={busy}
-                disabled={setup.isPending || !!setup.error || passkeyBusy}
-                variant="primary"
-                style={{
-                  width: "100%",
-                }}
-              >
-                {initializing ? "创建账户并进入" : "进入管理后台"}
-              </Button>
-            </div>
+            </FormField>
+            <Button
+              type="submit"
+              className="login-full"
+              variant="primary"
+              loading={busy || sharedForm.isSubmitting}
+              disabled={!!setup.error || passkeyBusy}
+            >
+              {initializing ? "创建账户并进入" : "登录"}
+            </Button>
           </Form>
+          {!initializing && passkeys.data?.data.enabled && (
+            <>
+              <div className="login-divider">
+                <Divider />
+                <span>或使用</span>
+                <Divider />
+              </div>
+              <div className="login-alternatives">
+                <Button
+                  className="login-full"
+                  loading={passkeyBusy}
+                  disabled={busy || !correctOrigin || !canUsePasskeys()}
+                  onClick={() => void usePasskey()}
+                >
+                  <Fingerprint size={18} />
+                  通行密钥
+                </Button>
+                {passkeyBusy && (
+                  <>
+                    <p role="status">
+                      {finishing ? "验证成功，正在登录…" : "请在设备上完成验证"}
+                    </p>
+                    <Button
+                      size="small"
+                      disabled={finishing}
+                      onClick={() => controller.current?.abort()}
+                      variant="ghost"
+                    >
+                      取消验证
+                    </Button>
+                  </>
+                )}
+              </div>
+            </>
+          )}
         </Card>
-        <Button href="/" variant="ghost">
-          {<ArrowLeft size={16} />}
-          返回相册
-        </Button>
-      </div>
-    </div>
+        <div className="login-back">
+          <Button href="/" variant="ghost">
+            <ArrowLeft size={16} />
+            返回相册
+          </Button>
+        </div>
+      </section>
+    </main>
   );
 }

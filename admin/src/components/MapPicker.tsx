@@ -1,4 +1,5 @@
-import { Button } from "@robert-stackflow/oneui";
+import { Alert, Button, IconButton } from "@robert-stackflow/oneui";
+import { Minus, Plus } from "lucide-react";
 import type { GeoJsonObject } from "geojson";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
@@ -34,15 +35,12 @@ export default function MapPicker({
       zoomControl: false,
     }).setView(initial.current || [25, 105], initial.current ? 6 : 2);
     map.current = m;
-    L.control
-      .zoom({ zoomInTitle: "放大地图", zoomOutTitle: "缩小地图" })
-      .addTo(m);
     L.geoJSON(land as unknown as GeoJsonObject, {
       interactive: false,
       style: {
-        color: "#667580",
+        color: "var(--muted)",
         weight: 1,
-        fillColor: "#60737b",
+        fillColor: "var(--line)",
         fillOpacity: 0.24,
       },
     }).addTo(m);
@@ -55,8 +53,8 @@ export default function MapPicker({
       marker?.remove();
       marker = L.circleMarker(p, {
         radius: 7,
-        color: "#819afa",
-        fillColor: "#536fe5",
+        color: "var(--accent)",
+        fillColor: "var(--accent)",
         fillOpacity: 1,
         weight: 3,
       }).addTo(m);
@@ -113,11 +111,21 @@ export default function MapPicker({
       >
         拖动、缩放后点击选点，也可以关闭地图直接填写经纬度。
       </p>
-      <div
-        ref={node}
-        className="location-map-picker"
-        aria-label="拍摄位置地图"
-      />
+      <div className="map-picker-frame">
+        <div
+          ref={node}
+          className="location-map-picker"
+          aria-label="拍摄位置地图"
+        />
+        <div className="map-picker-zoom" role="group" aria-label="地图缩放">
+          <IconButton label="放大地图" onClick={() => map.current?.zoomIn()}>
+            <Plus />
+          </IconButton>
+          <IconButton label="缩小地图" onClick={() => map.current?.zoomOut()}>
+            <Minus />
+          </IconButton>
+        </div>
+      </div>
       {!detailed ? (
         <div className="map-network-choice">
           <p
@@ -146,15 +154,7 @@ export default function MapPicker({
         </Button>
       )}
       {error && detailed && (
-        <p
-          className="ui-text"
-          style={{
-            fontSize: 12,
-            color: "orange",
-          }}
-        >
-          详细地图加载失败，仍可选点或切回本地轮廓。
-        </p>
+        <Alert tone="warning">详细地图加载失败，仍可选点或切回本地轮廓。</Alert>
       )}
       <div
         className="ui-row"

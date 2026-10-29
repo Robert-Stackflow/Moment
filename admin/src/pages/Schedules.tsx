@@ -377,6 +377,27 @@ export default function Schedules() {
         open={!!cancelling}
         onClose={() => !busy && setCancelling(null)}
         title="取消发布计划？"
+        footer={
+          <>
+            <Button
+              disabled={busy}
+              onClick={() => setCancelling(null)}
+              variant="secondary"
+              data-dialog-initial-focus
+            >
+              保留计划
+            </Button>
+            <Button
+              loading={busy}
+              onClick={() => void cancel()}
+              variant="danger"
+            >
+              确认取消
+            </Button>
+          </>
+        }
+        busy={!!busy}
+        variant="confirm"
       >
         <p
           className="ui-text"
@@ -387,28 +408,6 @@ export default function Schedules() {
           「{cancelling?.title}
           」将保留为草稿，可以继续编辑或重新安排时间。已公开的内容保持原样。
         </p>
-        <div
-          className="ui-row"
-          style={{
-            display: "flex",
-            alignItems: "center",
-            flexWrap: "wrap",
-            gap: 10,
-            justifyContent: "flex-end",
-            marginTop: 32,
-          }}
-        >
-          <Button
-            disabled={busy}
-            onClick={() => setCancelling(null)}
-            variant="secondary"
-          >
-            保留计划
-          </Button>
-          <Button loading={busy} onClick={() => void cancel()} variant="danger">
-            确认取消
-          </Button>
-        </div>
       </Dialog>
     </>
   );

@@ -320,6 +320,26 @@ export default function Shares() {
         open={!!action}
         onClose={() => !busy && setAction(null)}
         title={action ? `${labels[action.kind]}？` : ""}
+        footer={
+          <>
+            <Button
+              disabled={busy}
+              onClick={() => setAction(null)}
+              variant="secondary"
+            >
+              取消
+            </Button>
+            <Button
+              loading={busy}
+              onClick={() => void confirm()}
+              variant="primary"
+            >
+              {action ? labels[action.kind] : "确认"}
+            </Button>
+          </>
+        }
+        busy={!!busy}
+        variant="default"
       >
         <p
           className="ui-text"
@@ -335,32 +355,6 @@ export default function Shares() {
                 ? "链接和图片入口立即停止接受新请求。已经下载的照片无法收回。"
                 : "重新启用当前链接。有密码的访客需要重新解锁。"}
         </p>
-        <div
-          className="ui-row"
-          style={{
-            display: "flex",
-            alignItems: "center",
-            flexWrap: "wrap",
-            gap: 10,
-            justifyContent: "flex-end",
-            marginTop: 32,
-          }}
-        >
-          <Button
-            disabled={busy}
-            onClick={() => setAction(null)}
-            variant="secondary"
-          >
-            取消
-          </Button>
-          <Button
-            loading={busy}
-            onClick={() => void confirm()}
-            variant="primary"
-          >
-            {action ? labels[action.kind] : "确认"}
-          </Button>
-        </div>
       </Dialog>
       <Dialog
         open={!!copyLink}

@@ -52,6 +52,28 @@ export function PendingChangesProvider({ children }: { children: ReactNode }) {
         open={refreshRequested}
         onClose={() => setRefreshRequested(false)}
         title="刷新当前页面？"
+        footer={
+          <>
+            <Button
+              onClick={() => setRefreshRequested(false)}
+              data-autofocus
+              variant="secondary"
+              data-dialog-initial-focus
+            >
+              继续编辑
+            </Button>
+            <Button
+              onClick={() => {
+                allowRefresh.current = true;
+                window.location.reload();
+              }}
+              variant="danger"
+            >
+              放弃修改并刷新
+            </Button>
+          </>
+        }
+        variant="confirm"
       >
         <p
           className="ui-text"
@@ -61,34 +83,6 @@ export function PendingChangesProvider({ children }: { children: ReactNode }) {
         >
           当前修改尚未保存，刷新会丢失这些修改，并中断正在进行的上传。
         </p>
-        <div
-          className="ui-row"
-          style={{
-            display: "flex",
-            alignItems: "center",
-            flexWrap: "wrap",
-            gap: 10,
-            justifyContent: "flex-end",
-            marginTop: 32,
-          }}
-        >
-          <Button
-            onClick={() => setRefreshRequested(false)}
-            data-autofocus
-            variant="secondary"
-          >
-            继续编辑
-          </Button>
-          <Button
-            onClick={() => {
-              allowRefresh.current = true;
-              window.location.reload();
-            }}
-            variant="danger"
-          >
-            放弃修改并刷新
-          </Button>
-        </div>
       </Dialog>
     </PendingContext.Provider>
   );

@@ -1162,6 +1162,18 @@ export function PostEditor({
         open={adding}
         onClose={() => setAdding(false)}
         title="通过地址添加照片"
+        footer={
+          <>
+            <Button onClick={() => setAdding(false)} variant="secondary">
+              取消
+            </Button>
+            <Button onClick={addURLs} variant="primary">
+              {<Plus size={15} />}
+              添加到帖子
+            </Button>
+          </>
+        }
+        variant="default"
       >
         <div
           className="ui-stack"
@@ -1193,24 +1205,6 @@ export function PostEditor({
               setUrlError("");
             }}
           />
-          <div
-            className="ui-row"
-            style={{
-              display: "flex",
-              alignItems: "center",
-              flexWrap: "wrap",
-              gap: 10,
-              justifyContent: "flex-end",
-            }}
-          >
-            <Button onClick={() => setAdding(false)} variant="secondary">
-              取消
-            </Button>
-            <Button onClick={addURLs} variant="primary">
-              {<Plus size={15} />}
-              添加到帖子
-            </Button>
-          </div>
         </div>
       </Dialog>
       <Dialog

@@ -11,7 +11,7 @@ import {
 } from "@robert-stackflow/oneui";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Plus, RefreshCw } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useId, useState } from "react";
 import { flushSync } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import { api, ApiError, json, notifySuccess } from "../api";
@@ -36,6 +36,7 @@ type Dialog =
       key: Passkey;
     };
 export default function Security() {
+  const dialogFormId = useId();
   const client = useQueryClient();
   const auth = useAuth();
   const navigate = useNavigate();
@@ -291,9 +292,36 @@ export default function Security() {
               : "移除通行密钥？"
         }
         busy={busy}
+        footer={
+          dialog && (
+            <>
+              {" "}
+              <Button
+                disabled={busy && (dialog.kind !== "create" || finishing)}
+                onClick={() => (busy ? controller.current?.abort() : close())}
+                variant="secondary"
+              >
+                {busy ? "取消验证" : "取消"}
+              </Button>
+              <Button
+                type="submit"
+                form={dialogFormId}
+                loading={busy}
+                variant="primary"
+              >
+                {dialog.kind === "create"
+                  ? "验证并添加"
+                  : dialog.kind === "delete"
+                    ? "确认移除"
+                    : "保存"}
+              </Button>{" "}
+            </>
+          )
+        }
+        variant="form"
       >
         {dialog && (
-          <Form controller={sharedForm} onSubmit={submit}>
+          <Form controller={sharedForm} onSubmit={submit} id={dialogFormId}>
             <div
               className="ui-stack"
               style={{
@@ -369,31 +397,6 @@ export default function Security() {
                   )}
                 </Alert>
               )}
-              <div
-                className="ui-row"
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  flexWrap: "wrap",
-                  gap: 10,
-                  justifyContent: "flex-end",
-                }}
-              >
-                <Button
-                  disabled={busy && (dialog.kind !== "create" || finishing)}
-                  onClick={() => (busy ? controller.current?.abort() : close())}
-                  variant="secondary"
-                >
-                  {busy ? "取消验证" : "取消"}
-                </Button>
-                <Button type="submit" loading={busy} variant="primary">
-                  {dialog.kind === "create"
-                    ? "验证并添加"
-                    : dialog.kind === "delete"
-                      ? "确认移除"
-                      : "保存"}
-                </Button>
-              </div>
             </div>
           </Form>
         )}
@@ -402,6 +405,17 @@ export default function Security() {
         open={reloadPrompt}
         onClose={() => setReloadPrompt(false)}
         title="放弃当前修改并重新加载？"
+        footer={
+          <>
+            <Button onClick={() => setReloadPrompt(false)} variant="secondary">
+              继续编辑
+            </Button>
+            <Button onClick={() => void reloadLatest()} variant="primary">
+              放弃修改并重新加载
+            </Button>
+          </>
+        }
+        variant="default"
       >
         <p
           className="ui-text"
@@ -411,24 +425,6 @@ export default function Security() {
         >
           另一处修改已保存。重新加载后，此窗口尚未保存的内容会被替换。
         </p>
-        <div
-          className="ui-row"
-          style={{
-            display: "flex",
-            alignItems: "center",
-            flexWrap: "wrap",
-            gap: 10,
-            justifyContent: "flex-end",
-            marginTop: 24,
-          }}
-        >
-          <Button onClick={() => setReloadPrompt(false)} variant="secondary">
-            继续编辑
-          </Button>
-          <Button onClick={() => void reloadLatest()} variant="primary">
-            放弃修改并重新加载
-          </Button>
-        </div>
       </Dialog>
     </>
   );

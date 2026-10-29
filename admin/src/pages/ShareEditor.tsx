@@ -689,6 +689,23 @@ function ShareForm({
         open={reloadOpen}
         onClose={() => setReloadOpen(false)}
         title="加载最新相册？"
+        footer={
+          <>
+            <Button onClick={() => setReloadOpen(false)} variant="secondary">
+              继续编辑
+            </Button>
+            <Button
+              onClick={() => {
+                void client.invalidateQueries({ queryKey: ["share-picker"] });
+                onReload();
+              }}
+              variant="primary"
+            >
+              放弃编辑并加载
+            </Button>
+          </>
+        }
+        variant="default"
       >
         <p
           className="ui-text"
@@ -698,30 +715,6 @@ function ShareForm({
         >
           当前未保存的编辑将被替换。请先复制需要保留的文字或密码。
         </p>
-        <div
-          className="ui-row"
-          style={{
-            display: "flex",
-            alignItems: "center",
-            flexWrap: "wrap",
-            gap: 10,
-            marginTop: 32,
-            justifyContent: "flex-end",
-          }}
-        >
-          <Button onClick={() => setReloadOpen(false)} variant="secondary">
-            继续编辑
-          </Button>
-          <Button
-            onClick={() => {
-              void client.invalidateQueries({ queryKey: ["share-picker"] });
-              onReload();
-            }}
-            variant="primary"
-          >
-            放弃编辑并加载
-          </Button>
-        </div>
       </Dialog>
     </>
   );

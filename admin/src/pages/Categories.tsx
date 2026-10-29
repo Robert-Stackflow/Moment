@@ -14,7 +14,7 @@ import {
 } from "@robert-stackflow/oneui";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Folder, FolderPlus, Pencil, Plus, Tag, Trash2 } from "lucide-react";
-import { useState } from "react";
+import { useId, useState } from "react";
 import { api, json, notifyError, notifySuccess } from "../api";
 import { Empty, ErrorState, Loading, PageTitle } from "../components/Common";
 import { usePendingChanges } from "../components/PendingChanges";
@@ -23,6 +23,7 @@ import type { Category } from "../types";
 import { flatten } from "../types";
 const blank = { name: "", alias: "", desc: "", order: 0, parent_id: 0 };
 export default function Categories() {
+  const dialogFormId = useId();
   const client = useQueryClient();
   const categories = useQuery({
     queryKey: ["categories"],
@@ -216,8 +217,23 @@ export default function Categories() {
         busy={busy}
         title={editing === "new" ? "新建分类" : "编辑分类"}
         variant="form"
+        footer={
+          <>
+            <Button disabled={busy} onClick={() => setEditing(null)}>
+              取消
+            </Button>
+            <Button
+              type="submit"
+              form={dialogFormId}
+              variant="primary"
+              loading={busy}
+            >
+              保存分类
+            </Button>
+          </>
+        }
       >
-        <Form controller={sharedForm} onSubmit={save}>
+        <Form controller={sharedForm} onSubmit={save} id={dialogFormId}>
           <div className="ui-stack form-fields">
             <Input
               {...sharedForm.field("name")}
@@ -268,14 +284,6 @@ export default function Categories() {
                 onChange={(value) => field("order", value)}
               />
             </FormField>
-            <div className="dialog-actions">
-              <Button disabled={busy} onClick={() => setEditing(null)}>
-                取消
-              </Button>
-              <Button type="submit" variant="primary" loading={busy}>
-                保存分类
-              </Button>
-            </div>
           </div>
         </Form>
       </Dialog>
@@ -287,7 +295,11 @@ export default function Categories() {
         variant="confirm"
         footer={
           <>
-            <Button disabled={busy} onClick={() => setDeleting(null)}>
+            <Button
+              disabled={busy}
+              onClick={() => setDeleting(null)}
+              data-dialog-initial-focus
+            >
               取消
             </Button>
             <Button

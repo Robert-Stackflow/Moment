@@ -681,6 +681,27 @@ export default function Posts() {
           if (!busy) setDeleting(null);
         }}
         title="移入回收站"
+        footer={
+          <>
+            <Button
+              disabled={busy}
+              onClick={() => setDeleting(null)}
+              variant="secondary"
+              data-dialog-initial-focus
+            >
+              取消
+            </Button>
+            <Button
+              loading={busy}
+              onClick={() => deleting && void batch("delete", deleting)}
+              variant="danger"
+            >
+              移入回收站
+            </Button>
+          </>
+        }
+        busy={!!busy}
+        variant="confirm"
       >
         <div
           className="ui-stack"
@@ -694,37 +715,33 @@ export default function Posts() {
             将这 {deleting?.length}{" "}
             篇帖子移入回收站？访客将无法再访问，图片、分类和未发布草稿会保留，可随时恢复。
           </p>
-          <div
-            className="ui-row"
-            style={{
-              display: "flex",
-              alignItems: "center",
-              flexWrap: "wrap",
-              gap: 10,
-              justifyContent: "flex-end",
-            }}
-          >
-            <Button
-              disabled={busy}
-              onClick={() => setDeleting(null)}
-              variant="secondary"
-            >
-              取消
-            </Button>
-            <Button
-              loading={busy}
-              onClick={() => deleting && void batch("delete", deleting)}
-              variant="danger"
-            >
-              移入回收站
-            </Button>
-          </div>
         </div>
       </Dialog>
       <Dialog
         open={classifying}
         onClose={() => !busy && setClassifying(false)}
         title={`批量分类 · ${selected.length} 篇帖子`}
+        footer={
+          <>
+            <Button
+              disabled={busy}
+              onClick={() => setClassifying(false)}
+              variant="secondary"
+            >
+              取消
+            </Button>
+            <Button
+              loading={busy}
+              disabled={categoryMode !== "replace" && !batchCategories.length}
+              onClick={() => void batch("categories", selected)}
+              variant="primary"
+            >
+              应用到 {selected.length} 篇帖子
+            </Button>
+          </>
+        }
+        busy={!!busy}
+        variant="default"
       >
         <div
           className="ui-stack"
@@ -772,32 +789,6 @@ export default function Posts() {
                 : "这会清除所选帖子的全部分类。"}
             </Alert>
           )}
-          <div
-            className="ui-row"
-            style={{
-              display: "flex",
-              alignItems: "center",
-              flexWrap: "wrap",
-              gap: 10,
-              justifyContent: "flex-end",
-            }}
-          >
-            <Button
-              disabled={busy}
-              onClick={() => setClassifying(false)}
-              variant="secondary"
-            >
-              取消
-            </Button>
-            <Button
-              loading={busy}
-              disabled={categoryMode !== "replace" && !batchCategories.length}
-              onClick={() => void batch("categories", selected)}
-              variant="primary"
-            >
-              应用到 {selected.length} 篇帖子
-            </Button>
-          </div>
         </div>
       </Dialog>
     </>
