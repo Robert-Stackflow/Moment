@@ -744,11 +744,12 @@ export function PostEditor({
                           setDragTarget(null);
                         }}
                       >
-                        <button
+                        <Button
                           type="button"
-                          className="photo-edit-target"
+                          className="photo-edit-target image-action app-button-layout"
                           aria-label={`编辑图片 ${index + 1}`}
                           onClick={() => setEditing(photo._key)}
+                          variant="ghost"
                         >
                           <img
                             className="photo-cover"
@@ -766,7 +767,7 @@ export function PostEditor({
                             <Pencil size={15} />
                             编辑信息
                           </span>
-                        </button>
+                        </Button>
                         <span
                           className={`photo-status-badge ${photo.is_hidden ? "is-hidden" : ""}`}
                         >

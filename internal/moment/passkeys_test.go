@@ -370,30 +370,28 @@ func TestPasskeyBackupRestoreAndOlderUpgrade(t *testing.T) {
 		t.Fatal(err)
 	}
 	config, err := readPasskeyConfig(restored.db)
-	if err != nil || config.Enabled {
-		t.Fatal("old database did not upgrade to disabled defaults", err)
+	if err != nil || !config.Enabled {
+		t.Fatal("upgraded database did not make passkeys available", err)
 	}
 }
 
-func TestPasskeyConfigurationAndDefaultOff(t *testing.T) {
+func TestPasskeyAvailableWithoutEnableSwitch(t *testing.T) {
 	a, h, auth := testApp(t)
-	status(t, passkeyCall(t, h, "POST", "/passkeys/login/begin", Object{}), 409)
+	status(t, passkeyCall(t, h, "POST", "/passkeys/login/begin", Object{}), 200)
 	status(t, passkeyCall(t, h, "GET", "/me/passkeys", nil), 401)
 	status(t, passkeyCall(t, h, "PUT", "/passkeys/config", Object{"enabled": true, "revision": 0}), 401)
 	status(t, passkeyCall(t, h, "POST", "/me/passkeys/begin", Object{"name": "设备"}), 401)
-	enableTestPasskeys(t, h, auth)
+	device := addTestPasskey(t, h, auth)
+	w := passkeyCall(t, h, "POST", "/passkeys/login/begin", Object{})
+	body := device.assertion(t, passkeyOptions(t, w), 0x05, 1, passkeyTestOrigin, "localhost")
+	status(t, passkeyCall(t, h, "POST", "/passkeys/login/finish", body, passkeyResponseCookie(t, w, "moment_passkey")), 200)
+	status(t, passkeyCall(t, h, "PUT", "/passkeys/config", Object{"enabled": false, "revision": 0}, auth), 400)
 	config, err := readPasskeyConfig(a.db)
-	if err != nil || config.Origin != passkeyTestOrigin || config.RPID != "localhost" {
-		t.Fatalf("site was not detected: %+v, %v", config, err)
+	if err != nil || !config.Enabled || config.Revision != 0 {
+		t.Fatalf("disable request changed availability: %+v, %v", config, err)
 	}
-	status(t, passkeyCall(t, h, "PUT", "/passkeys/config", Object{"enabled": false, "revision": 0}, auth), 409)
-	status(t, passkeyCall(t, h, "POST", "/passkeys/login/begin", Object{}), 200)
-	status(t, passkeyCall(t, h, "PUT", "/passkeys/config", Object{"enabled": false, "revision": 1}, auth), 200)
-	var count int
-	if err := a.db.QueryRow("SELECT COUNT(*) FROM moment_passkey_challenges").Scan(&count); err != nil || count != 0 {
-		t.Fatalf("challenges survived disable: %d, %v", count, err)
-	}
-	status(t, passkeyCall(t, h, "POST", "/passkeys/login/begin", Object{}), 409)
+	enableTestPasskeys(t, h, auth)
+	status(t, passkeyCall(t, h, "PUT", "/passkeys/config", Object{"enabled": true, "revision": 0}, auth), 409)
 	status(t, passkeyCall(t, h, "POST", "/login", Object{"username": "tester", "password": testPassword}), 200)
 }
 

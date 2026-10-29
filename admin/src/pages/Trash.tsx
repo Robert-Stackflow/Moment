@@ -279,11 +279,12 @@ export default function Trash() {
                   checked={selected.includes(post.id)}
                   disabled={busy}
                 />
-                <button
-                  className="trash-preview-target"
+                <Button
+                  className="trash-preview-target image-action app-button-layout"
                   type="button"
                   onClick={() => setPreview(post)}
                   aria-label={`查看已删除帖子 ${post.title}`}
+                  variant="ghost"
                 >
                   <div className="trash-cover">
                     {cover ? (
@@ -348,7 +349,7 @@ export default function Trash() {
                       删除于 {post.deleted_at}
                     </p>
                   </div>
-                </button>
+                </Button>
                 <div
                   className={"ui-row " + "trash-row-actions"}
                   style={{

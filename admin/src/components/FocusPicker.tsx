@@ -89,9 +89,9 @@ export function FocusPicker({
             图片暂时无法预览，可用下方滑块调整。
           </p>
         ) : (
-          <button
+          <Button
             type="button"
-            className="focus-source"
+            className="focus-source image-action app-button-layout"
             aria-label="调整封面焦点，方向键微调"
             onPointerDown={(event) => {
               event.currentTarget.setPointerCapture(event.pointerId);
@@ -117,6 +117,7 @@ export function FocusPicker({
                 Math.max(0, Math.min(100, y + delta[1] * step)),
               );
             }}
+            variant="ghost"
           >
             <img
               src={src}
@@ -130,7 +131,7 @@ export function FocusPicker({
                 ...{ left: `${x}%`, top: `${y}%` },
               }}
             />
-          </button>
+          </Button>
         )}
       </div>
       {!failed && (
@@ -159,16 +160,6 @@ export function FocusPicker({
       )}
       <div className="focus-sliders">
         <div>
-          <p
-            className="ui-text"
-            style={{
-              fontSize: 12,
-              color: "var(--muted)",
-              marginBottom: 8,
-            }}
-          >
-            水平 · {x}%
-          </p>
           <Slider
             value={x}
             onChange={(value) => onChange(value, y)}
@@ -176,16 +167,6 @@ export function FocusPicker({
           />
         </div>
         <div>
-          <p
-            className="ui-text"
-            style={{
-              fontSize: 12,
-              color: "var(--muted)",
-              marginBottom: 8,
-            }}
-          >
-            垂直 · {y}%
-          </p>
           <Slider
             value={y}
             onChange={(value) => onChange(x, value)}

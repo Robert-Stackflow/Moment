@@ -567,10 +567,11 @@ export default function Duplicates() {
                       {item.count} 张
                     </Badge>
                   </div>
-                  <button
-                    className="duplicate-previews"
+                  <Button
+                    className="duplicate-previews image-action app-button-layout"
                     onClick={() => setGroup(item)}
                     aria-label={`比较分组 ${item.id}，${item.count} 张图片`}
+                    variant="ghost"
                   >
                     {item.images.map((photo) => (
                       <img
@@ -584,7 +585,7 @@ export default function Duplicates() {
                         loading="lazy"
                       />
                     ))}
-                  </button>
+                  </Button>
                   <div
                     className="ui-row"
                     style={{
@@ -947,17 +948,18 @@ function DuplicateGroup({
                   }`}
                   key={photo.image_id}
                 >
-                  <button
-                    className="duplicate-photo-preview"
+                  <Button
+                    className="duplicate-photo-preview image-action app-button-layout"
                     aria-label={`查看原图 ${photo.image_id}`}
                     onClick={() => setPreview(photo)}
+                    variant="ghost"
                   >
                     <img
                       src={thumbnail(photo.image_url, settings, 640)}
                       alt={photo.current_title || photo.post_title}
                       loading="lazy"
                     />
-                  </button>
+                  </Button>
                   <div className="duplicate-photo-copy">
                     <div
                       className="ui-row"

@@ -71,19 +71,22 @@ export default function Drafts() {
           新建帖子
         </Button>
       </PageTitle>
-      <Input
-        aria-label="搜索草稿"
-        placeholder="搜索草稿标题或描述"
-        leading={<Search size={17} />}
-        value={search}
-        onChange={(e) => {
-          setSearch(e.currentTarget.value);
-          setPage(1);
-        }}
+      <div
         style={{
           marginBottom: 24,
         }}
-      />
+      >
+        <Input
+          aria-label="搜索草稿"
+          placeholder="搜索草稿标题或描述"
+          leading={<Search size={17} />}
+          value={search}
+          onChange={(e) => {
+            setSearch(e.currentTarget.value);
+            setPage(1);
+          }}
+        />
+      </div>
       {drafts.isPending ? (
         <Loading />
       ) : drafts.error ? (

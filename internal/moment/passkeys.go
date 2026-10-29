@@ -30,7 +30,7 @@ type passkeyConfig struct {
 }
 
 func readPasskeyConfig(q querier) (passkeyConfig, error) {
-	rows, err := query(q, "SELECT enabled,origin,revision FROM moment_passkey_config WHERE id=1")
+	rows, err := query(q, "SELECT origin,revision FROM moment_passkey_config WHERE id=1")
 	if err != nil {
 		return passkeyConfig{}, err
 	}
@@ -38,7 +38,7 @@ func readPasskeyConfig(q querier) (passkeyConfig, error) {
 		return passkeyConfig{}, errors.New("missing passkey configuration")
 	}
 	r := rows[0]
-	config := passkeyConfig{Enabled: integer(r["enabled"]) != 0, Origin: text(r["origin"]), Revision: integer(r["revision"])}
+	config := passkeyConfig{Enabled: true, Origin: text(r["origin"]), Revision: integer(r["revision"])}
 	if u, err := url.Parse(config.Origin); err == nil {
 		config.RPID = u.Hostname()
 	}
@@ -163,6 +163,12 @@ func (a *App) configurePasskeys(c *gin.Context) {
 	}
 	if c.GetHeader("Origin") == "" {
 		fail(c, 403, "请从当前网站的后台修改通行密钥设置")
+		return
+	}
+	// Kept for older clients that refresh the relying-party configuration.
+	// Availability now follows the current origin, without a separate switch.
+	if !in.Enabled {
+		fail(c, 400, "通行密钥添加后即可使用，无需单独启用或关闭")
 		return
 	}
 	site := passkeyConfig{}

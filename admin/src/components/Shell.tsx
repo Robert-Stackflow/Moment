@@ -59,7 +59,13 @@ function AccountFooter() {
   }
   return (
     <div className="sidebar-footer">
-      <Button variant="ghost" href="/" target="_blank" rel="noreferrer">
+      <Button
+        variant="ghost"
+        className="footer-website app-button-layout"
+        href="/"
+        target="_blank"
+        rel="noreferrer"
+      >
         查看网站 <ArrowUpRight size={15} />
       </Button>
       <Segmented
@@ -98,7 +104,7 @@ function AccountFooter() {
       />
       <Button
         variant="ghost"
-        className="account-switch"
+        className="account-switch app-button-layout"
         ref={anchor}
         aria-label="账户菜单"
         aria-expanded={open}
@@ -112,7 +118,9 @@ function AccountFooter() {
         />
         <span className="account-label">
           <strong>{auth.user?.alias || auth.user?.username}</strong>
-          <small>@{auth.user?.username}</small>
+          {auth.user?.alias && auth.user.alias !== auth.user.username && (
+            <small>@{auth.user.username}</small>
+          )}
         </span>
         <ChevronsUpDown size={15} />
       </Button>

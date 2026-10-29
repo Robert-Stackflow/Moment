@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { spawn, spawnSync } from "node:child_process";
-import { mkdtemp, rm, mkdir } from "node:fs/promises";
+import { mkdtemp, rm, mkdir, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -15,7 +15,9 @@ const apiPort = 19998,
 const base = `http://localhost:${uiPort}/admin`;
 const children = [],
   failures = [],
-  consoleErrors = [];
+  consoleErrors = [],
+  runtimeEvidence = [];
+let activeCheck = "setup";
 let browser, page;
 function start(command, args, cwd, env = {}) {
   const child = spawn(command, args, {
@@ -47,6 +49,7 @@ async function ready(url, process) {
   throw new Error("Server did not start: " + process.log().slice(-600));
 }
 async function check(label, action) {
+  activeCheck = label;
   await action();
   console.log("PASS " + label);
 }
@@ -70,6 +73,19 @@ async function noOverflow() {
     };
   });
   assert.ok(overflow.body <= 1 && overflow.main <= 1, JSON.stringify(overflow));
+}
+async function searchIconAligned(label) {
+  const input = page.getByRole("textbox", { name: label, exact: true });
+  await input.waitFor();
+  const offset = await input.evaluate((input) => {
+    const icon = input.parentElement.querySelector("svg"),
+      field = input.getBoundingClientRect(),
+      rect = icon?.getBoundingClientRect();
+    return rect
+      ? Math.abs(rect.y + rect.height / 2 - field.y - field.height / 2)
+      : Infinity;
+  });
+  assert.ok(offset <= 2, `${label}: search icon offset ${offset}px`);
 }
 try {
   await mkdir(output, { recursive: true });
@@ -114,7 +130,14 @@ try {
     viewport: { width: 1280, height: 900 },
   });
   page = await context.newPage();
-  page.on("pageerror", (error) => consoleErrors.push(error.message));
+  page.on("pageerror", (error) => {
+    consoleErrors.push(error.message);
+    runtimeEvidence.push({
+      phase: activeCheck,
+      url: page.url(),
+      stack: error.stack,
+    });
+  });
   await check("shared login validation and real authentication", async () => {
     await page.goto(base + "/login");
     await page.getByRole("button", { name: "创建账户并进入" }).click();
@@ -173,14 +196,21 @@ try {
         ctx.fillRect(0, 0, 192, 128);
         return canvas.toDataURL("image/png").split(",")[1];
       });
-      await page
-        .locator('input[type="file"]')
-        .setInputFiles({
+      await page.locator('input[type="file"]').setInputFiles([
+        {
           name: "migration.png",
           mimeType: "image/png",
           buffer: Buffer.from(pixels, "base64"),
-        });
-      await page.locator(".photo-editor-card").waitFor();
+        },
+        {
+          name: "migration-copy.png",
+          mimeType: "image/png",
+          buffer: Buffer.from(pixels, "base64"),
+        },
+      ]);
+      await page.waitForFunction(
+        () => document.querySelectorAll(".photo-editor-card").length === 2,
+      );
       await page
         .getByRole("button", { name: "编辑图片 1", exact: true })
         .click();
@@ -192,6 +222,18 @@ try {
       });
       await tag.fill("迁移验证");
       await tag.press("Enter");
+      const focus = drawer.getByRole("button", {
+        name: "调整封面焦点，方向键微调",
+        exact: true,
+      });
+      await focus.focus();
+      await focus.press("ArrowRight");
+      assert.equal(
+        await drawer
+          .getByRole("slider", { name: /^焦点水平位置/ })
+          .inputValue(),
+        "51",
+      );
       await drawer
         .getByRole("button", { name: "应用修改", exact: true })
         .click();
@@ -208,7 +250,10 @@ try {
   await check(
     "shared date picker, independent category selection and photo menu",
     async () => {
-      await page.getByRole("button", { name: "图片操作", exact: true }).click();
+      await page
+        .getByRole("button", { name: "图片操作", exact: true })
+        .first()
+        .click();
       await page
         .getByRole("menuitem", { name: "隐藏图片", exact: true })
         .waitFor();
@@ -287,6 +332,291 @@ try {
       .waitFor();
     await page.keyboard.press("Escape");
   });
+  await check("shared accordion and nullable decimal coordinates", async () => {
+    await page.goto(base + "/posts/new");
+    await noOverflow();
+    const accordion = page
+      .getByRole("button", { name: "地图与时间线", exact: true })
+      .last();
+    await accordion.click();
+    const latitude = page
+      .getByRole("spinbutton", { name: "纬度", exact: true })
+      .last();
+    await latitude.waitFor();
+    assert.equal(await latitude.getAttribute("type"), "text");
+    assert.equal(await latitude.inputValue(), "");
+    await latitude.fill("30.123456");
+    await latitude.press("Tab");
+    assert.equal(await latitude.inputValue(), "30.123456");
+    await latitude.fill("");
+    await latitude.press("Tab");
+    assert.equal(await latitude.inputValue(), "");
+    assert.equal(await latitude.getAttribute("aria-valuenow"), null);
+    await accordion.click();
+    assert.equal(await accordion.getAttribute("aria-expanded"), "false");
+  });
+  await check(
+    "settings, entries, card rows and search icon layout",
+    async () => {
+      await page.goto(base + "/settings/meta");
+      await noOverflow();
+      await page
+        .getByRole("textbox", { name: "网站名称", exact: true })
+        .fill("视觉验证");
+      await page.getByRole("button", { name: "添加入口", exact: true }).click();
+      await page
+        .getByRole("textbox", { name: "入口名称 1", exact: true })
+        .fill("主页");
+      await page
+        .getByRole("textbox", { name: "入口地址 1", exact: true })
+        .fill("https://example.test");
+      assert.equal(
+        await page.locator('.entry-row [role="combobox"]').count(),
+        1,
+      );
+      const centers = await page.locator(".entry-row").evaluate((el) =>
+        [...el.querySelectorAll('input,[role="combobox"]')].map((node) => {
+          const b = node.getBoundingClientRect();
+          return b.y + b.height / 2;
+        }),
+      );
+      assert.ok(
+        Math.max(...centers) - Math.min(...centers) < 1,
+        "entry controls must share a vertical center",
+      );
+      const setting = page.getByRole("textbox", {
+        name: "网站名称",
+        exact: true,
+      });
+      assert.equal(
+        await setting.evaluate(
+          (el) => getComputedStyle(el.closest("[data-layout]")).display,
+        ),
+        "grid",
+      );
+      const entryBox = await page.locator(".entry-row").boundingBox();
+      for (const button of await page.locator(".entry-actions button").all()) {
+        const box = await button.boundingBox();
+        assert.ok(
+          box.y >= entryBox.y &&
+            box.y + box.height <= entryBox.y + entryBox.height,
+          "entry action must stay in its row",
+        );
+      }
+      const saving = page.waitForResponse(
+        (response) =>
+          response.url().endsWith("/api/admin/settings/meta") &&
+          response.request().method() === "PATCH",
+      );
+      await page.getByRole("button", { name: "保存设置", exact: true }).click();
+      assert.equal((await saving).status(), 200);
+      await page.waitForTimeout(150);
+      const settings = await api("/settings");
+      assert.equal(settings.meta.entries[0].name, "主页");
+      await page
+        .locator("main")
+        .evaluate((main) => (main.scrollTop = main.scrollHeight));
+      await page.screenshot({
+        path: path.join(output, "settings-entries-light.png"),
+      });
+      await page.goto(base + "/account/sessions");
+      await noOverflow();
+      assert.equal(await page.locator(".account-session-note").count(), 0);
+      await page
+        .getByRole("list", { name: "登录会话", exact: true })
+        .getByRole("listitem")
+        .first()
+        .waitFor();
+      assert.equal(
+        await page
+          .getByRole("list", { name: "登录会话", exact: true })
+          .getByRole("listitem")
+          .first()
+          .evaluate((el) => getComputedStyle(el).borderRadius),
+        await page
+          .locator("html")
+          .evaluate((el) =>
+            getComputedStyle(el).getPropertyValue("--card-radius").trim(),
+          ),
+      );
+      await page.screenshot({ path: path.join(output, "sessions-light.png") });
+      await page.goto(base + "/account/security");
+      await noOverflow();
+      assert.equal(await page.getByRole("switch").count(), 0);
+      const cdp = await context.newCDPSession(page);
+      await cdp.send("WebAuthn.enable");
+      const { authenticatorId } = await cdp.send(
+        "WebAuthn.addVirtualAuthenticator",
+        {
+          options: {
+            protocol: "ctap2",
+            transport: "internal",
+            hasResidentKey: true,
+            hasUserVerification: true,
+            isUserVerified: true,
+            automaticPresenceSimulation: true,
+          },
+        },
+      );
+      await page
+        .getByRole("button", { name: "添加通行密钥", exact: true })
+        .click();
+      const passkeyDialog = page.getByRole("dialog", {
+        name: "添加通行密钥",
+        exact: true,
+      });
+      await passkeyDialog
+        .getByRole("textbox", { name: "密钥名称", exact: true })
+        .fill("测试设备");
+      await passkeyDialog
+        .getByRole("button", { name: "验证并添加", exact: true })
+        .click();
+      await passkeyDialog.waitFor({ state: "hidden" });
+      const passkeyList = page.getByRole("list", {
+        name: "通行密钥",
+        exact: true,
+      });
+      await passkeyList
+        .getByRole("button", { name: "重命名通行密钥 测试设备", exact: true })
+        .waitFor();
+      assert.equal((await api("/me/passkeys")).length, 1);
+      await page.locator("dialog[open]").waitFor({ state: "hidden" });
+      await page.screenshot({
+        path: path.join(output, "passkeys-shared-light.png"),
+      });
+      await passkeyList
+        .getByRole("button", { name: "重命名通行密钥 测试设备", exact: true })
+        .click();
+      const rename = page.getByRole("dialog", {
+        name: "重命名通行密钥",
+        exact: true,
+      });
+      await rename
+        .getByRole("textbox", { name: "密钥名称", exact: true })
+        .fill("重命名设备");
+      await rename.getByRole("button", { name: "保存", exact: true }).click();
+      await rename.waitFor({ state: "hidden" });
+      assert.equal((await api("/me/passkeys"))[0].name, "重命名设备");
+      await cdp.send("WebAuthn.removeVirtualAuthenticator", {
+        authenticatorId,
+      });
+      await cdp.detach();
+      await page.goto(base + "/account/password");
+      await noOverflow();
+      assert.equal(
+        await page
+          .locator(".form-actions")
+          .evaluate((el) => getComputedStyle(el).borderTopWidth),
+        "0px",
+      );
+      const id = crypto.randomUUID(),
+        origin = new URL(base).origin;
+      const draft = await page.request.put(origin + "/api/admin/drafts/" + id, {
+        headers: { Origin: origin },
+        data: {
+          id,
+          post_id: null,
+          base_revision: 0,
+          revision: 0,
+          mutation_id: crypto.randomUUID(),
+          payload: {
+            title: "排版验证草稿",
+            desc: "草稿卡片与操作按钮",
+            location: "",
+            time: "2026-10-29T12:00:00",
+            is_hidden: false,
+            category_ids: [],
+            images: [],
+            discovery: {
+              latitude: null,
+              longitude: null,
+              precision: "private",
+              timeline: "show",
+            },
+          },
+        },
+      });
+      assert.equal(draft.status(), 200);
+      await page.goto(base + "/drafts");
+      await noOverflow();
+      await searchIconAligned("搜索草稿");
+      const row = page
+        .locator(".draft-row")
+        .filter({ has: page.getByText("排版验证草稿", { exact: true }) });
+      const content = await row.locator(".draft-row-main").boundingBox(),
+        remove = await row
+          .getByRole("button", { name: "删除草稿 排版验证草稿", exact: true })
+          .boundingBox();
+      assert.ok(
+        remove.x >= content.x + content.width - 1,
+        "draft action must be right aligned",
+      );
+      assert.ok(
+        Math.abs(
+          remove.y + remove.height / 2 - content.y - content.height / 2,
+        ) <= 2,
+        "draft action must align with content",
+      );
+      await page.goto(base + "/shares");
+      await noOverflow();
+      await searchIconAligned("搜索分享相册");
+      await page.goto(base + "/schedules");
+      await noOverflow();
+      await searchIconAligned("搜索发布计划");
+      await page.goto(base + "/organize/duplicates");
+      await noOverflow();
+      await page.getByRole("button", { name: "开始扫描", exact: true }).click();
+      await page
+        .getByRole("dialog", { name: "扫描重复图片", exact: true })
+        .getByRole("button", { name: "开始检测", exact: true })
+        .click();
+      const comparison = page
+        .getByRole("button", { name: /^比较分组/ })
+        .first();
+      await comparison.waitFor({ timeout: 20000 });
+      assert.equal(
+        await comparison.evaluate((el) => getComputedStyle(el).display),
+        "grid",
+      );
+      await comparison.click();
+      await page
+        .getByRole("button", { name: /^查看原图/ })
+        .first()
+        .waitFor();
+      await page.keyboard.press("Escape");
+      await page.goto(base + "/organize/tags");
+      await noOverflow();
+      assert.equal(
+        await page
+          .getByRole("tablist", { name: "照片整理方式", exact: true })
+          .count(),
+        1,
+      );
+      await searchIconAligned("搜索待整理照片");
+      const radii = await page.evaluate(() => {
+        const root = getComputedStyle(document.documentElement),
+          radius = parseFloat(root.getPropertyValue("--radius"));
+        return {
+          expected: radius - 3,
+          actual: [...document.querySelectorAll("button")]
+            .filter((button) => {
+              const r = button.getBoundingClientRect();
+              return (
+                r.width &&
+                r.height &&
+                button.closest(".sidebar-footer") &&
+                !button.closest('[role="group"]')
+              );
+            })
+            .map((button) => parseFloat(getComputedStyle(button).borderRadius)),
+        };
+      });
+      assert.ok(
+        radii.actual.every((radius) => radius === radii.expected),
+        "sidebar controls must use shared button radius",
+      );
+    },
+  );
   await check(
     "light/dark themes and mobile navigation without horizontal overflow",
     async () => {
@@ -319,6 +649,33 @@ try {
       await noOverflow();
       await page.goto(base + "/settings/meta");
       await noOverflow();
+      for (const input of await page.locator(".entry-row input").all())
+        assert.ok(
+          (await input.boundingBox()).width >= 150,
+          "mobile entry inputs must remain readable",
+        );
+      await page.goto(base + "/account/sessions");
+      await noOverflow();
+      for (const route of [
+        "workbench",
+        "drafts",
+        "schedules",
+        "shares",
+        "shares/new",
+        "organize/duplicates",
+        "organize/tags",
+        "categories",
+        "settings/content",
+        "settings/storage",
+        "settings/general",
+        "settings/backups",
+        "account",
+        "account/security",
+        "account/password",
+      ]) {
+        await page.goto(base + "/" + route);
+        await noOverflow();
+      }
       await page.getByRole("button", { name: "打开导航", exact: true }).click();
       await page.getByRole("link", { name: "工作台", exact: true }).click();
       await page.waitForURL("**/workbench");
@@ -335,6 +692,10 @@ try {
   console.error(String(error.stack || error).slice(0, 2400));
   process.exitCode = 1;
 } finally {
+  await writeFile(
+    path.join(output, "runtime-errors.json"),
+    JSON.stringify(runtimeEvidence, null, 2),
+  );
   await browser?.close();
   for (const child of children.reverse()) {
     if (child.exitCode !== null) continue;

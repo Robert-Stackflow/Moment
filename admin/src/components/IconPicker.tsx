@@ -1,7 +1,4 @@
-import {
-  FormField,
-  IconPicker as SharedIconPicker,
-} from "@robert-stackflow/oneui";
+import { IconPicker as SharedIconPicker } from "@robert-stackflow/oneui";
 import { Link2 } from "lucide-react";
 import icons from "../../../shared/entry-icons.json";
 export function EntryIcon({
@@ -45,8 +42,11 @@ export function IconPicker({
   name: string;
 }) {
   return (
-    <FormField label={name}>
-      <SharedIconPicker value={value} onChange={onChange} options={options} />
-    </FormField>
+    <SharedIconPicker
+      label={"入口图标 " + name}
+      value={value}
+      onChange={onChange}
+      options={options}
+    />
   );
 }

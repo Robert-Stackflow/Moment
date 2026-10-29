@@ -108,20 +108,23 @@ export default function Shares() {
           新建相册
         </Button>
       </PageTitle>
-      <Input
-        aria-label="搜索分享相册"
-        placeholder="搜索相册名称"
-        leading={<Search size={17} />}
-        value={search}
-        onChange={(e) => {
-          setSearch(e.currentTarget.value);
-          setPage(1);
-        }}
+      <div
         style={{
           marginBottom: 32,
           maxWidth: 440,
         }}
-      />
+      >
+        <Input
+          aria-label="搜索分享相册"
+          placeholder="搜索相册名称"
+          leading={<Search size={17} />}
+          value={search}
+          onChange={(e) => {
+            setSearch(e.currentTarget.value);
+            setPage(1);
+          }}
+        />
+      </div>
       {list.isLoading ? (
         <Loading />
       ) : list.isError ? (

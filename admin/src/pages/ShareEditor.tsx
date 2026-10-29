@@ -562,19 +562,22 @@ function ShareForm({
                 <h4 className="ui-title">选择帖子</h4>
                 <Plus size={18} />
               </div>
-              <Input
-                aria-label="搜索帖子"
-                placeholder="搜索标题或描述"
-                value={search}
-                onChange={(e) => {
-                  setSearch(e.currentTarget.value);
-                  setPage(1);
-                }}
-                leading={<Search size={16} />}
+              <div
                 style={{
                   marginBottom: 24,
                 }}
-              />
+              >
+                <Input
+                  aria-label="搜索帖子"
+                  placeholder="搜索标题或描述"
+                  value={search}
+                  onChange={(e) => {
+                    setSearch(e.currentTarget.value);
+                    setPage(1);
+                  }}
+                  leading={<Search size={16} />}
+                />
+              </div>
               {posts.isLoading ? (
                 <Loading />
               ) : posts.isError ? (

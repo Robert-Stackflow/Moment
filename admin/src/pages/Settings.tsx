@@ -2,6 +2,7 @@ import {
   Button,
   Card,
   Form,
+  FormField,
   Input,
   NumberInput,
   PasswordField,
@@ -9,20 +10,20 @@ import {
   Select,
   SettingsLayout,
   Textarea,
+  Switch,
 } from "@robert-stackflow/oneui";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Archive, Code2, Database, Globe, Image, Save } from "lucide-react";
 import { lazy, useState } from "react";
 import { Navigate, useNavigate, useParams } from "react-router-dom";
 import { api, json, notifyError, notifySuccess } from "../api";
-import { Brand, brandAppleIcon, brandIcon } from "../components/Brand";
+import { brandAppleIcon, brandIcon } from "../components/Brand";
 import { ErrorState, Loading, PageTitle } from "../components/Common";
 import {
   EntryList,
   type EditableEntry,
   type Entry,
 } from "../components/EntryList";
-import { Toggle as Switch } from "../components/Toggle";
 import { UnsavedChanges } from "../components/UnsavedChanges";
 import { useModelForm } from "../components/useModelForm";
 import type { Section, Settings } from "../types";
@@ -332,49 +333,36 @@ function SettingsForm({
     }
   }
   function renderField(field: Field) {
-    const value = values[field.key];
-    const isCredential = field.kind === "password";
-    const configured = initial[`${field.key}_configured`] === true;
+    const value = values[field.key],
+      credential = field.kind === "password",
+      configured = initial[field.key + "_configured"] === true;
+    if (field.kind === "switch")
+      return (
+        <FormField key={field.key} label={field.label} hint={field.description}>
+          <Switch
+            label={field.label}
+            checked={value === true}
+            onChange={(next) => set(field.key, next)}
+          />
+        </FormField>
+      );
     return (
       <div
-        className={`setting-row ${field.kind === "textarea" ? "setting-wide" : ""}`}
         key={field.key}
+        className={
+          field.kind === "textarea" ? "setting-field is-wide" : "setting-field"
+        }
       >
-        <div>
-          <p
-            id={`label-${field.key}`}
-            className="ui-text"
-            style={{
-              fontWeight: 500,
-              fontSize: 13,
-            }}
-          >
-            {field.label}
-          </p>
-          <p
-            className="ui-text"
-            style={{
-              fontSize: 12,
-              color: "var(--muted)",
-              marginTop: 5,
-            }}
-          >
-            {isCredential && configured
-              ? "已配置。留空保留当前凭据。"
-              : field.description}
-          </p>
-        </div>
-        <div>
-          {field.kind === "switch" ? (
-            <Switch
-              aria-label={field.label}
-              checked={value === true}
-              onChange={(e) => set(field.key, e)}
-            />
-          ) : field.kind === "number" ? (
+        <FormField
+          {...sharedForm.field(field.key)}
+          label={field.label}
+          hint={
+            credential && configured ? "留空保留当前凭据。" : field.description
+          }
+        >
+          {field.kind === "number" ? (
             <NumberInput
-              {...sharedForm.field(field.key)}
-              aria-labelledby={`label-${field.key}`}
+              label={field.label}
               min={
                 field.key === "max_size"
                   ? 0.1
@@ -389,116 +377,72 @@ function SettingsForm({
                     ? 600
                     : 100
               }
-              onChange={(value) => set(field.key, Number(value || 0))}
-              label={field.label}
-              value={Number(Number(value) || 0)}
+              value={Number(value) || 0}
+              onChange={(value) => set(field.key, value)}
             />
           ) : field.kind === "select" ? (
             <Select
-              aria-labelledby={`label-${field.key}`}
-              options={selectOptions(field.options)}
-              onChange={(value) => set(field.key, value)}
               label={field.label}
-              value={String(value) ?? ""}
-            />
-          ) : isCredential ? (
-            <PasswordField
+              options={selectOptions(field.options)}
+              value={String(value ?? "")}
               onChange={(value) => set(field.key, value)}
-              aria-labelledby={`label-${field.key}`}
-              value={String(value)}
+            />
+          ) : credential ? (
+            <PasswordField
+              value={String(value ?? "")}
+              onChange={(value) => set(field.key, value)}
               autoComplete="off"
               placeholder={configured ? "已配置，输入以替换" : "尚未配置"}
             />
           ) : field.kind === "textarea" ? (
             <Textarea
-              aria-labelledby={`label-${field.key}`}
-              value={String(value)}
+              value={String(value ?? "")}
               rows={field.key.startsWith("custom_") ? 6 : 3}
-              onChange={(e) => set(field.key, e.currentTarget.value)}
+              onChange={(event) => set(field.key, event.currentTarget.value)}
             />
           ) : (
             <Input
-              aria-labelledby={`label-${field.key}`}
-              value={String(value)}
-              onChange={(e) => set(field.key, e.currentTarget.value)}
+              value={String(value ?? "")}
+              onChange={(event) => set(field.key, event.currentTarget.value)}
             />
           )}
-        </div>
+        </FormField>
       </div>
     );
   }
+  const group = (title: string, items: Field[], action?: React.ReactNode) => (
+    <Card title={title} action={action}>
+      <div className="settings-fields-grid">
+        {[
+          ...items.filter((field) => field.kind !== "textarea"),
+          ...items.filter((field) => field.kind === "textarea"),
+        ].map(renderField)}
+      </div>
+    </Card>
+  );
+  const iconKeys = [
+      "primary_color",
+      "site_icon",
+      "site_apple_icon",
+      "bottom_icon",
+    ],
+    footerKeys = ["bottom_desc", "icp"];
   return (
-    <Card className="moment-panel">
-      <Form controller={sharedForm} onSubmit={save}>
+    <div className="settings-form">
+      <Form controller={sharedForm} onSubmit={save} layout="inline">
         <UnsavedChanges dirty={dirty} />
-        {section === "storage" ? (
-          <>
-            <div className="storage-provider-section">
-              <h4 className="ui-title">存储方式</h4>
-              <p
-                className="ui-text"
-                style={{
-                  color: "var(--muted)",
-                  fontSize: 13,
-                  marginTop: 6,
-                  marginBottom: 20,
-                }}
-              >
-                选择新上传照片的存储方式，已有照片地址保持有效。
-              </p>
-              <RadioGroup
-                name="storage-provider"
-                value={String(values.provider)}
-                onChange={(value) => set("provider", value)}
-                aria-label="图片存储方式"
-                label={"\u56FE\u7247\u5B58\u50A8\u65B9\u5F0F"}
-                options={[
-                  { value: "local", label: "\u672C\u5730\u5B58\u50A8" },
-                  { value: "s3", label: "S3 \u5BF9\u8C61\u5B58\u50A8" },
-                ]}
-              />
-            </div>
-            <div className="storage-common-fields">
-              {fields.storage
-                .filter((field) =>
-                  ["enable_storage", "max_size", "path"].includes(field.key),
-                )
-                .map(renderField)}
-            </div>
-            <div hidden={!(values.provider === "s3")}>
-              <div className="storage-connection">
-                {fields.storage
-                  .filter((field) =>
-                    [
-                      "endpoint",
-                      "region",
-                      "bucket",
-                      "prefix",
-                      "access_id",
-                      "secret_key",
-                      "timeout_time",
-                    ].includes(field.key),
-                  )
-                  .map(renderField)}
-              </div>
-            </div>
-          </>
-        ) : (
-          <>
-            {section === "meta" && (
-              <div className="brand-setting">
-                <Brand size={44} />
-                <div>
-                  <p
-                    className="ui-text"
-                    style={{
-                      fontWeight: 600,
-                      fontSize: 13,
-                    }}
-                  >
-                    Moment 新图标
-                  </p>
-                </div>
+        <div className="settings-groups">
+          {section === "meta" ? (
+            <>
+              {group(
+                "网站信息",
+                fields.meta.filter(
+                  (field) => ![...iconKeys, ...footerKeys].includes(field.key),
+                ),
+              )}
+              {group(
+                "外观与图标",
+                fields.meta.filter((field) => iconKeys.includes(field.key)),
                 <Button
                   size="small"
                   onClick={() => {
@@ -510,46 +454,83 @@ function SettingsForm({
                     }));
                     setDirty(true);
                   }}
-                  variant="secondary"
                 >
-                  使用新图标
-                </Button>
-              </div>
-            )}
-            {fields[section].map(renderField)}
-          </>
-        )}
-
-        {section === "meta" && (
-          <EntryList
-            entries={entries}
-            onChange={(next) => {
-              setEntries(next);
-              setDirty(true);
-            }}
-          />
-        )}
-        <div className="save-bar">
-          <p
-            className="ui-text"
-            style={{
-              fontSize: 12,
-              color: "var(--muted)",
-            }}
-          >
+                  使用 Moment 图标
+                </Button>,
+              )}
+              {group(
+                "页脚",
+                fields.meta.filter((field) => footerKeys.includes(field.key)),
+              )}
+              <EntryList
+                entries={entries}
+                onChange={(next) => {
+                  setEntries(next);
+                  setDirty(true);
+                }}
+              />
+            </>
+          ) : section === "storage" ? (
+            <>
+              <Card title="图片存储">
+                <FormField label="存储方式">
+                  <RadioGroup
+                    name="storage-provider"
+                    label="存储方式"
+                    value={String(values.provider)}
+                    onChange={(value) => set("provider", value)}
+                    options={[
+                      { value: "local", label: "本地存储" },
+                      { value: "s3", label: "S3 对象存储" },
+                    ]}
+                  />
+                </FormField>
+                <div className="settings-fields-grid storage-fields">
+                  {fields.storage
+                    .filter((field) =>
+                      ["enable_storage", "max_size", "path"].includes(
+                        field.key,
+                      ),
+                    )
+                    .map(renderField)}
+                </div>
+              </Card>
+              {values.provider === "s3" &&
+                group(
+                  "S3 连接",
+                  fields.storage.filter(
+                    (field) =>
+                      ![
+                        "provider",
+                        "enable_storage",
+                        "max_size",
+                        "path",
+                      ].includes(field.key),
+                  ),
+                )}
+            </>
+          ) : (
+            group(
+              section === "content" ? "相册展示" : "个性化",
+              fields[section],
+            )
+          )}
+        </div>
+        <div className="form-actions">
+          <span className="muted">
             {dirty ? "有尚未保存的修改" : "设置已同步"}
-          </p>
+          </span>
           <Button
             type="submit"
             loading={busy}
             disabled={!dirty}
             variant="primary"
           >
-            {<Save size={16} />}
+            <Save size={16} />
             保存设置
           </Button>
         </div>
       </Form>
-    </Card>
+    </div>
   );
 }

@@ -631,19 +631,22 @@ export default function SmartTags() {
           marginBottom: 16,
         }}
       >
-        <Input
-          aria-label="搜索待整理照片"
-          placeholder="搜索帖子、图片标题或标签"
-          leading={<Search size={16} />}
-          value={search}
-          onChange={(e) => {
-            setSearch(e.currentTarget.value);
-            setPage(1);
-          }}
+        <div
           style={{
             ...{ flex: 1, minWidth: 220 },
           }}
-        />
+        >
+          <Input
+            aria-label="搜索待整理照片"
+            placeholder="搜索帖子、图片标题或标签"
+            leading={<Search size={16} />}
+            value={search}
+            onChange={(e) => {
+              setSearch(e.currentTarget.value);
+              setPage(1);
+            }}
+          />
+        </div>
         <Checkbox
           onChange={(checked) => {
             setUntagged(checked);
@@ -988,11 +991,12 @@ export default function SmartTags() {
               className={"moment-panel " + "tag-review-row"}
             >
               <Tooltip content="查看完整照片">
-                <button
+                <Button
                   type="button"
-                  className="tag-review-image"
+                  className="tag-review-image image-action app-button-layout"
                   aria-label={`查看照片 ${item.photo.id} 原图`}
                   onClick={() => setPreview(item.photo)}
+                  variant="ghost"
                 >
                   <img
                     src={thumbnail(
@@ -1006,7 +1010,7 @@ export default function SmartTags() {
                   <span className="tag-review-image-expand" aria-hidden="true">
                     <Maximize2 size={14} />
                   </span>
-                </button>
+                </Button>
               </Tooltip>
               <div
                 className={"ui-stack " + "tag-review-copy"}

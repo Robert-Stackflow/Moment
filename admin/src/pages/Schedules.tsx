@@ -143,19 +143,22 @@ export default function Schedules() {
           marginBottom: 24,
         }}
       >
-        <Input
-          aria-label="搜索发布计划"
-          placeholder="搜索帖子标题"
-          leading={<Search size={17} />}
-          value={search}
-          onChange={(e) => {
-            setSearch(e.currentTarget.value);
-            setPage(1);
-          }}
+        <div
           style={{
             ...{ flex: "1 1 220px" },
           }}
-        />
+        >
+          <Input
+            aria-label="搜索发布计划"
+            placeholder="搜索帖子标题"
+            leading={<Search size={17} />}
+            value={search}
+            onChange={(e) => {
+              setSearch(e.currentTarget.value);
+              setPage(1);
+            }}
+          />
+        </div>
         <div
           style={{
             width: 170,

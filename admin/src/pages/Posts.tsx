@@ -196,7 +196,6 @@ export default function Posts() {
       <div className="toolbar">
         <div className="toolbar-search">
           <Input
-            className="toolbar-search"
             aria-label="搜索帖子"
             placeholder="搜索标题、描述或图片标签"
             leading={<Search size={17} />}

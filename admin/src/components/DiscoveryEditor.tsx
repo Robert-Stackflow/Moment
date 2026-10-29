@@ -2,10 +2,11 @@ import {
   Button,
   Dialog,
   FormField,
-  Input,
+  Accordion,
+  NumberInput,
   Select,
 } from "@robert-stackflow/oneui";
-import { ChevronDown, MapPin } from "lucide-react";
+import { MapPin } from "lucide-react";
 import { lazy, Suspense, useState } from "react";
 import type { Discovery } from "../types";
 import { selectOptions } from "../ui-data";
@@ -34,22 +35,7 @@ export function DiscoveryEditor({
   const inherit = image ? [{ value: "inherit", label: "沿用帖子" }] : [];
   return (
     <div className="discovery-editor">
-      <Button
-        variant="ghost"
-        className="discovery-heading"
-        aria-expanded={open}
-        onClick={() => setOpen(!open)}
-      >
-        <MapPin size={16} />
-        <span>地图与时间线</span>
-        <ChevronDown
-          size={16}
-          style={{
-            ...{ transform: open ? "rotate(180deg)" : undefined },
-          }}
-        />
-      </Button>
-      <div hidden={!open}>
+      <Accordion title="地图与时间线" open={open} onChange={setOpen}>
         <div
           className="ui-stack"
           style={{
@@ -84,41 +70,27 @@ export function DiscoveryEditor({
                 }}
               >
                 <FormField label={"纬度"}>
-                  <Input
+                  <NumberInput
                     label="纬度"
-                    type="number"
-                    inputMode="decimal"
-                    step="any"
+                    nullable
+                    placeholder="未设置"
+                    step={0.000001}
                     min={-90}
                     max={90}
-                    onChange={(event) =>
-                      field(
-                        "latitude",
-                        event.currentTarget.value === ""
-                          ? null
-                          : Number(event.currentTarget.value),
-                      )
-                    }
-                    value={data.latitude ?? ""}
+                    value={data.latitude}
+                    onChange={(value) => field("latitude", value)}
                   />
                 </FormField>
                 <FormField label={"经度"}>
-                  <Input
+                  <NumberInput
                     label="经度"
-                    type="number"
-                    inputMode="decimal"
-                    step="any"
+                    nullable
+                    placeholder="未设置"
+                    step={0.000001}
                     min={-180}
                     max={180}
-                    onChange={(event) =>
-                      field(
-                        "longitude",
-                        event.currentTarget.value === ""
-                          ? null
-                          : Number(event.currentTarget.value),
-                      )
-                    }
-                    value={data.longitude ?? ""}
+                    value={data.longitude}
+                    onChange={(value) => field("longitude", value)}
                   />
                 </FormField>
               </div>
@@ -188,7 +160,7 @@ export function DiscoveryEditor({
             仅影响浏览入口；照片墙与大图仍按原有设置显示拍摄时间。没有时间的照片归入「日期未记录」。
           </p>
         </div>
-      </div>
+      </Accordion>
       <Dialog
         open={mapOpen}
         onClose={() => setMapOpen(false)}

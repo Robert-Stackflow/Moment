@@ -1,5 +1,4 @@
 import { Button, Card, Form, PasswordField } from "@robert-stackflow/oneui";
-import { KeyRound } from "lucide-react";
 import { useState } from "react";
 import { flushSync } from "react-dom";
 import { useNavigate } from "react-router-dom";
@@ -58,31 +57,17 @@ export default function Password() {
   return (
     <>
       <UnsavedChanges dirty={dirty} />
-      <Card className={"moment-panel " + "account-panel"}>
-        <div className="account-panel-heading">
-          <div
-            className="ui-row"
-            style={{
-              display: "flex",
-              alignItems: "center",
-              flexWrap: "wrap",
-              gap: 10,
-            }}
-          >
-            <KeyRound size={21} />
-            <h3 className="ui-title">修改密码</h3>
-          </div>
-          <p
-            className="ui-text"
-            style={{
-              fontSize: 13,
-              color: "var(--muted)",
-              marginTop: 10,
-            }}
-          >
-            修改后所有设备的登录会话都会失效，请使用新密码重新登录。
-          </p>
-        </div>
+      <Card className={"moment-panel " + "account-panel"} title="修改密码">
+        <p
+          className="ui-text"
+          style={{
+            fontSize: 13,
+            color: "var(--muted)",
+            marginBottom: 24,
+          }}
+        >
+          修改后所有设备的登录会话都会失效，请使用新密码重新登录。
+        </p>
         <Form controller={sharedForm} onSubmit={save}>
           <div
             className={"ui-stack " + "account-password-fields"}
@@ -123,7 +108,7 @@ export default function Password() {
               disabled={busy}
             />
           </div>
-          <div className="save-bar">
+          <div className="form-actions">
             <p
               className="ui-text"
               style={{
