@@ -5,6 +5,15 @@ services:
     pull_policy: never
     container_name: moment
     restart: always
+    mem_limit: 768m
+    memswap_limit: 768m
+    cpus: 1.0
+    pids_limit: 256
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
     volumes:
       - ${MOMENT_HOST_DATA:-./data}:/app/data
       - ${MOMENT_HOST_MODEL:-/home/models/moment/clip-vit-base-patch32-d15189d7028b}:/app/dist/admin/tag-model/local:ro

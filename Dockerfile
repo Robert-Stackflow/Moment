@@ -1,4 +1,6 @@
 FROM node:22-alpine AS frontend
+ARG NODE_OPTIONS=--max-old-space-size=1280
+ENV NODE_OPTIONS=$NODE_OPTIONS
 WORKDIR /build
 COPY web/package*.json ./web/
 COPY admin/package*.json ./admin/
@@ -14,7 +16,7 @@ COPY go.mod go.sum ./
 RUN go mod download
 COPY cmd ./cmd
 COPY internal ./internal
-RUN CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o /moment ./cmd/moment
+RUN CGO_ENABLED=0 GOMAXPROCS=1 GOMEMLIMIT=1400MiB go build -p 1 -trimpath -ldflags="-s -w" -o /moment ./cmd/moment
 
 FROM alpine:3.22
 RUN apk add --no-cache ca-certificates tzdata
