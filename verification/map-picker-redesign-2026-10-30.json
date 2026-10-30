@@ -33,5 +33,11 @@
     "temporaryDraftRemoved": true,
     "userEditingTabModified": false
   },
-  "deployment": "pending"
+  "deployment": {
+    "release": "20261030-picker-search",
+    "sourceCommit": "4d226de716138a6fc05ef42244110fab92442586",
+    "healthy": true,
+    "publicAndAdminResourcesVerified": true,
+    "dataPreserved": true
+  }
 }

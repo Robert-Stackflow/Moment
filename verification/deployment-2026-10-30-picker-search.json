@@ -1,0 +1,63 @@
+{
+  "runtime": {
+    "image": "ruida/moment:dev",
+    "imageId": "sha256:1dd4d499418f25cdb8dca0b20f1035196a828b1e876ad18d1053f9c80d30c6e6",
+    "health": "healthy",
+    "sourceCommit": "4d226de716138a6fc05ef42244110fab92442586",
+    "release": "20261030-picker-search",
+    "ports": {
+      "9999/tcp": [
+        {
+          "HostIp": "127.0.0.1",
+          "HostPort": "3010"
+        }
+      ]
+    },
+    "memory": 805306368,
+    "memorySwap": 805306368,
+    "nanoCpus": 1000000000,
+    "pids": 256,
+    "logging": {
+      "Type": "json-file",
+      "Config": {
+        "max-file": "3",
+        "max-size": "10m"
+      }
+    }
+  },
+  "coreTableCounts": {
+    "blog": 45,
+    "blog_image": 57,
+    "category": 13,
+    "user": 1
+  },
+  "fingerprintsPreserved": true,
+  "candidateValidated": true,
+  "servedAdminMatchesContainer": true,
+  "servedIndexMatchesContainer": true,
+  "indexSha256": "26b877198bd4982ccca817a708bfa08e83046668be12ecb84ead2d3daf16192a",
+  "activation": {
+    "release": "20261030-picker-search",
+    "image": "ruida/moment:dev",
+    "backup": "/home/apps/moment/backups/20261030-picker-search",
+    "dataPreserved": true,
+    "https": true
+  },
+  "releaseDirectories": [
+    "20261030-location-nearby",
+    "20261030-picker-search"
+  ],
+  "verifiedAt": "2026-10-30T20:40:20+08:00",
+  "server": "43.156.71.44",
+  "directory": "/home/apps/moment",
+  "url": "https://moment.cloudchewie.com",
+  "cleanup": {
+    "retainedReleases": [
+      "20261030-location-nearby",
+      "20261030-picker-search"
+    ],
+    "removedObsoleteReleases": 1,
+    "removedObsoleteImages": 1,
+    "dataAndBackupsRetained": true
+  }
+}
