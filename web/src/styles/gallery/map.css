@@ -10,6 +10,23 @@
   min-height: 300px;
   background: radial-gradient(ellipse at 50% 40%, #283b44, #182229);
 }
+.explore-map-wrap[data-provider='amap'] {
+  background: #f2f3f1;
+}
+.explore-map-wrap[data-provider='amap'] .photo-map-canvas {
+  background: #f2f3f1;
+}
+.explore-map-wrap[data-provider='amap'] .explore-map-marker {
+  width: 36px;
+  height: 36px;
+  color: #fff;
+  background: #333b42;
+  border: 2px solid #fff;
+  box-shadow: 0 2px 9px #23303b25;
+}
+.explore-map-wrap[data-provider='amap'] .explore-map-marker:hover {
+  background: #526475;
+}
 .explore-map .leaflet-control-attribution {
   font-size: 10px;
   background: #182229d9;

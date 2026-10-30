@@ -182,7 +182,8 @@ export default function Explore({ mode }) {
                 (year ? '?year=' + encodeURIComponent(year) : '')
               }
             >
-              {mode === 'map' ? '按时间浏览' : '在地图上看'} <span aria-hidden="true">↗</span>
+              {`${mode === 'map' ? '按时间浏览' : '在地图上看'} `}
+              <span aria-hidden="true">↗</span>
             </Link>
           )}
         </div>

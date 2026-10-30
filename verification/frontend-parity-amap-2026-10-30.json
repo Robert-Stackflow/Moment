@@ -1,0 +1,109 @@
+{
+  "date": "2026-10-30",
+  "baseline": {
+    "image": "sha256:85966a073da6e20b1f48b48c0bb1c58343bf5113a4c41625a1f4edcda6a0845c",
+    "framework": "Vue",
+    "source": "previous deployed public frontend"
+  },
+  "intentionalChanges": [
+    "36px header icon buttons including fullscreen",
+    "OneUI 0.5.0 Tooltip instead of private tooltip",
+    "AMap JS API 2.0 whitesmoke map when configured",
+    "admin app handoff without self-navigation reload loop"
+  ],
+  "parity": {
+    "states": 60,
+    "viewportWidths": [
+      1280,
+      737,
+      736,
+      390,
+      320,
+      844
+    ],
+    "landscapeHeight": 390,
+    "layoutDifferences": 0,
+    "screenshotChangedPixels": 0,
+    "desktopScreenshotMask": "last 310px of bottom 80px header, for requested fullscreen size change",
+    "mapComparison": "original local-outline provider; AMap validated separately",
+    "transitionPropertySetsEqual": true,
+    "transitionPropertiesObserved": 11,
+    "overflow": 0,
+    "runtimeErrors": 0
+  },
+  "interactions": [
+    "browser fullscreen enter/exit",
+    "OneUI tooltips, Escape dismissal and aria association",
+    "viewer information and thumbnail toggles",
+    "clipboard failure fallback and Escape",
+    "keyboard navigation, zoom, focus trap, direct URLs",
+    "touch pinch and swipe",
+    "map, timeline, year/location filters and back navigation",
+    "share password, lock/unlock and revocation"
+  ],
+  "amap": {
+    "checks": [
+      {
+        "width": 1280,
+        "provider": "amap",
+        "center": [
+          120.104803,
+          30.197725
+        ],
+        "zoom": 7,
+        "canvas": 1,
+        "sdk": true,
+        "webgl": false,
+        "markers": 1,
+        "logo": true,
+        "privateCodeInWindow": false,
+        "message": "",
+        "noOverflow": true,
+        "selectionWithoutReload": true,
+        "zoomControls": true,
+        "returnWithoutDuplicateMaps": true,
+        "spa": true
+      },
+      {
+        "width": 390,
+        "provider": "amap",
+        "center": [
+          120.104803,
+          30.197725
+        ],
+        "zoom": 7,
+        "canvas": 1,
+        "sdk": true,
+        "webgl": false,
+        "markers": 1,
+        "logo": true,
+        "privateCodeInWindow": false,
+        "message": "",
+        "noOverflow": true,
+        "selectionWithoutReload": true,
+        "zoomControls": true,
+        "returnWithoutDuplicateMaps": true,
+        "spa": true
+      }
+    ],
+    "errors": [],
+    "failedResponses": []
+  },
+  "adminHandoff": {
+    "documents": 2,
+    "automaticReloads": 0,
+    "loginVisible": true,
+    "errors": []
+  },
+  "checks": {
+    "publicBrowserMatrix": 3,
+    "coordinatesRoundTrip": "passed",
+    "backendSuite": "passed",
+    "publicLint": "passed",
+    "npmAuditVulnerabilities": 0,
+    "publicAndAdminProductionBuilds": "passed",
+    "adminHandoffRegression": "passed",
+    "credentialScanSourceAndBuild": "passed"
+  },
+  "credentialHandling": "server environment only; public key and same-origin serviceHost sent to browser; security code excluded from git, archives and bundles"
+}

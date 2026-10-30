@@ -101,10 +101,12 @@
   border-color: #ffffff2b;
   color: #fff;
 }
-#footer .about-close {
+#footer .about-close-position {
   position: absolute;
   right: 14px;
   top: 14px;
+}
+#footer .about-close {
   width: 34px;
   height: 34px;
   background: transparent;
@@ -162,11 +164,13 @@
   #footer .about-links h3 {
     margin-top: 0;
   }
+  #footer .about-close-position {
+    top: 8px;
+    right: 8px;
+  }
   #footer .about-close {
     width: 42px;
     height: 42px;
-    top: 8px;
-    right: 8px;
   }
   .about-legal {
     margin-top: 24px;

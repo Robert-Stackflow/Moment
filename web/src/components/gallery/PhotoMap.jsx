@@ -17,21 +17,45 @@ export default function PhotoMap({ year, initial, onBounds, onSelect, ref }) {
     detailed: false,
     error: '',
     tileError: false,
+    provider: 'local',
   })
   const update = (patch) => setState((value) => ({ ...value, ...patch }))
   useImperativeHandle(ref, () => ({ reset: () => controller.current?.reset() }), [])
   useEffect(() => {
-    const map = createPhotoMap(
-      host.current,
-      () => latest.current,
-      (event, value) => latest.current[event === 'bounds' ? 'onBounds' : 'onSelect'](value),
-      update,
-    )
-    controller.current = map
-    map.mount()
+    let disposed = false,
+      map
+    const request = new AbortController()
+    async function initialize() {
+      let config
+      try {
+        const response = await fetch('/api/v1/visitor/maps/config', { signal: request.signal })
+        if (response.ok) config = (await response.json()).data
+      } catch {
+        /* An unconfigured host retains the existing local outline map. */
+      }
+      if (disposed) return
+      const factory =
+        config?.provider === 'amap'
+          ? (await import('../../lib/amap-controller')).createAMap
+          : createPhotoMap
+      if (disposed) return
+      update({ provider: config?.provider === 'amap' ? 'amap' : 'local' })
+      map = factory(
+        host.current,
+        () => latest.current,
+        (event, value) => latest.current[event === 'bounds' ? 'onBounds' : 'onSelect'](value),
+        update,
+        config,
+      )
+      controller.current = map
+      void map.mount()
+    }
+    void initialize()
     return () => {
+      disposed = true
+      request.abort()
       controller.current = null
-      map.dispose()
+      map?.dispose()
     }
   }, [])
   useEffect(() => {
@@ -44,7 +68,7 @@ export default function PhotoMap({ year, initial, onBounds, onSelect, ref }) {
     if (state.consent) consentCard.current?.focus()
   }, [state.consent])
   return (
-    <div className="explore-map-wrap" aria-busy={state.busy}>
+    <div className="explore-map-wrap" data-provider={state.provider} aria-busy={state.busy}>
       <div
         ref={host}
         className="photo-map-canvas"
@@ -62,12 +86,14 @@ export default function PhotoMap({ year, initial, onBounds, onSelect, ref }) {
           label="查看全部位置"
           onClick={() => controller.current?.reset()}
         />
-        <GalleryButton
-          icon="map"
-          label={state.detailed ? '仅使用本地轮廓' : '加载详细地图'}
-          pressed={state.detailed}
-          onClick={() => controller.current?.toggleDetailed()}
-        />
+        {state.provider === 'local' && (
+          <GalleryButton
+            icon="map"
+            label={state.detailed ? '仅使用本地轮廓' : '加载详细地图'}
+            pressed={state.detailed}
+            onClick={() => controller.current?.toggleDetailed()}
+          />
+        )}
       </div>
       {state.busy && (
         <div className="map-loading" role="status">

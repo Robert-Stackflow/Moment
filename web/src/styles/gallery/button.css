@@ -35,34 +35,8 @@
   outline: 2px solid #fff;
   outline-offset: 3px;
 }
-.gallery-tooltip {
-  position: fixed;
-  z-index: 30010;
-  padding: 7px 10px;
-  border-radius: 7px;
-  background: #f4f4f5;
-  color: #23252a;
-  font:
-    12px/1.5 system-ui,
-    sans-serif;
-  font-weight: 500;
-  letter-spacing: 0;
-  max-width: calc(100vw - 16px);
-  box-shadow: 0 4px 18px #0003;
-  pointer-events: none;
-}
-.gallery-tip-enter-active,
-.gallery-tip-leave-active {
-  transition: opacity 0.12s ease;
-}
-.gallery-tip-enter-from,
-.gallery-tip-leave-to {
-  opacity: 0;
-}
 @media (prefers-reduced-motion: reduce) {
-  .gallery-button,
-  .gallery-tip-enter-active,
-  .gallery-tip-leave-active {
+  .gallery-button {
     transition: none;
   }
 }

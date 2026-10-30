@@ -69,12 +69,14 @@ export default function AboutPanel({ open, onClose }) {
         if (event.target === event.currentTarget) focusPanel()
       }}
     >
-      <GalleryButton
-        className="about-close"
-        icon="close"
-        label="关闭关于 · Esc"
-        onClick={onClose}
-      />
+      <div className="about-close-position">
+        <GalleryButton
+          className="about-close"
+          icon="close"
+          label="关闭关于 · Esc"
+          onClick={onClose}
+        />
+      </div>
       <div className="about-content">
         <section className="about-story">
           <img
@@ -82,7 +84,7 @@ export default function AboutPanel({ open, onClose }) {
             src={versionedBrandIcon(meta.bottom_icon || import.meta.env.VITE_ICON)}
             alt=""
           />
-          <h2 id="about-title">关于{meta.site_name || import.meta.env.VITE_TITLE}</h2>
+          <h2 id="about-title">{`关于${meta.site_name || import.meta.env.VITE_TITLE}`}</h2>
           <p>{meta.site_desc || import.meta.env.VITE_DESC}</p>
         </section>
         {!!meta.entries?.length && (

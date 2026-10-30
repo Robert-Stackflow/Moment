@@ -75,13 +75,15 @@ export default function GalleryHeader({ aboutOpen, onAbout }) {
       </Link>
       <span className="description">{meta.bottom_desc || import.meta.env.VITE_DESC}</span>
       <nav aria-label="相册导航">
-        <GalleryButton
-          className="gallery-fullscreen"
-          icon="expand"
-          label={fullscreen ? '退出全屏' : '全屏浏览'}
-          pressed={fullscreen}
-          onClick={toggleFullScreen}
-        />
+        <span className="gallery-fullscreen">
+          <GalleryButton
+            className="gallery-explore-link"
+            icon="expand"
+            label={fullscreen ? '退出全屏' : '全屏浏览'}
+            pressed={fullscreen}
+            onClick={toggleFullScreen}
+          />
+        </span>
         <div ref={categoryNav} className="gallery-category-nav">
           <GalleryButton
             icon="categories"

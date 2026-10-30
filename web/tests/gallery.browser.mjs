@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict'
+import { createServer } from 'node:http'
 import { spawn, spawnSync } from 'node:child_process'
 import { mkdir, writeFile } from 'node:fs/promises'
 import { fileURLToPath } from 'node:url'
@@ -11,10 +12,21 @@ const web = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..'),
   output = path.join(web, 'test-results')
 const port = Number(process.env.MOMENT_GALLERY_TEST_PORT || 5183),
   base = `http://127.0.0.1:${port}`
+const adminServer = createServer((request, response) => {
+  if (!request.url.startsWith('/admin/')) return response.writeHead(404).end()
+  response.writeHead(200, { 'Content-Type': 'text/html' })
+  response.end('<h1>Admin application</h1>')
+})
+await new Promise((resolve) => adminServer.listen(0, '127.0.0.1', resolve))
 const server = spawn(
   process.execPath,
   ['node_modules/vite/bin/vite.js', '--host', '127.0.0.1', '--port', String(port), '--strictPort'],
-  { cwd: web, windowsHide: true, stdio: ['ignore', 'pipe', 'pipe'] },
+  {
+    cwd: web,
+    windowsHide: true,
+    stdio: ['ignore', 'pipe', 'pipe'],
+    env: { ...process.env, MOMENT_DEV_API: `http://127.0.0.1:${adminServer.address().port}` },
+  },
 )
 let logs = ''
 for (const stream of [server.stdout, server.stderr])
@@ -54,6 +66,27 @@ try {
     })
     await page.goto(base)
     await expect(page.locator('.thumb.is-revealed').first()).toBeVisible()
+    if (width > 736) {
+      const sizes = await page.locator('#header nav .gallery-button').evaluateAll((buttons) =>
+        buttons.map((button) => {
+          const rect = button.getBoundingClientRect()
+          return [rect.width, rect.height]
+        }),
+      )
+      assert.ok(sizes.every(([width, height]) => width === 36 && height === 36))
+      const full = page.getByRole('button', { name: '全屏浏览', exact: true })
+      await full.hover()
+      await expect(page.getByRole('tooltip', { name: '全屏浏览', exact: true })).toBeVisible()
+      assert.ok(await full.getAttribute('aria-describedby'))
+      await page.keyboard.press('Escape')
+      await expect(page.getByRole('tooltip', { name: '全屏浏览', exact: true })).toBeHidden()
+      await full.click()
+      await expect.poll(() => page.evaluate(() => !!document.fullscreenElement)).toBe(true)
+      await page.getByRole('button', { name: '退出全屏', exact: true }).click()
+      await expect.poll(() => page.evaluate(() => !!document.fullscreenElement)).toBe(false)
+    } else {
+      await expect(page.getByRole('button', { name: '全屏浏览', exact: true })).toBeHidden()
+    }
     await page.locator('.gallery-sentinel').scrollIntoViewIfNeeded()
     if ((await page.locator('.thumb-a').count()) < 5) {
       const more = page
@@ -96,6 +129,36 @@ try {
     await page.keyboard.press('ArrowRight')
     await expect(page.locator('.viewer-counter')).toContainText('2')
     await expect(page.locator('.viewer-photo[aria-hidden="false"]')).toBeVisible()
+    const information = page.getByRole('button', { name: '照片信息', exact: true })
+    const informationInitiallyOpen = (await information.getAttribute('aria-pressed')) === 'true'
+    if (!informationInitiallyOpen) {
+      await information.click()
+      await expect(page.locator('.viewer-caption')).toBeVisible()
+    }
+    await information.click()
+    await expect(page.locator('.viewer-caption')).toHaveCount(0)
+    await page.getByRole('button', { name: '照片信息', exact: true }).click()
+    await expect(page.locator('.viewer-caption')).toBeVisible()
+    if (!informationInitiallyOpen) await information.click()
+    await page.getByRole('button', { name: '缩略图', exact: true }).click()
+    await expect(page.locator('.viewer-thumbnails')).toHaveCount(0)
+    await page.getByRole('button', { name: '缩略图', exact: true }).click()
+    await expect(page.locator('.viewer-thumbnails')).toBeVisible()
+    await page.evaluate(() => {
+      Object.defineProperty(navigator, 'share', { configurable: true, value: undefined })
+      Object.defineProperty(navigator, 'clipboard', {
+        configurable: true,
+        value: {
+          writeText: async () => {
+            throw new Error('Clipboard unavailable')
+          },
+        },
+      })
+    })
+    await page.getByRole('button', { name: '分享当前照片', exact: true }).click()
+    await expect(page.getByLabel('复制照片链接', { exact: true })).toHaveValue(/post\/1\?photo=2$/)
+    await page.keyboard.press('Escape')
+    await expect(page.locator('.viewer-share')).toHaveCount(0)
     await page.getByRole('button', { name: '放大 · 双击照片', exact: true }).click()
     await expect(page.locator('.viewer-stage')).toHaveClass(/is-zoomed/)
     await page.keyboard.press('Escape')
@@ -258,11 +321,43 @@ try {
   const frame = await motionPage.locator('.viewer-frame').boundingBox()
   assert.ok(Math.abs(frame.width / frame.height - 0.6) < 0.01)
   await motionContext.close()
+  const adminResponse = await fetch(base + '/admin/login?next=%2Fadmin%2Fposts', {
+    redirect: 'manual',
+  })
+  assert.equal(adminResponse.status, 302)
+  const adminTarget = new URL(adminResponse.headers.get('location'))
+  assert.notEqual(adminTarget.origin, base)
+  assert.equal(adminTarget.pathname, '/admin/login')
+  assert.equal(adminTarget.searchParams.get('next'), '/admin/posts')
+  const adminContext = await browser.newContext()
+  const adminPage = await adminContext.newPage()
+  activePage = adminPage
+  await installFixtures(adminPage)
+  let documents = 0
+  adminPage.on('request', (request) => {
+    if (request.isNavigationRequest() && request.frame() === adminPage.mainFrame()) documents++
+  })
+  await adminPage.goto(base + '/admin/login?next=%2Fadmin%2Fposts')
+  await expect(adminPage.getByRole('heading', { name: 'Admin application' })).toBeVisible()
+  await adminPage.waitForTimeout(600)
+  assert.equal(documents, 2, 'one handoff to the admin application, without a reload loop')
+  await adminPage.goto(base)
+  await expect(adminPage.locator('.thumb-a').first()).toBeVisible()
+  const documentStamp = await adminPage.evaluate(() => {
+    history.pushState({}, '', '/admin/login')
+    dispatchEvent(new PopStateEvent('popstate'))
+    return performance.timeOrigin
+  })
+  await expect(adminPage.getByRole('link', { name: '打开后台管理', exact: true })).toBeVisible()
+  await adminPage.waitForTimeout(600)
+  assert.equal(await adminPage.evaluate(() => performance.timeOrigin), documentStamp)
+  await adminContext.close()
   assert.deepEqual(errors, [])
   console.log(
     JSON.stringify({
       checks: checks.length,
       animatedTransitions: true,
+      adminHandoffWithoutReloadLoop: true,
       errors: errors.length,
       productionWrites: 0,
     }),
@@ -287,6 +382,7 @@ try {
 } finally {
   await writeFile(path.join(output, 'gallery.json'), JSON.stringify({ checks, errors }, null, 2))
   await browser?.close()
+  await new Promise((resolve) => adminServer.close(resolve))
   if (server.exitCode === null) {
     if (process.platform === 'win32')
       spawnSync('taskkill', ['/PID', String(server.pid), '/T', '/F'], {

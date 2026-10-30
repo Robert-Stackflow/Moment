@@ -477,3 +477,17 @@
     transition: none !important;
   }
 }
+.gallery-tip-enter-active,
+.gallery-tip-leave-active {
+  transition: opacity 0.12s ease;
+}
+.gallery-tip-enter-from,
+.gallery-tip-leave-to {
+  opacity: 0;
+}
+@media (prefers-reduced-motion: reduce) {
+  .gallery-tip-enter-active,
+  .gallery-tip-leave-active {
+    transition: none;
+  }
+}

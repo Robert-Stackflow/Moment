@@ -16,12 +16,13 @@ function NotFound() {
     </main>
   )
 }
-function AdminRedirect() {
+function AdminEntry() {
   const route = useLocation()
-  useLayoutEffect(() => {
-    window.location.assign(route.pathname + route.search + route.hash)
-  }, [])
-  return null
+  return (
+    <main style={{ padding: '80px 24px', textAlign: 'center' }}>
+      <a href={route.pathname + route.search + route.hash}>打开后台管理</a>
+    </main>
+  )
 }
 class ErrorBoundary extends Component {
   state = { failed: false }
@@ -78,7 +79,7 @@ export default function App() {
               <Route path="timeline" element={<Explore key="timeline" mode="timeline" />} />
             </Route>
             <Route path="share/:token" element={<ShareAlbum />} />
-            <Route path="admin/*" element={<AdminRedirect />} />
+            <Route path="admin/*" element={<AdminEntry />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         )}

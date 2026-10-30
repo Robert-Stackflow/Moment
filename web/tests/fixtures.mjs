@@ -103,7 +103,8 @@ export async function installFixtures(page) {
               expires_at: Date.UTC(2100, 0, 1) / 1000,
             }
           : { locked: true }
-    } else if (name.includes('/settings/')) result = data[name.split('/').at(-1)]
+    } else if (name.endsWith('/maps/config')) result = { provider: 'local' }
+    else if (name.includes('/settings/')) result = data[name.split('/').at(-1)]
     else if (name.endsWith('/category/list')) result = data.categories
     else if (name.endsWith('/category/get/alias'))
       result = query.get('alias') === 'travel' ? data.categories[0].children[0] : data.categories[0]

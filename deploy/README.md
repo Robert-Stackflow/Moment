@@ -17,6 +17,8 @@
 
 使用已安装的配置启动：
 
+高德地图的 `MOMENT_AMAP_KEY` 和 `MOMENT_AMAP_SECURITY_CODE` 存放在服务器的私有 `.env` 中，由 Compose 传给后端。更新配置时保留这两个值，不能打入镜像、源码包或浏览器脚本。反向代理同时转发 `/_AMapService` 路径。未配置凭据的实例继续使用本地轮廓地图。
+
 ```sh
 cd /home/apps/moment
 docker compose up -d --no-build --pull never
