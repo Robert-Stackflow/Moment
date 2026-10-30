@@ -6,50 +6,61 @@
     "dev": "vite",
     "build": "vite build --emptyOutDir",
     "preview": "vite preview",
-    "lint": "eslint --ext .js,.vue .",
-    "lint:fix": "eslint --fix --ext .js,.vue .",
+    "lint": "eslint --ext .js,.jsx src",
+    "lint:fix": "eslint --fix --ext .js,.jsx src",
     "lint:staged": "lint-staged",
-    "prettier": "npx prettier --write ."
+    "prettier": "npx prettier --write .",
+    "test:ui": "node tests/gallery.browser.mjs"
   },
   "dependencies": {
-    "@iconify/vue": "^4.1.1",
-    "@vueuse/core": "^10.3.0",
     "axios": "^1.20.0",
     "dayjs": "^1.11.9",
     "leaflet": "^1.9.4",
-    "pinia": "^2.1.6",
-    "vue": "^3.3.4",
-    "vue-router": "^4.2.4"
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "react-router-dom": "7.18.4",
+    "@iconify/react": "6.0.3"
   },
   "devDependencies": {
-    "@vitejs/plugin-vue": "^6.0.9",
     "vite": "^7.3.6",
     "@iconify/json": "^2.2.101",
-    "@unocss/eslint-config": "^0.55.0",
-    "@zclzone/eslint-config": "^0.0.4",
     "dotenv": "^16.3.1",
     "eslint": "^8.46.0",
     "rollup-plugin-visualizer": "^5.9.2",
     "sass": "^1.65.1",
     "typescript": "^5.1.6",
     "unocss": "^66.5.4",
-    "unplugin-auto-import": "^0.16.6",
-    "unplugin-icons": "^0.16.5",
-    "unplugin-vue-components": "^0.25.1",
     "vite-plugin-compression": "^0.5.1",
-    "vite-plugin-html": "^3.2.0"
-  },
-  "lint-staged": {
-    "*.{js,vue}": [
-      "eslint --ext .js,.vue ."
-    ]
+    "vite-plugin-html": "^3.2.0",
+    "@vitejs/plugin-react": "4.7.0",
+    "playwright": "1.64.1"
   },
   "eslintConfig": {
+    "root": true,
+    "env": {
+      "browser": true,
+      "es2022": true
+    },
+    "parserOptions": {
+      "ecmaVersion": "latest",
+      "sourceType": "module",
+      "ecmaFeatures": {
+        "jsx": true
+      }
+    },
     "extends": [
-      "@zclzone",
-      "@unocss",
-      ".eslint-global-variables.json"
-    ]
+      "eslint:recommended"
+    ],
+    "rules": {
+      "no-unused-vars": [
+        "error",
+        {
+          "varsIgnorePattern": "^[A-Z]",
+          "argsIgnorePattern": "^_",
+          "caughtErrorsIgnorePattern": "^_"
+        }
+      ]
+    }
   },
   "type": "module",
   "engines": {

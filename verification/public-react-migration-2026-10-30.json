@@ -1,0 +1,132 @@
+{
+  "date": "2026-10-30",
+  "baselineCommit": "07d3cc7",
+  "scope": "Public gallery Vue to React; original styling preserved",
+  "runtime": {
+    "react": "19.3.0",
+    "vite": "7.3.7",
+    "vueRuntime": false,
+    "internalNavigation": "React Router SPA"
+  },
+  "checks": {
+    "originalCSSSectionsUnchanged": [
+      "shell",
+      "header",
+      "about",
+      "button",
+      "lightbox",
+      "photo",
+      "wall",
+      "explore",
+      "map",
+      "share"
+    ],
+    "layoutAndTypographyStates": 10,
+    "visualStates": 20,
+    "viewportWidths": [
+      1280,
+      390,
+      320
+    ],
+    "isolatedBrowserCases": 3,
+    "animationTransitions": true,
+    "touchPinchSwipe": true,
+    "shareLockUnlockRevocation": true,
+    "spaDocumentRetained": true,
+    "browserRuntimeErrors": 0,
+    "productionWrites": 0,
+    "lint": "passed",
+    "publicAndAdminProductionBuilds": "passed",
+    "dependencyAudit": {
+      "total": 0
+    }
+  },
+  "visualComparison": [
+    {
+      "state": "about-1280",
+      "changedPercent": 0.0
+    },
+    {
+      "state": "about-390",
+      "changedPercent": 0.0
+    },
+    {
+      "state": "map-1280",
+      "changedPercent": 0.0
+    },
+    {
+      "state": "map-390",
+      "changedPercent": 0.0
+    },
+    {
+      "state": "timeline-1280",
+      "changedPercent": 0.0001
+    },
+    {
+      "state": "timeline-390",
+      "changedPercent": 0.0
+    },
+    {
+      "state": "viewer-1280",
+      "changedPercent": 0.0
+    },
+    {
+      "state": "viewer-390",
+      "changedPercent": 0.0
+    },
+    {
+      "state": "wall-1280",
+      "changedPercent": 0.0001
+    },
+    {
+      "state": "wall-390",
+      "changedPercent": 0.0
+    },
+    {
+      "state": "category-1280",
+      "changedPercent": 0.0
+    },
+    {
+      "state": "category-390",
+      "changedPercent": 0.0
+    },
+    {
+      "state": "location-1280",
+      "changedPercent": 0.0
+    },
+    {
+      "state": "location-390",
+      "changedPercent": 0.0
+    },
+    {
+      "state": "share-gate-1280",
+      "changedPercent": 0.0
+    },
+    {
+      "state": "share-gate-390",
+      "changedPercent": 0.0
+    },
+    {
+      "state": "share-viewer-1280",
+      "changedPercent": 0.0
+    },
+    {
+      "state": "share-viewer-390",
+      "changedPercent": 0.0
+    },
+    {
+      "state": "share-wall-1280",
+      "changedPercent": 0.0
+    },
+    {
+      "state": "share-wall-390",
+      "changedPercent": 0.0
+    }
+  ],
+  "development": {
+    "url": "http://127.0.0.1:3100",
+    "reactRootConfirmed": true,
+    "mapNavigationRetainsDocument": true
+  },
+  "evidenceDirectory": "work/moment-react-migration (local baseline/screenshots and cached read-only fixtures)"
+}

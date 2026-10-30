@@ -1,0 +1,116 @@
+.explore-map-wrap {
+  position: relative;
+  isolation: isolate;
+  height: 100%;
+  min-height: 300px;
+  background: #1b242c;
+}
+.photo-map-canvas {
+  height: 100%;
+  min-height: 300px;
+  background: radial-gradient(ellipse at 50% 40%, #283b44, #182229);
+}
+.explore-map .leaflet-control-attribution {
+  font-size: 10px;
+  background: #182229d9;
+  color: #abb6bb;
+  padding: 3px 6px;
+}
+.explore-map .leaflet-control-attribution a {
+  color: #bccbd4;
+}
+.explore-map-tools {
+  position: absolute;
+  right: 18px;
+  top: 18px;
+  display: flex;
+  gap: 7px;
+  z-index: 600;
+}
+.explore-map-tools .gallery-button {
+  background: #202c34ed;
+  width: 36px;
+  height: 36px;
+}
+.explore-map-marker {
+  width: 40px;
+  height: 40px;
+  background: #d5dde3;
+  color: #25333e;
+  border: 3px solid #ffffff8c;
+  border-radius: 50%;
+  box-shadow: 0 3px 12px #0005;
+  font: 600 13px system-ui;
+  cursor: pointer;
+  transition: background 150ms, box-shadow 150ms;
+}
+.explore-map-marker:hover {
+  background: #fff;
+  box-shadow: 0 0 0 6px #cadcf025;
+}
+.explore-map-marker:focus-visible {
+  outline: 3px solid white;
+  outline-offset: 4px;
+}
+.map-loading,
+.map-message {
+  position: absolute;
+  left: 18px;
+  bottom: 30px;
+  z-index: 600;
+  background: #192027eb;
+  color: #ced6e0;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  max-width: calc(100% - 36px);
+}
+.map-message {
+  bottom: 55px;
+}
+.map-message button {
+  color: white;
+  margin-left: 8px;
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+.map-consent {
+  position: absolute;
+  z-index: 650;
+  right: 18px;
+  top: 65px;
+  width: 300px;
+  max-width: calc(100% - 36px);
+  padding: 20px;
+  background: #202a33;
+  border: 1px solid #ffffff20;
+  border-radius: 14px;
+  box-shadow: 0 10px 30px #0005;
+  color: #c9d0d8;
+  font-size: 13px;
+  line-height: 1.8;
+}
+.map-consent p {
+  margin: 10px 0 18px;
+}
+.map-consent > div {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}
+.map-consent button {
+  border: 1px solid #ffffff25;
+  border-radius: 7px;
+  background: #ffffff0c;
+  color: white;
+  padding: 6px 10px;
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .explore-map-marker {
+    transition: none;
+  }
+}

@@ -1,4 +1,4 @@
-import vue from '@vitejs/plugin-vue'
+import react from '@vitejs/plugin-react'
 
 /**
  * * unocss插件，原子css
@@ -12,10 +12,10 @@ import { visualizer } from 'rollup-plugin-visualizer'
 import viteCompression from 'vite-plugin-compression'
 
 import { configHtmlPlugin } from './html'
-import unplugin from './unplugin'
+
 
 export function createVitePlugins(viteEnv, isBuild) {
-  const plugins = [vue(), ...unplugin, configHtmlPlugin(viteEnv, isBuild), Unocss()]
+  const plugins = [react(), configHtmlPlugin(viteEnv, isBuild), Unocss()]
 
   if (viteEnv.VITE_USE_COMPRESS) {
     plugins.push(viteCompression({ algorithm: viteEnv.VITE_COMPRESS_TYPE || 'gzip' }))

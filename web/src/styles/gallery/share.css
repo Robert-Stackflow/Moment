@@ -1,0 +1,228 @@
+body.shared-gallery {
+  margin: 0;
+  padding: 0 0 82px;
+  background: #202226;
+  color: #d4d7dd;
+  font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+  line-height: 1.6;
+  color-scheme: dark;
+}
+.shared-page * {
+  box-sizing: border-box;
+}
+.shared-page h1 {
+  font-size: 25px;
+  line-height: 1.4;
+  margin: 0;
+  color: #f3f4f6;
+  font-weight: 600;
+  letter-spacing: -0.4px;
+}
+.shared-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 28px 32px;
+}
+.shared-heading > div {
+  min-width: 0;
+}
+.shared-heading p {
+  color: #9da2ac;
+  font-size: 14px;
+  margin: 8px 0 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.shared-heading h1 {
+  overflow-wrap: anywhere;
+}
+.shared-heading > span {
+  flex-shrink: 0;
+  font-size: 12px;
+  color: #9da2ac;
+}
+.shared-wall {
+  display: flex;
+  flex-wrap: wrap;
+}
+.shared-wall .tag-categories span {
+  color: #c3c5ca;
+  font-size: 12px;
+  padding: 3px 7px;
+  border-radius: 5px;
+  background: #12141650;
+}
+.shared-navigation {
+  position: fixed;
+  bottom: 0;
+  inset-inline: 0;
+  min-height: 76px;
+  padding: 16px 28px max(16px, env(safe-area-inset-bottom));
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  background: #151719ed;
+  backdrop-filter: blur(20px);
+  border-top: 1px solid #ffffff10;
+  z-index: 10;
+}
+.shared-navigation > div {
+  min-width: 0;
+  display: grid;
+}
+.shared-navigation span {
+  font-size: 14px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #e4e7ed;
+}
+.shared-navigation small {
+  color: #8e939e;
+  font-size: 11px;
+}
+#blog-main.shared-gate {
+  display: grid;
+  place-items: center;
+  padding: 28px;
+  min-height: calc(100dvh - 82px);
+  width: 100%;
+  background: radial-gradient(ellipse at 50% 35%, #343c4a44, transparent 65%);
+}
+.shared-gate-card {
+  width: min(100%, 380px);
+  padding: 34px 28px;
+  background: #ffffff04;
+  border: 1px solid #ffffff12;
+  border-radius: 22px;
+  box-shadow: 0 20px 80px #0002;
+}
+.shared-lock-mark {
+  display: grid;
+  place-items: center;
+  width: 50px;
+  height: 50px;
+  border: 1px solid #ffffff15;
+  border-radius: 16px;
+  margin-bottom: 30px;
+  background: #ffffff07;
+  color: #ced6e8;
+}
+.shared-lock-mark svg {
+  width: 23px;
+  height: 23px;
+}
+.shared-gate-card h1 {
+  font-size: 23px;
+}
+.shared-gate-card p {
+  font-size: 13px;
+  color: #969da9;
+  margin: 12px 0 28px;
+  line-height: 1.8;
+}
+.shared-gate-card label {
+  display: block;
+  font-size: 12px;
+  color: #a9b0bc;
+  margin: 20px 0 8px;
+}
+.shared-password {
+  display: flex;
+  gap: 8px;
+  padding: 0 12px;
+  border-radius: 10px;
+  border: 1px solid #ffffff1a;
+  background: #13171b;
+}
+.shared-password:focus-within {
+  border-color: #8b9aba;
+  box-shadow: 0 0 0 3px #8b9aba1a;
+}
+.shared-password input {
+  min-width: 0;
+  flex: 1;
+  padding: 13px 0;
+  border: 0;
+  background: transparent;
+  outline: 0;
+  color: #edf0f6;
+  font: inherit;
+  font-size: 16px;
+}
+.shared-password button {
+  border: 0;
+  background: transparent;
+  color: #a6adbb;
+  cursor: pointer;
+  font-size: 12px;
+}
+.shared-primary {
+  width: 100%;
+  padding: 13px 18px;
+  margin-top: 20px;
+  border: 1px solid #aab6d13a;
+  border-radius: 10px;
+  background: #c1cbe1;
+  color: #1a2130;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 160ms, transform 160ms;
+}
+.shared-primary:hover {
+  background: #dde4f4;
+}
+.shared-primary:active {
+  transform: scale(0.985);
+}
+.shared-primary:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+.shared-page button:focus-visible {
+  outline: 2px solid #9daecc;
+  outline-offset: 4px;
+}
+.shared-gate-card .shared-error {
+  color: #f0a2a2;
+  margin: 12px 0 0;
+}
+.shared-empty {
+  padding: 60px 24px;
+  font-size: 14px;
+}
+.viewer-fade-enter-active,
+.viewer-fade-leave-active {
+  transition: opacity 0.18s ease;
+}
+.viewer-fade-enter-from,
+.viewer-fade-leave-to {
+  opacity: 0;
+}
+@media (max-width: 736px) {
+  .shared-heading {
+    padding: 22px 16px;
+    align-items: start;
+  }
+  .shared-page h1 {
+    font-size: 21px;
+  }
+  .shared-heading > span {
+    padding-top: 5px;
+  }
+  .shared-navigation {
+    padding-inline: 16px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .shared-primary,
+  .viewer-fade-enter-active,
+  .viewer-fade-leave-active {
+    transition: none;
+  }
+}

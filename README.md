@@ -1,6 +1,6 @@
 # Moment
 
-个人相册与照片故事。当前版本使用 **Go + Gin + SQLite** 提供服务，管理后台使用 **React + TypeScript + Vite + OneUI**，视觉参考 [Share](https://github.com/Robert-Stackflow/Share)。公开相册继续使用 Vue 3，保留原有展示方式。
+个人相册与照片故事。当前版本使用 **Go + Gin + SQLite** 提供服务，管理后台使用 **React + TypeScript + Vite + OneUI**，视觉参考 [Share](https://github.com/Robert-Stackflow/Share)。公开相册使用 **React + Vite**，沿用原有样式、满铺照片墙与图片浏览交互。
 
 ## 功能
 
@@ -34,7 +34,7 @@ go run ./cmd/moment -addr 127.0.0.1:9999
 
 **构建顺序是公开相册在前、后台在后。** 公开相册构建会清理 `dist`，仓库根目录的 `npm run build` 已按此顺序执行。
 
-开发时运行 Go 服务，再执行 `npm run dev:admin`（5174 端口）或 `npm run dev:gallery`（3100 端口）。前端使用同源代理连接 Go 服务；后台可通过 `MOMENT_DEV_API` 指定其他服务地址。
+开发时运行 Go 服务，再执行 `npm run dev:admin`（5174 端口）或 `npm run dev:gallery`（3100 端口）。前端使用同源代理连接 Go 服务；前台和后台均可通过 `MOMENT_DEV_API` 指定其他服务地址。该变量只控制开发代理，不改变生产环境的同源 API。
 
 后台直接使用 npm 包 `@robert-stackflow/oneui@0.5.0` 的蓝白主题与共享组件，包含应用框架、表单校验、设置布局、选择器、表格、弹窗、通知和加载动画。弹窗关闭/卸载后的焦点恢复与紧凑分页直接由 OneUI 管理，Moment 仅传递 `returnFocus`、`compact` 和尺寸参数。图片操作使用共享 ActionSheet，关闭后再打开图片编辑弹窗；横向多行表单的标签对齐由共享 FormField 处理。菜单入口直接使用 OneUI 内置的完整图标目录，旧图标名称只做显示兼容，未编辑时不会改写已保存的数据。`admin/src/styles.css` 只维护照片、地图等业务布局。浅色、深色和跟随系统偏好保存在浏览器中，兼容读取原有的颜色模式偏好。地图、EXIF/GPS、串行上传、草稿、登录和会话继续使用 Moment 的业务实现。
 
@@ -116,13 +116,17 @@ OneUI 迁移的浏览器验证可执行 `npm --prefix admin run test:ui`。首�
 | `internal/moment` | 认证、内容、设置、存储与数据库逻辑 |
 | `internal/moment/migrations` | 版本化 SQL 迁移 |
 | `admin` | 全新 React 管理后台 |
-| `web` | Vue 公开相册 |
+| `web` | React 公开相册 |
 | `shared/map` | 本地地图轮廓与数据来源说明 |
 | `dist` | 本地构建输出 |
 
 主题起源于 [TimePlus](https://github.com/zhheo/TimePlus) 与 [time](https://github.com/wclk/time)，早期版本基于 [vue-fastapi-admin](https://github.com/mizhexiaoxiao/vue-fastapi-admin)。使用仓库原有 LICENSE。
 
 ## 前台浏览与封面裁切
+
+前台通过 React Router 在照片墙、分类、地点、地图、时间线和照片地址间切换；内部导航不刷新文档，修饰键、新标签打开和直接访问仍可使用。管理后台使用独立入口。路由页位于 `web/src/pages`；照片卡片、导航、关于面板、工具提示和大图浏览器共用于公开相册与分享相册，位于 `web/src/components/gallery`。复杂的图片手势和 Leaflet 生命周期分别放在 `hooks/useLightbox.js` 与 `lib/map-controller.js`；设置由一个 Context 提供。原 CSS 保存在 `styles/gallery`，没有套用后台的页面主题。
+
+`npm --prefix web run lint` 检查前台代码，`npm --prefix web run test:ui` 使用隔离的接口模拟验证 1280px、390px、320px 下的 SPA 导航、分页、图片键盘/触摸操作、地图、时间线及分享访问撤销。Windows 默认使用本机 Edge；其他环境先在 `web` 中执行 `npx playwright install chromium`，可通过 `MOMENT_TEST_CHANNEL` 指定浏览器。测试不修改线上数据。
 
 - 照片墙保留满铺布局，桌面导航固定在底部，手机导航位于顶部。
 - 在后台「编辑帖子 → 点击照片 → 封面焦点」中点击、拖动或使用方向键调整裁切位置。应用后随帖子保存；原图保持完整，旧照片默认居中。
