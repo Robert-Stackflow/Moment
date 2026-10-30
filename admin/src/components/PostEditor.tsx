@@ -6,7 +6,7 @@ import {
   Drawer,
   Form,
   Input,
-  ActionSheet,
+  Menu,
   Textarea,
 } from "@robert-stackflow/oneui";
 import { useQueryClient } from "@tanstack/react-query";
@@ -15,10 +15,11 @@ import {
   ArrowLeft,
   ArrowUp,
   CalendarClock,
+  Check,
   CloudCheck,
   Eye,
   EyeOff,
-  FilePenLine,
+  MoreHorizontal,
   GripVertical,
   Link2,
   Pencil,
@@ -28,7 +29,7 @@ import {
   Star,
   Trash2,
 } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import { api, ApiError, json, notifyError, notifySuccess } from "../api";
@@ -159,6 +160,7 @@ export function PostEditor({
   const [dragging, setDragging] = useState<string | null>(null);
   const [dragTarget, setDragTarget] = useState<string | null>(null);
   const titleInput = useRef<HTMLInputElement>(null);
+  const photoDetailsFormId = useId();
   const saving = useRef(false);
   const saveShortcut = useRef<() => void>(() => {});
   const dirty = serialized !== snapshot;
@@ -429,6 +431,124 @@ export function PostEditor({
             返回帖子
           </Button>
         </PageTitle>
+        <div className="editor-save-dock">
+          <div className="editor-save-status" aria-live="polite">
+            {autosave.status === "saved" && !autosave.dirty ? (
+              <CloudCheck size={18} />
+            ) : (
+              <span
+                className={
+                  autosave.dirty ? "status-dot is-dirty" : "status-dot"
+                }
+              />
+            )}
+            <div>
+              <p
+                className="ui-text"
+                style={{
+                  fontSize: 13,
+                  fontWeight: 500,
+                }}
+              >
+                {pendingSchedule
+                  ? "已安排定时发布"
+                  : uploading
+                    ? "照片上传中…"
+                    : busy
+                      ? "正在保存…"
+                      : autosave.status === "saving"
+                        ? "正在保存草稿…"
+                        : autosave.error
+                          ? "草稿未同步"
+                          : autosave.dirty
+                            ? "等待自动保存…"
+                            : autosave.status === "saved"
+                              ? "草稿已保存 · 未发布"
+                              : postID
+                                ? "所有修改已保存"
+                                : "尚未保存"}
+              </p>
+              <p
+                className="ui-text"
+                style={{
+                  fontSize: 12,
+                  color: "var(--muted)",
+                }}
+              >
+                {autosave.savedAt
+                  ? `保存于 ${autosave.savedAt}`
+                  : savedAt && !dirty
+                    ? `上次保存 ${savedAt}`
+                    : "Ctrl / ⌘ + S 保存草稿"}
+              </p>
+            </div>
+          </div>
+          <div
+            className={"ui-row " + "editor-save-actions"}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              flexWrap: "wrap",
+              gap: 8,
+            }}
+          >
+            <Button
+              disabled={!photos.length || busy || uploading}
+              onClick={() => setPreview(true)}
+              variant="ghost"
+            >
+              {<Eye size={16} />}
+              预览
+            </Button>
+            <Button
+              disabled={
+                locked ||
+                autosave.conflict ||
+                autosave.status === "saving" ||
+                (!autosave.dirty && autosave.status === "saved")
+              }
+              onClick={() => void saveDraft()}
+              variant="secondary"
+            >
+              保存草稿
+            </Button>
+            <Button
+              disabled={
+                locked ||
+                autosave.conflict ||
+                publishConflict ||
+                draft.is_hidden ||
+                !visibleCount ||
+                !draft.title.trim()
+              }
+              onClick={() => setScheduling(true)}
+              variant="secondary"
+            >
+              {<CalendarClock size={16} />}
+              定时发布
+            </Button>
+            <Button
+              type="submit"
+              loading={busy}
+              disabled={
+                uploading ||
+                needsReload ||
+                pendingSchedule ||
+                autosave.conflict ||
+                publishConflict ||
+                (!dirty && !!postID)
+              }
+              variant="primary"
+            >
+              {<Save size={16} />}
+              {postID
+                ? "发布更新"
+                : draft.is_hidden
+                  ? "保存帖子"
+                  : "保存并公开"}
+            </Button>
+          </div>
+        </div>
         {publishConflict && (
           <div
             style={{
@@ -487,18 +607,6 @@ export function PostEditor({
               </Alert>
             </div>
           )}
-        <div className="draft-notice">
-          <FilePenLine size={17} />
-          <p
-            className="ui-text"
-            style={{
-              fontSize: 13,
-            }}
-          >
-            {initialDraft ? "已恢复未发布的草稿。" : "编辑会自动保存为草稿。"}
-            {postID ? "发布更新后，访客才会看到修改。" : "发布前仅自己可见。"}
-          </p>
-        </div>
         {autosave.error && (
           <div
             style={{
@@ -797,9 +905,11 @@ export function PostEditor({
                             {photo.title ||
                               `照片 ${String(index + 1).padStart(2, "0")}`}
                           </p>
-                          <ActionSheet
+                          <Menu
                             label={`图片操作 ${index + 1}`}
-                            title="图片操作"
+                            trigger={<MoreHorizontal size={18} />}
+                            variant="ghost"
+                            className="photo-menu-trigger"
                             items={[
                               {
                                 label: "\u7F16\u8F91\u56FE\u7247\u4FE1\u606F",
@@ -902,9 +1012,23 @@ export function PostEditor({
                       value={draft.time}
                       onChange={(value) => field("time", value)}
                     />
-                    <LocationField latitude={draft.discovery.latitude} longitude={draft.discovery.longitude} value={draft.location} onChange={value => field("location", value)}
-                      onPlace={place => setDraft(current => ({...current, location: place.label,
-                        discovery: {...current.discovery, latitude: place.latitude, longitude: place.longitude}}))} />
+                    <LocationField
+                      latitude={draft.discovery.latitude}
+                      longitude={draft.discovery.longitude}
+                      value={draft.location}
+                      onChange={(value) => field("location", value)}
+                      onPlace={(place) =>
+                        setDraft((current) => ({
+                          ...current,
+                          location: place.label,
+                          discovery: {
+                            ...current.discovery,
+                            latitude: place.latitude,
+                            longitude: place.longitude,
+                          },
+                        }))
+                      }
+                    />
                     <CategoryMultiSelect
                       categories={categories}
                       value={draft.category_ids}
@@ -912,53 +1036,18 @@ export function PostEditor({
                     />
                   </div>
                   <DiscoveryEditor
-                    onPlace={(place, discovery) => setDraft(current => ({...current, location: place.label, discovery}))}
+                    onPlace={(place, discovery) =>
+                      setDraft((current) => ({
+                        ...current,
+                        location: place.label,
+                        discovery,
+                      }))
+                    }
                     value={draft.discovery}
                     onChange={(value) => field("discovery", value)}
                   />
                 </div>
               </Card>
-              {cover && (
-                <Card className={"moment-panel " + "editor-cover-summary"}>
-                  <img
-                    className="editor-cover-thumb"
-                    src={thumbnail(cover.image_url, settings)}
-                    alt="当前封面"
-                  />
-                  <div className="editor-cover-copy">
-                    <p
-                      className="ui-text"
-                      style={{
-                        fontSize: 13,
-                        fontWeight: 600,
-                      }}
-                    >
-                      相册封面
-                    </p>
-                    <p
-                      className="ui-text"
-                      style={{
-                        fontSize: 12,
-                        color: "var(--muted)",
-                        marginTop: 4,
-                      }}
-                    >
-                      {visibleCount} 张公开 · {photos.length - visibleCount}{" "}
-                      张隐藏
-                    </p>
-                    <p
-                      className="ui-text"
-                      style={{
-                        fontSize: 12,
-                        color: "var(--muted)",
-                        marginTop: 4,
-                      }}
-                    >
-                      在图片菜单中更换封面
-                    </p>
-                  </div>
-                </Card>
-              )}
               {!!photos.length && !visibleCount && (
                 <Alert tone={tone("yellow")} icon={<EyeOff size={16} />}>
                   所有图片都已隐藏，访客不会看到这篇帖子。
@@ -980,124 +1069,6 @@ export function PostEditor({
             </div>
           </div>
         </fieldset>
-        <div className="editor-save-dock">
-          <div className="editor-save-status" aria-live="polite">
-            {autosave.status === "saved" && !autosave.dirty ? (
-              <CloudCheck size={18} />
-            ) : (
-              <span
-                className={
-                  autosave.dirty ? "status-dot is-dirty" : "status-dot"
-                }
-              />
-            )}
-            <div>
-              <p
-                className="ui-text"
-                style={{
-                  fontSize: 13,
-                  fontWeight: 500,
-                }}
-              >
-                {pendingSchedule
-                  ? "已安排定时发布"
-                  : uploading
-                    ? "照片上传中…"
-                    : busy
-                      ? "正在保存…"
-                      : autosave.status === "saving"
-                        ? "正在保存草稿…"
-                        : autosave.error
-                          ? "草稿未同步"
-                          : autosave.dirty
-                            ? "等待自动保存…"
-                            : autosave.status === "saved"
-                              ? "草稿已保存 · 未发布"
-                              : postID
-                                ? "所有修改已保存"
-                                : "尚未保存"}
-              </p>
-              <p
-                className="ui-text"
-                style={{
-                  fontSize: 12,
-                  color: "var(--muted)",
-                }}
-              >
-                {autosave.savedAt
-                  ? `保存于 ${autosave.savedAt}`
-                  : savedAt && !dirty
-                    ? `上次保存 ${savedAt}`
-                    : "Ctrl / ⌘ + S 保存草稿"}
-              </p>
-            </div>
-          </div>
-          <div
-            className={"ui-row " + "editor-save-actions"}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              flexWrap: "wrap",
-              gap: 8,
-            }}
-          >
-            <Button
-              disabled={!photos.length || busy || uploading}
-              onClick={() => setPreview(true)}
-              variant="ghost"
-            >
-              {<Eye size={16} />}
-              预览
-            </Button>
-            <Button
-              disabled={
-                locked ||
-                autosave.conflict ||
-                autosave.status === "saving" ||
-                (!autosave.dirty && autosave.status === "saved")
-              }
-              onClick={() => void saveDraft()}
-              variant="secondary"
-            >
-              保存草稿
-            </Button>
-            <Button
-              disabled={
-                locked ||
-                autosave.conflict ||
-                publishConflict ||
-                draft.is_hidden ||
-                !visibleCount ||
-                !draft.title.trim()
-              }
-              onClick={() => setScheduling(true)}
-              variant="secondary"
-            >
-              {<CalendarClock size={16} />}
-              定时发布
-            </Button>
-            <Button
-              type="submit"
-              loading={busy}
-              disabled={
-                uploading ||
-                needsReload ||
-                pendingSchedule ||
-                autosave.conflict ||
-                publishConflict ||
-                (!dirty && !!postID)
-              }
-              variant="primary"
-            >
-              {<Save size={16} />}
-              {postID
-                ? "发布更新"
-                : draft.is_hidden
-                  ? "保存帖子"
-                  : "保存并公开"}
-            </Button>
-          </div>
-        </div>
       </Form>
       {scheduling && (
         <ScheduleDialog
@@ -1112,10 +1083,22 @@ export function PostEditor({
         title="编辑图片信息"
         size={440}
         open={!!current}
+        footer={
+          <>
+            <Button onClick={() => setEditing(null)} variant="secondary">
+              取消
+            </Button>
+            <Button type="submit" form={photoDetailsFormId} variant="primary">
+              <Check size={16} />
+              应用修改
+            </Button>
+          </>
+        }
       >
         {current && (
           <PhotoDetails
             key={current._key}
+            formId={photoDetailsFormId}
             photo={current}
             inheritedDiscovery={draft.discovery}
             settings={settings}
@@ -1129,7 +1112,6 @@ export function PostEditor({
               );
               setEditing(null);
             }}
-            onCancel={() => setEditing(null)}
           />
         )}
       </Drawer>

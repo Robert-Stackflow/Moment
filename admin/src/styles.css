@@ -107,7 +107,8 @@ h4.ui-title {
   display: block;
 }
 .category-label strong {
-  font-size: 15px;
+  font-size: 14px;
+  font-weight: 500;
   margin-right: 8px;
 }
 .category-label small {
@@ -120,16 +121,16 @@ h4.ui-title {
   display: grid;
   place-items: center;
   flex: none;
-  width: 36px;
-  height: 36px;
+  width: 32px;
+  height: 32px;
   background: var(--selected);
   color: var(--accent);
   border: 1px solid var(--line);
   border-radius: var(--radius);
 }
 .category-symbol svg {
-  width: 20px;
-  height: 20px;
+  width: 18px;
+  height: 18px;
 }
 @media (max-width: 700px) {
   .ui-grid {
@@ -477,23 +478,6 @@ h4.ui-title {
   font-size: 12px;
   color: var(--moment-accent);
 }
-.editor-cover-summary > [data-card-body] {
-  display: flex;
-  gap: 13px;
-  align-items: center;
-}
-.editor-cover-thumb {
-  display: block;
-  width: 76px;
-  height: 76px;
-  object-fit: cover;
-  flex: none;
-  border-radius: var(--radius);
-}
-.editor-cover-copy {
-  min-width: 0;
-  overflow-wrap: anywhere;
-}
 .schedule-copy {
   display: flex;
   align-items: center;
@@ -514,13 +498,13 @@ h4.ui-title {
 }
 .editor-save-dock {
   position: sticky;
-  bottom: 16px;
+  top: 0;
   z-index: 15;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  margin-top: 26px;
+  margin: 0 0 24px;
   padding: 16px 20px;
   border: 1px solid var(--moment-border);
   border-radius: var(--card-radius);
@@ -552,18 +536,6 @@ h4.ui-title {
   object-fit: contain;
   background: var(--moment-input);
 }
-.photo-detail-actions {
-  position: sticky;
-  bottom: 0;
-  background: var(--moment-surface);
-  border-top: 1px solid var(--moment-border);
-  padding: 16px 0;
-  display: flex;
-  gap: 10px;
-  flex-direction: column;
-  align-items: flex-end;
-  z-index: 2;
-}
 @media (max-width: 1200px) {
   .editor-layout {
     grid-template-columns: minmax(0, 1fr) 310px;
@@ -594,7 +566,7 @@ h4.ui-title {
     margin-left: 38px;
   }
   .editor-save-dock {
-    bottom: 8px;
+    top: 0;
     padding: 12px;
     gap: 10px;
     flex-wrap: wrap;
@@ -1381,19 +1353,7 @@ h4.ui-title {
   gap: 20px;
   padding: 4px 4px 8px;
 }
-.draft-notice {
-  display: flex;
-  gap: 10px;
-  align-items: center;
-  padding: 12px 16px;
-  margin-bottom: 22px;
-  border-radius: var(--radius);
-  background: var(--selected);
-  color: var(--accent);
-}
-.draft-notice svg {
-  flex-shrink: 0;
-}
+
 .trash-selection {
   margin-top: 12px;
 }
@@ -1918,17 +1878,6 @@ h4.ui-title {
   flex-direction: column;
   gap: 24px;
 }
-.settings-fields-grid {
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
-}
-.setting-field {
-  min-width: 0;
-}
-.storage-fields {
-  margin-top: 24px;
-}
 .form-actions {
   display: flex;
   justify-content: space-between;
@@ -2039,11 +1988,6 @@ h4.ui-title {
   }
 }
 @media (max-width: 700px) {
-  .settings-fields-grid {
-    display: flex;
-    flex-direction: column;
-    gap: 24px;
-  }
   .draft-row > [data-card-body] {
     gap: 12px;
   }
@@ -2098,18 +2042,6 @@ h4.ui-title {
   display: flex;
   flex-direction: column;
   gap: 12px;
-}
-.account-recovery {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 12px;
-  color: var(--muted);
-  font-size: 12px;
-}
-.account-recovery p {
-  margin: 0;
 }
 .account-empty {
   color: var(--muted);
@@ -2210,3 +2142,17 @@ h4.ui-title {
 }
 .map-picker-frame[data-hide-attribution="true"] .amap-logo,
 .map-picker-frame[data-hide-attribution="true"] .amap-copyright { display: none !important; }
+
+.preferences-layout { display: grid; grid-template-columns: 210px minmax(0, 1fr); gap: 28px; align-items: start; }
+.preferences-navigation { position: sticky; top: 0; min-width: 0; }
+.preferences-content { min-width: 0; }
+.preferences-mobile-navigation { display: none; min-width: 0; --select-width: 100%; }
+.settings-rows { min-width: 0; }
+@media (max-width: 800px) {
+  .preferences-layout { grid-template-columns: minmax(0, 1fr); gap: 20px; }
+  .preferences-navigation { display: none; }
+  .preferences-mobile-navigation { display: block; }
+}
+
+.photo-menu-trigger { width: 32px; height: 32px; padding: 0; flex: none; }
+.security-key-content { display: grid; gap: 16px; }

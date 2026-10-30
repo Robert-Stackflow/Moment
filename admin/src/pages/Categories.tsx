@@ -124,6 +124,7 @@ export default function Categories() {
         </Card>
       ) : (
         <TreeTable
+          density="compact"
           rows={data}
           label="分类与层级"
           rowKey={(item) => item.id}

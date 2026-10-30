@@ -3,14 +3,14 @@ import {
   Card,
   Form,
   FormField,
-  Input,
   NumberInput,
   PasswordField,
-  RadioGroup,
-  Select,
-  SettingsLayout,
+  SelectSettingRow,
+  SettingRow,
+  SwitchSettingRow,
+  TextSettingRow,
+  TextAreaSettingRow,
   Textarea,
-  Switch,
 } from "@robert-stackflow/oneui";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Archive, Code2, Database, Globe, Image, Save } from "lucide-react";
@@ -24,6 +24,7 @@ import {
   type EditableEntry,
   type Entry,
 } from "../components/EntryList";
+import { PreferencesLayout } from "../components/PreferencesLayout";
 import { UnsavedChanges } from "../components/UnsavedChanges";
 import { useModelForm } from "../components/useModelForm";
 import type { Section, Settings } from "../types";
@@ -227,17 +228,45 @@ export default function SettingsPage() {
   return (
     <>
       <PageTitle title="网站设置" />
-      <SettingsLayout
-        value={selected}
-        onChange={(key) => navigate(`/settings/${key}`)}
+      <PreferencesLayout
+        label="网站设置导航"
+        active={`/settings/${selected}`}
+        onNavigate={navigate}
         groups={[
           {
             id: "site",
-            items: sections.map(({ key, label, icon: Icon }) => ({
-              value: key,
-              label,
-              icon: <Icon />,
-            })),
+            items: sections
+              .filter((item) => ["meta", "content"].includes(item.key))
+              .map(({ key, label, icon: Icon }) => ({
+                id: `/settings/${key}`,
+                path: `/settings/${key}`,
+                label,
+                icon: <Icon />,
+              })),
+          },
+          {
+            id: "data",
+            label: "数据",
+            items: sections
+              .filter((item) => ["storage", "backups"].includes(item.key))
+              .map(({ key, label, icon: Icon }) => ({
+                id: `/settings/${key}`,
+                path: `/settings/${key}`,
+                label,
+                icon: <Icon />,
+              })),
+          },
+          {
+            id: "advanced",
+            label: "高级",
+            items: sections
+              .filter((item) => item.key === "general")
+              .map(({ key, label, icon: Icon }) => ({
+                id: `/settings/${key}`,
+                path: `/settings/${key}`,
+                label,
+                icon: <Icon />,
+              })),
           },
         ]}
       >
@@ -250,7 +279,7 @@ export default function SettingsPage() {
             initial={settings.data.data[selected]}
           />
         )}
-      </SettingsLayout>
+      </PreferencesLayout>
     </>
   );
 }
@@ -334,35 +363,79 @@ function SettingsForm({
   }
   function renderField(field: Field) {
     const value = values[field.key],
-      credential = field.kind === "password",
+      control = sharedForm.field(field.key);
+    const credential = field.kind === "password",
       configured = initial[field.key + "_configured"] === true;
+    const description =
+      credential && configured ? "已配置，留空保留当前凭据" : field.description;
+    const common = { title: field.label, description };
     if (field.kind === "switch")
       return (
-        <FormField key={field.key} label={field.label} hint={field.description}>
-          <Switch
-            label={field.label}
-            checked={value === true}
-            onChange={(next) => set(field.key, next)}
-          />
-        </FormField>
+        <SwitchSettingRow
+          key={field.key}
+          {...common}
+          {...control}
+          checked={value === true}
+          onChange={(next) => set(field.key, next)}
+        />
       );
+    if (field.kind === "select")
+      return (
+        <SelectSettingRow
+          key={field.key}
+          {...common}
+          {...control}
+          options={selectOptions(field.options)}
+          value={String(value ?? "")}
+          onChange={(next) => set(field.key, next)}
+        />
+      );
+    if (field.kind === "textarea")
+      return (
+        <TextAreaSettingRow
+          key={field.key}
+          {...common}
+          {...control}
+          align="start"
+          controlWidth="100%"
+          value={String(value ?? "")}
+          rows={3}
+          onChange={(next) => set(field.key, next)}
+        />
+      );
+    if (field.kind !== "number" && !credential)
+      return (
+        <TextSettingRow
+          key={field.key}
+          {...common}
+          {...control}
+          controlWidth="100%"
+          value={String(value ?? "")}
+          onChange={(next) => set(field.key, next)}
+        />
+      );
+    const descriptionId = description ? `${control.id}-description` : undefined;
     return (
-      <div
+      <SettingRow
         key={field.key}
-        className={
-          field.kind === "textarea" ? "setting-field is-wide" : "setting-field"
-        }
+        {...common}
+        controlId={control.id}
+        descriptionId={descriptionId}
+        controlWidth={credential ? "100%" : 180}
       >
-        <FormField
-          {...sharedForm.field(field.key)}
-          label={field.label}
-          hint={
-            credential && configured ? "留空保留当前凭据。" : field.description
-          }
-        >
-          {field.kind === "number" ? (
+        <FormField {...control} aria-describedby={descriptionId}>
+          {credential ? (
+            <PasswordField
+              value={String(value ?? "")}
+              onChange={(next) => set(field.key, next)}
+              autoComplete="off"
+              placeholder={configured ? "已配置，输入以替换" : "尚未配置"}
+            />
+          ) : (
             <NumberInput
               label={field.label}
+              fullWidth
+              step={field.key === "max_size" ? 0.1 : 1}
               min={
                 field.key === "max_size"
                   ? 0.1
@@ -378,46 +451,16 @@ function SettingsForm({
                     : 100
               }
               value={Number(value) || 0}
-              onChange={(value) => set(field.key, value)}
-            />
-          ) : field.kind === "select" ? (
-            <Select
-              label={field.label}
-              options={selectOptions(field.options)}
-              value={String(value ?? "")}
-              onChange={(value) => set(field.key, value)}
-            />
-          ) : credential ? (
-            <PasswordField
-              value={String(value ?? "")}
-              onChange={(value) => set(field.key, value)}
-              autoComplete="off"
-              placeholder={configured ? "已配置，输入以替换" : "尚未配置"}
-            />
-          ) : field.kind === "textarea" ? (
-            <Textarea
-              value={String(value ?? "")}
-              rows={field.key.startsWith("custom_") ? 6 : 3}
-              onChange={(event) => set(field.key, event.currentTarget.value)}
-            />
-          ) : (
-            <Input
-              value={String(value ?? "")}
-              onChange={(event) => set(field.key, event.currentTarget.value)}
+              onChange={(next) => set(field.key, next)}
             />
           )}
         </FormField>
-      </div>
+      </SettingRow>
     );
   }
   const group = (title: string, items: Field[], action?: React.ReactNode) => (
     <Card title={title} action={action}>
-      <div className="settings-fields-grid">
-        {[
-          ...items.filter((field) => field.kind !== "textarea"),
-          ...items.filter((field) => field.kind === "textarea"),
-        ].map(renderField)}
-      </div>
+      <div className="settings-rows">{items.map(renderField)}</div>
     </Card>
   );
   const iconKeys = [
@@ -429,7 +472,7 @@ function SettingsForm({
     footerKeys = ["bottom_desc", "icp"];
   return (
     <div className="settings-form">
-      <Form controller={sharedForm} onSubmit={save} layout="inline">
+      <Form controller={sharedForm} onSubmit={save}>
         <UnsavedChanges dirty={dirty} />
         <div className="settings-groups">
           {section === "meta" ? (
@@ -472,29 +515,12 @@ function SettingsForm({
             </>
           ) : section === "storage" ? (
             <>
-              <Card title="图片存储">
-                <FormField label="存储方式">
-                  <RadioGroup
-                    name="storage-provider"
-                    label="存储方式"
-                    value={String(values.provider)}
-                    onChange={(value) => set("provider", value)}
-                    options={[
-                      { value: "local", label: "本地存储" },
-                      { value: "s3", label: "S3 对象存储" },
-                    ]}
-                  />
-                </FormField>
-                <div className="settings-fields-grid storage-fields">
-                  {fields.storage
-                    .filter((field) =>
-                      ["enable_storage", "max_size", "path"].includes(
-                        field.key,
-                      ),
-                    )
-                    .map(renderField)}
-                </div>
-              </Card>
+              {group(
+                "图片上传",
+                ["provider", "enable_storage", "max_size", "path"].map(
+                  (key) => fields.storage.find((field) => field.key === key)!,
+                ),
+              )}
               {values.provider === "s3" &&
                 group(
                   "S3 连接",
@@ -509,11 +535,65 @@ function SettingsForm({
                   ),
                 )}
             </>
+          ) : section === "content" ? (
+            <>
+              {group(
+                "浏览入口",
+                fields.content.filter((field) =>
+                  ["map_enabled", "timeline_enabled"].includes(field.key),
+                ),
+              )}
+              {group(
+                "照片墙",
+                fields.content.filter((field) =>
+                  [
+                    "page_size",
+                    "order_option",
+                    "thumbnail_show_location",
+                    "thumbnail_show_time",
+                    "thumbnail_time_format",
+                  ].includes(field.key),
+                ),
+              )}
+              {group(
+                "照片详情",
+                fields.content.filter((field) =>
+                  [
+                    "detail_show_location",
+                    "detail_show_time",
+                    "detail_time_format",
+                  ].includes(field.key),
+                ),
+              )}
+              {group(
+                "图片加载",
+                fields.content.filter((field) =>
+                  [
+                    "local_thumbnails",
+                    "thumbnail_suffix",
+                    "detail_suffix",
+                  ].includes(field.key),
+                ),
+              )}
+            </>
           ) : (
-            group(
-              section === "content" ? "相册展示" : "个性化",
-              fields[section],
-            )
+            fields.general.map((field) => (
+              <Card
+                key={field.key}
+                title={field.label}
+                description={field.description}
+              >
+                <Textarea
+                  {...sharedForm.field(field.key)}
+                  aria-label={field.label}
+                  rows={10}
+                  value={String(values[field.key] ?? "")}
+                  onChange={(event) =>
+                    set(field.key, event.currentTarget.value)
+                  }
+                />
+              </Card>
+            ))
           )}
         </div>
         <div className="form-actions">

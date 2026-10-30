@@ -1,0 +1,39 @@
+{
+  "oneui": "0.6.17",
+  "registryIntegrity": "sha512-E6Xejr68O1YIa6SiL8kXH64Za5uS0orWJe2idVLlOhdi2LY9Xu/iPSxamM8ZYEr40ZllJXiMtaaaiw6hD8BY8w==",
+  "navigation": {
+    "mainEntriesPreserved": 10,
+    "groups": ["内容管理", "照片工具", "管理"],
+    "accountAndSettings": "shared SideBar card; shared Select on narrow screens",
+    "collapseExtraOverflowBefore": 39,
+    "collapseExtraOverflowAfter": 0,
+    "upstreamFix": "OneUI eb5fe16"
+  },
+  "settings": {
+    "rows": "SettingRow, TextSettingRow, TextAreaSettingRow, SwitchSettingRow, SelectSettingRow",
+    "codeEditors": "full-width shared Textarea",
+    "allSettingRoutesAndActiveLinks": true,
+    "saveAndEntryEditing": true,
+    "credentialPreservation": "unchanged"
+  },
+  "editor": {
+    "saveControls": "sticky top",
+    "removed": ["ordinary draft notice", "cover summary preview", "应用后，随帖子一起保存", "account recovery tip"],
+    "photoActions": "shared Menu",
+    "photoEditing": "shared Drawer footer with form-associated submit button",
+    "footerBottomGapPixels": 14.8,
+    "categoryTitlePixels": 14,
+    "categoryIconPixels": 18
+  },
+  "validation": {
+    "productionBuild": true,
+    "adminUnitTests": 8,
+    "settingsAndAuthenticationRegression": true,
+    "publicBrowserMatrices": 3,
+    "editorLightDarkWidths": [1440, 390, 320],
+    "editorMatrices": 6,
+    "horizontalOverflows": 0,
+    "browserRuntimeErrors": 0,
+    "productionTestWrites": 0
+  }
+}

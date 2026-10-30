@@ -9,6 +9,7 @@ import {
   Input,
   PasswordField,
   Progress,
+  SettingRow,
 } from "@robert-stackflow/oneui";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Archive, ArchiveRestore, Download, Plus, Trash2 } from "lucide-react";
@@ -197,38 +198,24 @@ export default function Backups() {
         dirty={!!busy}
         message="备份操作正在进行。离开可能中断传输；恢复一旦开始替换数据，将继续完成。返回后请检查操作结果。"
       />
-      <Card className="moment-panel">
-        <div
-          className="ui-row"
-          style={{
-            display: "flex",
-            alignItems: "flex-start",
-            flexWrap: "wrap",
-            gap: 24,
-            justifyContent: "space-between",
-          }}
-        >
-          <div>
-            <h3 className="ui-title">备份与恢复</h3>
-            <p
-              className="ui-text"
-              style={{
-                fontSize: 13,
-                color: "var(--muted)",
-                marginTop: 8,
-              }}
+      <Card title="备份与恢复" className="moment-panel">
+        <div className="settings-rows">
+          <SettingRow
+            title="创建备份"
+            description="保存数据库、本地照片和头像，迁移后继续使用"
+          >
+            <Button
+              disabled={!!busy}
+              onClick={() => void create()}
+              variant="primary"
             >
-              保存数据库、本地照片和头像，迁移后继续使用。
-            </p>
-          </div>
-          <div
-            className="ui-row"
-            style={{
-              display: "flex",
-              alignItems: "center",
-              flexWrap: "wrap",
-              gap: 6,
-            }}
+              <Plus size={16} />
+              创建备份
+            </Button>
+          </SettingRow>
+          <SettingRow
+            title="导入备份"
+            description="支持本版本导出的 ZIP，最大 2 GB，解压总量不超过 8 GB"
           >
             <FilePicker
               label="导入备份"
@@ -238,28 +225,10 @@ export default function Backups() {
               disabled={!!busy}
               onFiles={(files) => void upload(files[0])}
             />
-            <Button
-              disabled={!!busy}
-              onClick={() => void create()}
-              variant="primary"
-            >
-              {<Plus size={16} />}
-              创建备份
-            </Button>
-          </div>
+          </SettingRow>
         </div>
-
-        <p
-          className="ui-text"
-          style={{
-            fontSize: 12,
-            color: "var(--muted)",
-            marginTop: 24,
-          }}
-        >
-          包含账户及存储凭据，请妥善保管。S3
-          原图不打包，需单独备份存储桶。支持本版本导出的 ZIP，最大 2
-          GB；解压总量不超过 8 GB。
+        <p className="ui-text muted" style={{ fontSize: 12, marginTop: 12 }}>
+          包含账户及存储凭据，请妥善保管。S3 原图不打包，需单独备份存储桶。
         </p>
         {!!busy && (
           <div

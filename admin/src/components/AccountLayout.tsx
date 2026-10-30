@@ -1,4 +1,4 @@
-import { SettingsLayout } from "@robert-stackflow/oneui";
+import { PreferencesLayout } from "./PreferencesLayout";
 import { Fingerprint, KeyRound, Monitor, UserRound } from "lucide-react";
 import { Suspense } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
@@ -15,15 +15,30 @@ export default function AccountLayout() {
   return (
     <>
       <PageTitle title="我的账户" />
-      <SettingsLayout
-        value={pathname.replace(/\/$/, "")}
-        onChange={navigate}
-        groups={[{ id: "account", items: sections }]}
+      <PreferencesLayout
+        label="账户设置导航"
+        active={pathname.replace(/\/$/, "")}
+        onNavigate={navigate}
+        groups={[
+          {
+            id: "profile",
+            items: sections
+              .slice(0, 1)
+              .map((item) => ({ ...item, id: item.value, path: item.value })),
+          },
+          {
+            id: "security",
+            label: "安全",
+            items: sections
+              .slice(1)
+              .map((item) => ({ ...item, id: item.value, path: item.value })),
+          },
+        ]}
       >
         <Suspense fallback={<Loading />}>
           <Outlet />
         </Suspense>
-      </SettingsLayout>
+      </PreferencesLayout>
     </>
   );
 }

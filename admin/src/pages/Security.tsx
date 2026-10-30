@@ -1,5 +1,6 @@
 import {
   Alert,
+  Banner,
   Button,
   Card,
   Dialog,
@@ -26,7 +27,7 @@ import {
   type PasskeyConfig,
 } from "../passkeys";
 import { useAuth } from "../session";
-import { adminHref, tone } from "../ui-data";
+import { tone } from "../ui-data";
 type Dialog =
   | {
       kind: "create";
@@ -236,49 +237,40 @@ export default function Security() {
               </div>
             }
           >
-            {(!canUsePasskeys() || !correctOrigin) && (
-              <Alert tone="warning">
-                当前浏览器或网址不支持通行密钥。请使用支持通行密钥的浏览器和
-                HTTPS；本地预览请用 localhost。
-              </Alert>
-            )}
-            {!keys.data?.data.length ? (
-              <p className="account-empty">还没有通行密钥</p>
-            ) : (
-              <div
-                className="account-item-list"
-                role="list"
-                aria-label="通行密钥"
-              >
-                {keys.data.data.map((key) => (
-                  <PasskeyItem
-                    key={key.id}
-                    name={key.name}
-                    createdAt={key.created_at}
-                    lastUsedAt={key.last_used_at || undefined}
-                    description={
-                      key.rp_id !== settings?.rp_id
-                        ? `属于其他登录域名：${key.rp_id}`
-                        : undefined
-                    }
-                    disabled={busy}
-                    onRename={() => open({ kind: "rename", key })}
-                    onRemove={() => open({ kind: "delete", key })}
-                  />
-                ))}
-              </div>
-            )}
+            <div className="security-key-content">
+              {(!canUsePasskeys() || !correctOrigin) && (
+                <Banner tone="warning" compact>
+                  当前环境暂不支持添加通行密钥，请使用 HTTPS 或 localhost。
+                </Banner>
+              )}
+              {!keys.data?.data.length ? (
+                <p className="account-empty">还没有通行密钥</p>
+              ) : (
+                <div
+                  className="account-item-list"
+                  role="list"
+                  aria-label="通行密钥"
+                >
+                  {keys.data.data.map((key) => (
+                    <PasskeyItem
+                      key={key.id}
+                      name={key.name}
+                      createdAt={key.created_at}
+                      lastUsedAt={key.last_used_at || undefined}
+                      description={
+                        key.rp_id !== settings?.rp_id
+                          ? `属于其他登录域名：${key.rp_id}`
+                          : undefined
+                      }
+                      disabled={busy}
+                      onRename={() => open({ kind: "rename", key })}
+                      onRemove={() => open({ kind: "delete", key })}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
           </Card>
-          <div className="account-recovery">
-            <p>设备丢失时，可使用账户密码登录并移除对应的通行密钥。</p>
-            <Button
-              size="small"
-              href={adminHref("/account/password")}
-              variant="ghost"
-            >
-              管理账户密码
-            </Button>
-          </div>
         </div>
       )}
       <Dialog

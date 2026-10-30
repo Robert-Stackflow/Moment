@@ -273,7 +273,7 @@ try {
         .first()
         .click();
       await page
-        .getByRole("button", { name: "隐藏图片", exact: true })
+        .getByRole("menuitem", { name: "隐藏图片", exact: true })
         .waitFor();
       await page.keyboard.press("Escape");
       await page.getByRole("combobox", { name: "分类", exact: true }).click();
@@ -378,6 +378,36 @@ try {
     async () => {
       await page.goto(base + "/settings/meta");
       await noOverflow();
+      const settingsNavigation = page.getByRole("navigation", {
+        name: "网站设置导航",
+        exact: true,
+      });
+      assert.equal(
+        await settingsNavigation.getAttribute("data-navigation"),
+        "card",
+      );
+      for (const label of [
+        "相册展示",
+        "图片存储",
+        "备份与恢复",
+        "个性化",
+        "网站信息",
+      ]) {
+        await settingsNavigation
+          .getByRole("link", { name: label, exact: true })
+          .click();
+        await settingsNavigation
+          .locator('a[aria-current="page"]')
+          .filter({ hasText: label })
+          .waitFor();
+        await noOverflow();
+        assert.equal(
+          await settingsNavigation
+            .getByRole("link", { name: label, exact: true })
+            .getAttribute("aria-current"),
+          "page",
+        );
+      }
       await page
         .getByRole("textbox", { name: "网站名称", exact: true })
         .fill("视觉验证");
@@ -406,11 +436,24 @@ try {
         name: "网站名称",
         exact: true,
       });
-      assert.equal(
-        await setting.evaluate(
-          (el) => getComputedStyle(el.closest("[data-layout]")).display,
-        ),
-        "grid",
+      assert.ok(
+        await setting.evaluate((el) => {
+          const label = document.querySelector(`label[for="${el.id}"]`);
+          const row = el.closest("[data-align]");
+          if (!label || !row || !row.contains(label)) return false;
+          const inputBox = el.getBoundingClientRect();
+          const labelBox = label.getBoundingClientRect();
+          return (
+            inputBox.left > labelBox.right &&
+            Math.abs(
+              inputBox.y +
+                inputBox.height / 2 -
+                labelBox.y -
+                labelBox.height / 2,
+            ) < 2
+          );
+        }),
+        "shared setting row must link and align its label and control",
       );
       const entryBox = await page.locator(".entry-row").boundingBox();
       for (const button of await page.locator(".entry-actions button").all()) {
@@ -439,6 +482,12 @@ try {
       });
       await page.goto(base + "/account/sessions");
       await noOverflow();
+      assert.equal(
+        await page
+          .getByRole("navigation", { name: "账户设置导航", exact: true })
+          .getAttribute("data-navigation"),
+        "card",
+      );
       assert.equal(await page.locator(".account-session-note").count(), 0);
       await page
         .getByRole("list", { name: "登录会话", exact: true })
@@ -716,7 +765,7 @@ try {
     );
   });
   await check(
-    "reported photo cards, editor layout and shared action sheet",
+    "reported photo cards, editor layout and shared action menu",
     async () => {
       console.log(
         "PHOTO_LAYOUT " +

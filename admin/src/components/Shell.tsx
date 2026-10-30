@@ -5,6 +5,7 @@ import {
   MenuItem,
   Popover,
   Segmented,
+  type NavigationGroup,
 } from "@robert-stackflow/oneui";
 import {
   ArrowUpRight,
@@ -23,6 +24,7 @@ import {
   Sun,
   Trash2,
   UserRound,
+  type LucideIcon,
 } from "lucide-react";
 import { useRef, useState } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
@@ -30,18 +32,43 @@ import { notifyError } from "../api";
 import { useAppearance } from "../appearance";
 import { useAuth } from "../session";
 import { Brand } from "./Brand";
-const items = [
-  { label: "工作台", path: "/workbench", icon: Grid2X2 },
-  { label: "帖子与图片", path: "/posts", icon: Images },
-  { label: "照片整理", path: "/organize", icon: ScanSearch },
-  { label: "草稿", path: "/drafts", icon: FilePenLine },
-  { label: "定时发布", path: "/schedules", icon: CalendarClock },
-  { label: "分享相册", path: "/shares", icon: Link2 },
-  { label: "回收站", path: "/trash", icon: Trash2 },
-  { label: "分类管理", path: "/categories", icon: FolderTree },
-  { label: "网站设置", path: "/settings/meta", icon: Settings2 },
-  { label: "我的账户", path: "/account", icon: UserRound },
+const navItem = (label: string, path: string, Icon: LucideIcon) => ({
+  id: path,
+  path,
+  label,
+  icon: <Icon />,
+});
+const navigationGroups: NavigationGroup[] = [
+  { id: "overview", items: [navItem("工作台", "/workbench", Grid2X2)] },
+  {
+    id: "content",
+    label: "内容管理",
+    items: [
+      navItem("帖子与图片", "/posts", Images),
+      navItem("草稿", "/drafts", FilePenLine),
+      navItem("定时发布", "/schedules", CalendarClock),
+      navItem("分类管理", "/categories", FolderTree),
+    ],
+  },
+  {
+    id: "photos",
+    label: "照片工具",
+    items: [
+      navItem("照片整理", "/organize", ScanSearch),
+      navItem("分享相册", "/shares", Link2),
+      navItem("回收站", "/trash", Trash2),
+    ],
+  },
+  {
+    id: "manage",
+    label: "管理",
+    items: [
+      navItem("网站设置", "/settings/meta", Settings2),
+      navItem("我的账户", "/account", UserRound),
+    ],
+  },
 ];
+const items = navigationGroups.flatMap((group) => group.items);
 function AccountFooter() {
   const auth = useAuth(),
     navigate = useNavigate(),
@@ -163,12 +190,8 @@ export function Shell() {
     );
   return (
     <AppShell
-      navigation={items.map((item) => ({
-        id: item.path,
-        path: item.path,
-        label: item.label,
-        icon: <item.icon />,
-      }))}
+      navigation={items}
+      navigationGroups={navigationGroups}
       active={selected?.path || "/workbench"}
       title={selected?.label || "Moment"}
       brandName="Moment"

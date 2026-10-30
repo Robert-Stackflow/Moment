@@ -19,8 +19,18 @@ export async function auditPhotoLayout({
         mode,
       );
       await page.goto(base + `/posts/${postId}`);
-      const cover = page.locator(".editor-cover-thumb");
-      await expect(cover).toBeVisible();
+      await expect(page.locator(".editor-title-input")).toBeVisible();
+      assert.equal(
+        await page.locator(".editor-cover-summary,.draft-notice").count(),
+        0,
+      );
+      const toolbar = page.locator(".editor-save-dock");
+      const titleBox = await page.locator(".editor-title-input").boundingBox();
+      const toolbarBox = await toolbar.boundingBox();
+      assert.ok(
+        toolbarBox.y + toolbarBox.height < titleBox.y,
+        "save controls precede editor fields",
+      );
       const editor = await page.evaluate(() => {
         const title = getComputedStyle(
           document.querySelector(".editor-title-input"),
@@ -48,21 +58,6 @@ export async function auditPhotoLayout({
         editor.gaps.every((gap) => gap >= 14 && gap <= 18),
         "publishing fields use compact consistent spacing",
       );
-      const imageBounds = await cover.evaluate((el) => {
-        const image = el.getBoundingClientRect(),
-          card = el.closest("section").getBoundingClientRect();
-        return {
-          width: image.width,
-          height: image.height,
-          right: image.right,
-          cardRight: card.right,
-          fit: getComputedStyle(el).objectFit,
-        };
-      });
-      assert.equal(imageBounds.width, 76);
-      assert.equal(imageBounds.height, 76);
-      assert.ok(imageBounds.right < imageBounds.cardRight);
-      assert.equal(imageBounds.fit, "cover");
       await noOverflow();
       const trigger = page.getByRole("button", {
         name: "图片操作 1",
@@ -70,10 +65,10 @@ export async function auditPhotoLayout({
       });
       assert.ok((await trigger.boundingBox()).width <= 40);
       await trigger.click();
-      const sheet = page.getByRole("dialog", { name: "图片操作", exact: true });
+      const sheet = page.getByRole("menu", { name: "图片操作 1", exact: true });
       await expect(sheet).toBeVisible();
       await sheet
-        .getByRole("button", { name: "编辑图片信息", exact: true })
+        .getByRole("menuitem", { name: "编辑图片信息", exact: true })
         .click();
       const details = page.getByRole("dialog", {
         name: "编辑图片信息",
@@ -81,7 +76,30 @@ export async function auditPhotoLayout({
       });
       await expect(details).toBeVisible();
       assert.equal(await page.locator("dialog[open]").count(), 1);
-      await page.keyboard.press("Escape");
+      assert.equal(
+        await details
+          .getByText("应用后，随帖子一起保存", { exact: true })
+          .count(),
+        0,
+      );
+      const apply = details.getByRole("button", {
+        name: "应用修改",
+        exact: true,
+      });
+      const footerGeometry = await apply.evaluate((button) => ({
+        bottom:
+          button.closest('[role="dialog"],dialog').getBoundingClientRect()
+            .bottom - button.getBoundingClientRect().bottom,
+        insideForm: !!button.closest("form"),
+        linkedForm: !!document.getElementById(button.getAttribute("form")),
+      }));
+      assert.ok(
+        footerGeometry.bottom < 30,
+        "drawer footer stays at its bottom",
+      );
+      assert.equal(footerGeometry.insideForm, false);
+      assert.equal(footerGeometry.linkedForm, true);
+      await apply.click();
       await expect(details).toHaveCount(0);
       await expect(trigger).toBeFocused();
       const upload = await page.locator(".upload-zone").evaluate((el) => {
@@ -99,7 +117,7 @@ export async function auditPhotoLayout({
       });
       assert.ok(width > 600 ? upload.sameRow : upload.below);
       if (mode === "light" && width === 1440) {
-        await cover.scrollIntoViewIfNeeded();
+        await toolbar.scrollIntoViewIfNeeded();
         const main = await page.locator("main").first().boundingBox();
         await page.screenshot({
           path: path.join(output, "photo-editor-layout.png"),
@@ -120,10 +138,7 @@ export async function auditPhotoLayout({
       await expect(description).toBeVisible();
       const label = await description.evaluate((el) => {
         const a = el.getBoundingClientRect(),
-          b = el
-            .closest("[data-layout]")
-            .querySelector("label")
-            .getBoundingClientRect();
+          b = document.querySelector(`label[for="${el.id}"]`).getBoundingClientRect();
         return { offset: b.top - a.top, above: b.bottom <= a.top };
       });
       assert.ok(
