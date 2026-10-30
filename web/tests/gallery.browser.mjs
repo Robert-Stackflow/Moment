@@ -237,6 +237,49 @@ try {
     await page.getByRole('link', { name: '地图', exact: true }).click()
     await expect(page.locator('.photo-map-canvas')).toBeVisible()
     await expect(page.locator('.explore-map-marker')).toBeVisible()
+    await expect(page.locator('.explore-feed')).toHaveCount(0)
+    assert.ok(
+      await page.evaluate(() => document.documentElement.scrollHeight <= innerHeight + 1),
+      'map page fits the viewport without page scrolling',
+    )
+    assert.ok(
+      await page
+        .locator('.explore-map-wrap')
+        .evaluate(
+          (el) =>
+            Math.abs(
+              el.getBoundingClientRect().width -
+                document.querySelector('.explore-content').getBoundingClientRect().width,
+            ) < 1,
+        ),
+    )
+    await expect(page.getByRole('group', { name: '年份', exact: true })).toBeVisible()
+    const mapMarker = page.locator('.explore-map-marker').first()
+    await expect(mapMarker.locator('img')).toBeVisible()
+    if (width === 1280) await mapMarker.hover()
+    else await mapMarker.tap()
+    const mapPreview = page.getByRole('dialog', { name: '此处的照片', exact: true })
+    await expect(mapPreview).toBeVisible()
+    await expect(mapPreview.locator('.map-photo-list a')).toHaveCount(7)
+    await mapPreview.evaluate((el) =>
+      Promise.all(el.getAnimations().map((animation) => animation.finished.catch(() => {}))),
+    )
+    const markerBounds = await mapMarker.boundingBox(),
+      previewBounds = await mapPreview.boundingBox()
+    assert.ok(
+      previewBounds.y + previewBounds.height <= markerBounds.y ||
+        previewBounds.y >= markerBounds.y + markerBounds.height,
+      'photo preview must leave its marker uncovered',
+    )
+    if (width === 1280) {
+      await mapMarker.click()
+      await expect(mapPreview).toBeVisible()
+      await expect(page.getByRole('dialog', { name: '照片浏览', exact: true })).toHaveCount(0)
+    }
+    await mapPreview.locator('.map-photo-list a').first().click()
+    await expect(page.getByRole('dialog', { name: '照片浏览', exact: true })).toBeVisible()
+    await page.keyboard.press('Escape')
+    await expect(page.getByRole('dialog', { name: '照片浏览', exact: true })).toHaveCount(0)
     await sameDocument()
     await page.getByRole('button', { name: '加载详细地图', exact: true }).click()
     await expect(page.getByRole('dialog', { name: '加载详细地图', exact: true })).toBeVisible()
@@ -289,6 +332,29 @@ try {
     await expect(page.getByRole('heading', { name: '找不到这个页面', exact: true })).toBeVisible()
     await page.getByRole('link', { name: '返回相册', exact: true }).click()
     await expect(page.locator('.thumb-a').first()).toBeVisible()
+    const failedSettings = '**/api/v1/visitor/settings/meta'
+    await page.route(failedSettings, (route) =>
+      route.fulfill({
+        status: 503,
+        contentType: 'application/json',
+        body: JSON.stringify({ code: 503, msg: '暂时不可用' }),
+      }),
+    )
+    await page.goto(base)
+    await expect(page.getByRole('heading', { name: '相册暂时无法加载', exact: true })).toBeVisible()
+    const failureLayout = await page.locator('.gallery-page-status-content').evaluate((el) => ({
+      center: (el.getBoundingClientRect().left + el.getBoundingClientRect().right) / 2,
+      viewport: innerWidth,
+      radius: getComputedStyle(el.querySelector('button')).borderRadius,
+    }))
+    assert.ok(
+      Math.abs(failureLayout.center - failureLayout.viewport / 2) < 1,
+      JSON.stringify(failureLayout),
+    )
+    assert.notEqual(failureLayout.radius, '0px')
+    await page.unroute(failedSettings)
+    await page.getByRole('button', { name: '重新加载', exact: true }).click()
+    await expect(page.locator('.thumb-a').first()).toBeVisible()
     checks.push({
       width,
       spaNavigation: true,
@@ -297,6 +363,7 @@ try {
       touchPinchAndSwipe: width < 500,
       focusTrap: true,
       mapAndTimeline: true,
+      rootErrorRecovery: true,
       directPhotoURL: true,
       shareUnlockLockAndRevocation: true,
       noOverflow: true,

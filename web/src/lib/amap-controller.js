@@ -1,6 +1,7 @@
 import { exploreRequest } from './api'
 import { loadAMap } from './amap-sdk'
 import { toAMap, fromAMap } from './coordinates'
+import { createPhotoMarker } from './map-markers'
 
 export function createAMap(host, getProps, emit, update, config) {
   let map,
@@ -38,7 +39,7 @@ export function createAMap(host, getProps, emit, update, config) {
     map.setBounds(
       new AMap.Bounds(toAMap([west, south]), toAMap([east, north])),
       true,
-      [50, 50, 50, 50],
+      [80, 80, 80, 80],
     )
     if (map.getZoom() > maximum) map.setZoom(maximum, true)
   }
@@ -61,27 +62,15 @@ export function createAMap(host, getProps, emit, update, config) {
       if (disposed || token !== generation) return
       clearMarkers()
       for (const point of data.points) {
-        const button = document.createElement('button')
-        button.type = 'button'
-        button.className = 'explore-map-marker'
-        button.textContent = String(point.count)
-        button.setAttribute('aria-label', `${point.count} 张照片，查看此处`)
+        const button = createPhotoMarker(point, getProps, emit)
         const marker = new AMap.Marker({
           position: toAMap([point.longitude, point.latitude]),
           content: button,
-          anchor: 'center',
+          anchor: 'bottom-center',
+          offset: new AMap.Pixel(0, -6),
         })
         marker.setMap(map)
         markers.push(marker)
-        button.addEventListener('click', (event) => {
-          event.stopPropagation()
-          if (
-            point.count > 1 &&
-            (point.north - point.south > 0.0001 || point.east - point.west > 0.0001)
-          )
-            fit([point], Math.min(18, map.getZoom() + 3))
-          else emit('select', [point.west, point.south, point.east, point.north].join(','))
-        })
       }
       if (global && data.points.length) {
         fit(data.points)
@@ -159,6 +148,7 @@ export function createAMap(host, getProps, emit, update, config) {
     reset: () => load(true),
     zoomIn: () => map?.zoomIn(),
     zoomOut: () => map?.zoomOut(),
+    focus: (point) => fit([point], Math.min(18, map.getZoom() + 3)),
     dispose() {
       disposed = true
       generation++

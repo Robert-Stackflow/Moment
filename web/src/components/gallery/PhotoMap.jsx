@@ -2,15 +2,58 @@ import { useEffect, useImperativeHandle, useRef, useState } from 'react'
 import 'leaflet/dist/leaflet.css'
 import { createPhotoMap } from '../../lib/map-controller'
 import GalleryButton from './GalleryButton'
+import MapPhotoPreview from './MapPhotoPreview'
 import '../../styles/gallery/map.css'
 
-export default function PhotoMap({ year, initial, onBounds, onSelect, ref }) {
+export default function PhotoMap({ year, initial, onBounds, onSelect, preview, ref }) {
   const host = useRef(null),
     consentCard = useRef(null),
     controller = useRef(null),
     latest = useRef(null),
-    previousYear = useRef(year)
-  latest.current = { year, initial, onBounds, onSelect }
+    previousYear = useRef(year),
+    selectionRef = useRef(null),
+    emptyAnchor = useRef(null),
+    closeTimer = useRef(null)
+  const [selection, setSelection] = useState(null)
+  latest.current = { year, initial, onBounds, onSelect, content: preview?.content || {} }
+  function closePreview() {
+    clearTimeout(closeTimer.current)
+    selectionRef.current = null
+    setSelection((previous) => (previous ? { ...previous, open: false } : previous))
+  }
+  function leavePreview() {
+    if (selectionRef.current?.reason === 'hover') closeTimer.current = setTimeout(closePreview, 240)
+  }
+  function receive(event, value) {
+    if (event === 'bounds') {
+      closePreview()
+      latest.current.onBounds(value)
+    } else if (event === 'leave') {
+      if (selectionRef.current?.anchorRef.current === value) leavePreview()
+    } else if (event === 'select') {
+      clearTimeout(closeTimer.current)
+      const previous = selectionRef.current
+      if (
+        previous?.reason !== 'hover' &&
+        value.reason === 'hover' &&
+        previous?.bounds === value.bounds
+      )
+        return
+      const rect = value.anchor.getBoundingClientRect()
+      const above = rect.top - 16,
+        below = innerHeight - rect.bottom - 16
+      const next = {
+        ...value,
+        anchorRef: { current: value.anchor },
+        open: true,
+        maxHeight: Math.max(100, Math.min(420, Math.max(above, below))),
+        side: above > below ? 'top' : 'bottom',
+      }
+      selectionRef.current = next
+      setSelection(next)
+      if (previous?.bounds !== value.bounds) latest.current.onSelect(value.bounds)
+    }
+  }
   const [state, setState] = useState({
     busy: false,
     consent: false,
@@ -40,13 +83,7 @@ export default function PhotoMap({ year, initial, onBounds, onSelect, ref }) {
           : createPhotoMap
       if (disposed) return
       update({ provider: config?.provider === 'amap' ? 'amap' : 'local' })
-      map = factory(
-        host.current,
-        () => latest.current,
-        (event, value) => latest.current[event === 'bounds' ? 'onBounds' : 'onSelect'](value),
-        update,
-        config,
-      )
+      map = factory(host.current, () => latest.current, receive, update, config)
       controller.current = map
       void map.mount()
     }
@@ -54,6 +91,7 @@ export default function PhotoMap({ year, initial, onBounds, onSelect, ref }) {
     return () => {
       disposed = true
       request.abort()
+      clearTimeout(closeTimer.current)
       controller.current = null
       map?.dispose()
     }
@@ -132,6 +170,20 @@ export default function PhotoMap({ year, initial, onBounds, onSelect, ref }) {
             <button onClick={() => controller.current?.accept()}>加载详细地图</button>
           </div>
         </div>
+      )}
+      {preview && (
+        <MapPhotoPreview
+          selection={selection}
+          emptyAnchor={emptyAnchor}
+          feed={preview}
+          onClose={closePreview}
+          onEnter={() => clearTimeout(closeTimer.current)}
+          onLeave={leavePreview}
+          onZoom={() => {
+            if (selection?.point) controller.current?.focus(selection.point)
+            closePreview()
+          }}
+        />
       )}
     </div>
   )

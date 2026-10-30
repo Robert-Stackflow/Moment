@@ -20,17 +20,6 @@
 .explore-map-wrap[data-provider='amap'] .photo-map-canvas {
   background: #f2f3f1;
 }
-.explore-map-wrap[data-provider='amap'] .explore-map-marker {
-  width: 36px;
-  height: 36px;
-  color: #fff;
-  background: #333b42;
-  border: 2px solid #fff;
-  box-shadow: 0 2px 9px #23303b25;
-}
-.explore-map-wrap[data-provider='amap'] .explore-map-marker:hover {
-  background: #526475;
-}
 .explore-map .leaflet-control-attribution {
   font-size: 10px;
   background: #182229d9;
@@ -53,26 +42,14 @@
   width: 36px;
   height: 36px;
 }
-.explore-map-marker {
-  width: 40px;
-  height: 40px;
-  background: #d5dde3;
-  color: #25333e;
-  border: 3px solid #ffffff8c;
-  border-radius: 50%;
-  box-shadow: 0 3px 12px #0005;
-  font: 600 13px system-ui;
-  cursor: pointer;
-  transition: background 150ms, box-shadow 150ms;
-}
-.explore-map-marker:hover {
-  background: #fff;
-  box-shadow: 0 0 0 6px #cadcf025;
-}
-.explore-map-marker:focus-visible {
-  outline: 3px solid white;
-  outline-offset: 4px;
-}
+.explore-map-marker { position: relative; display: block; isolation: isolate; width: 52px; height: 52px; padding: 0; border: 3px solid #fff; border-radius: 13px; background: #e7edf2; color: #fff; box-shadow: 0 4px 16px #15233350; cursor: pointer; transition: transform 160ms, box-shadow 160ms; }
+.explore-map-marker::after { content: ''; position: absolute; bottom: -7px; left: calc(50% - 5px); border: 5px solid transparent; border-top-color: #fff; border-bottom: 0; }
+.explore-map-marker img { display: block; width: 100%; height: 100%; border-radius: 9px; object-fit: cover; }
+.map-marker-count { position: absolute; right: -9px; bottom: -8px; z-index: 1; display: grid; place-items: center; min-width: 22px; height: 22px; padding: 0 4px; border: 2px solid #fff; border-radius: 20px; background: #263542; font: 500 11px/1 system-ui; }
+.explore-map-marker.without-thumbnail { background: #394f60; }
+.explore-map-marker.without-thumbnail .map-marker-count { inset: 0; height: auto; border: 0; background: transparent; font-size: 15px; }
+.explore-map-marker:hover { transform: translateY(-3px); box-shadow: 0 8px 22px #15233366; }
+.explore-map-marker:focus-visible { outline: 3px solid #8cb7e4; outline-offset: 3px; }
 .map-loading,
 .map-message {
   position: absolute;

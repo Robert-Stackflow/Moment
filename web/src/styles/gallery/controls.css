@@ -1,0 +1,135 @@
+:where(.explore-years, .map-photo-popup, .gallery-page-status) {
+  --fg: #e5ebf1;
+  --muted: #a0aab5;
+  --surface: #2c353e;
+  --soft: #1b2127;
+  --hover: #36424d;
+  --line: #ffffff1f;
+  --radius: 14px;
+  --control-height: 38px;
+  --control-small: 30px;
+  --field-font-size: 12px;
+  --segment-background: #191f25;
+  --segment-radius: 12px;
+  --segment-height-min: 34px;
+  --segment-selected-color: #f4f7fa;
+  --popup-background: #252e37;
+  --popup-border: #ffffff24;
+  --popup-radius: 16px;
+  --popup-shadow: 0 14px 40px #10151b55;
+  --motion-segment: 220ms;
+  --motion-hover: 150ms;
+  --motion-press: 100ms;
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+}
+.gallery-page-status {
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: #202428;
+  color: var(--fg);
+}
+.gallery-page-status-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  max-width: 360px;
+}
+.gallery-page-status-content > button {
+  min-width: 108px;
+}
+.map-photo-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 10px 14px;
+}
+.map-photo-popup {
+  box-sizing: border-box;
+}
+.map-photo-heading > div:first-child {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+}
+.map-photo-heading strong {
+  font: 500 14px/1.4 var(--ui-font);
+  overflow-wrap: anywhere;
+}
+.map-photo-heading span {
+  font: 400 12px/1.4 var(--ui-font);
+  color: var(--muted);
+}
+.map-photo-actions {
+  display: flex;
+  gap: 4px;
+  flex: none;
+}
+.map-photo-actions svg {
+  width: 17px;
+  height: 17px;
+}
+.map-photo-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  padding: 0 10px 10px;
+}
+.map-photo-list a {
+  min-width: 0;
+  color: var(--fg);
+  text-decoration: none;
+  border-radius: 10px;
+}
+.map-photo-list a:focus-visible {
+  outline: 2px solid #c1d7ee;
+  outline-offset: 3px;
+}
+.map-photo-list img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  border-radius: 10px;
+  background: var(--soft);
+}
+.map-photo-list a > span {
+  display: block;
+  padding-top: 7px;
+  font: 400 12px/1.5 var(--ui-font);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+}
+.map-photo-status {
+  padding: 16px 10px 24px;
+  color: var(--muted);
+  font: 400 13px/1.6 var(--ui-font);
+}
+.map-photo-status button {
+  display: block;
+  margin-top: 12px;
+}
+.map-photo-more {
+  display: flex;
+  justify-content: center;
+  padding: 6px 10px 10px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .explore-years {
+    --motion-segment: 0ms;
+    --motion-hover: 0ms;
+    --motion-press: 0ms;
+  }
+}
+
+body:has(.gallery-page-status) {
+  padding: 0;
+}
+html:has(.gallery-page-status) {
+  scrollbar-gutter: auto;
+  overflow: hidden;
+}

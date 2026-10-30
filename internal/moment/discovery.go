@@ -230,7 +230,15 @@ func (a *App) discoveryPoints(c *gin.Context) {
 	}
 	// A global grid is stable while panning; at most 2,000 clusters per response.
 	cell := 360 / math.Pow(2, float64(zoom+2))
-	rows, err := query(a.db, discoveryCTE()+`SELECT COUNT(*) AS count,AVG(latitude) AS latitude,AVG(longitude) AS longitude,MIN(latitude) AS south,MAX(latitude) AS north,MIN(longitude) AS west,MAX(longitude) AS east FROM photos WHERE `+where+` GROUP BY CAST((longitude+180)/? AS INTEGER),CAST((latitude+90)/? AS INTEGER) ORDER BY COUNT(*) DESC,MIN(photo_id) LIMIT 2001`, append(args, cell, cell)...)
+	rows, err := query(a.db, discoveryCTE()+`, clusters AS (
+ SELECT COUNT(*) AS count,AVG(latitude) AS latitude,AVG(longitude) AS longitude,
+ MIN(latitude) AS south,MAX(latitude) AS north,MIN(longitude) AS west,MAX(longitude) AS east,
+ MIN(photo_id) AS photo_id FROM photos WHERE `+where+`
+ GROUP BY CAST((longitude+180)/? AS INTEGER),CAST((latitude+90)/? AS INTEGER)
+ ORDER BY COUNT(*) DESC,MIN(photo_id) LIMIT 2001)
+ SELECT clusters.*,photos.image_url,photos.focus_x,photos.focus_y,photos.title,photos.location
+ FROM clusters JOIN photos ON photos.photo_id=clusters.photo_id
+ ORDER BY clusters.count DESC,clusters.photo_id`, append(args, cell, cell)...)
 	if err != nil {
 		databaseError(c, err)
 		return

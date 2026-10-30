@@ -7,6 +7,7 @@ import api, { exploreRequest } from '../lib/api'
 import { imageURL, focusPosition } from '../lib/gallery'
 import GalleryLightbox from '../components/gallery/GalleryLightbox'
 import Presence from '../components/gallery/Presence'
+import ExploreYears from '../components/gallery/ExploreYears'
 import '../styles/gallery/explore.css'
 const PhotoMap = lazy(() => import('../components/gallery/PhotoMap'))
 
@@ -22,8 +23,7 @@ export default function Explore({ mode }) {
     [years, setYears] = useState([]),
     [loading, setLoading] = useState(false),
     [error, setError] = useState(''),
-    [total, setTotal] = useState(0),
-    [chosen, setChosen] = useState(false)
+    [total, setTotal] = useState(0)
   const [selected, setSelected] = useState(null),
     [detailLoading, setDetailLoading] = useState(false),
     [detailError, setDetailError] = useState('')
@@ -114,7 +114,7 @@ export default function Explore({ mode }) {
     request.current.disposed = false
     if (enabled) {
       void loadYears()
-      void load(true)
+      if (mode === 'timeline') void load(true)
     }
     return () => {
       request.current.disposed = true
@@ -127,7 +127,6 @@ export default function Explore({ mode }) {
   useEffect(() => {
     if (previousYear.current !== year) {
       previousYear.current = year
-      setChosen(false)
       if (mode === 'timeline') void load(true)
     }
   }, [year])
@@ -173,19 +172,15 @@ export default function Explore({ mode }) {
         <div className="explore-heading">
           <div>
             <h1>{mode === 'map' ? '地图' : '拍摄时间线'}</h1>
-            <span>{`${total} 张照片${chosen ? ' · 所选位置' : ''}`}</span>
+            <span>
+              {mode === 'map'
+                ? years
+                    .filter((item) => !year || item.year === year)
+                    .reduce((sum, item) => sum + item.count, 0)
+                : total}{' '}
+              张照片
+            </span>
           </div>
-          {content[(mode === 'map' ? 'timeline' : 'map') + '_enabled'] !== false && (
-            <Link
-              to={
-                (mode === 'map' ? '/timeline' : '/map') +
-                (year ? '?year=' + encodeURIComponent(year) : '')
-              }
-            >
-              {`${mode === 'map' ? '按时间浏览' : '在地图上看'} `}
-              <span aria-hidden="true">↗</span>
-            </Link>
-          )}
         </div>
         {!enabled ? (
           <div className="explore-status">
@@ -193,25 +188,11 @@ export default function Explore({ mode }) {
           </div>
         ) : (
           <>
-            <nav className="explore-years" aria-label="按拍摄年份筛选">
-              <button
-                aria-pressed={!year}
-                onClick={() => updateQuery({ year: null, post: null, photo: null })}
-              >
-                全部年份
-              </button>
-              {years.map((item) => (
-                <button
-                  key={item.year}
-                  aria-pressed={year === item.year}
-                  aria-label={`${item.year === 'unknown' ? '日期未记录' : item.year + ' 年'}，${item.count} 张照片`}
-                  onClick={() => updateQuery({ year: item.year, post: null, photo: null })}
-                >
-                  {item.year === 'unknown' ? '日期未记录' : item.year}
-                  <small>{item.count}</small>
-                </button>
-              ))}
-            </nav>
+            <ExploreYears
+              year={year}
+              years={years}
+              onChange={(value) => updateQuery({ year: value, post: null, photo: null })}
+            />
             <div className="explore-content">
               {mode === 'map' && (
                 <Suspense fallback={null}>
@@ -221,109 +202,116 @@ export default function Explore({ mode }) {
                     initial={Object.fromEntries(query)}
                     onBounds={(area) => {
                       request.current.bounds = area.bounds
-                      setChosen(false)
-                      void load(true)
                       updateQuery({ lat: area.lat, lng: area.lng, z: area.z })
                     }}
                     onSelect={(bounds) => {
                       request.current.bounds = bounds
-                      setChosen(true)
                       void load(true)
+                    }}
+                    preview={{
+                      photos,
+                      total,
+                      loading,
+                      error,
+                      content,
+                      onMore: () => void load(),
+                      href: (photo) => pathFor(postStub(photo)),
+                      onPhoto: (photo) =>
+                        updateQuery({ post: photo.post_id, photo: photo.photo_id }, false, {
+                          discoveryOverlay: true,
+                        }),
                     }}
                   />
                 </Suspense>
               )}
-              <div className="explore-feed" aria-busy={loading}>
-                {chosen && (
-                  <button className="explore-reset" onClick={() => map.current?.reset()}>
-                    取消位置筛选
-                  </button>
-                )}
-                {groups.map((group) => (
-                  <section key={group.label} className="explore-group">
-                    <h2>{group.label}</h2>
-                    <div className="explore-photos">
-                      {group.photos.map((photo) => (
-                        <a
-                          key={photo.photo_id}
-                          href={pathFor(postStub(photo))}
-                          className="explore-photo"
-                          onClick={(event) => {
-                            if (
-                              !event.metaKey &&
-                              !event.ctrlKey &&
-                              !event.shiftKey &&
-                              !event.altKey &&
-                              event.button === 0
-                            ) {
-                              event.preventDefault()
-                              updateQuery({ post: photo.post_id, photo: photo.photo_id }, false, {
-                                discoveryOverlay: true,
-                              })
-                            }
-                          }}
-                        >
-                          <img
-                            src={imageURL(photo, content, 'thumbnail', 640)}
-                            style={{ objectPosition: focusPosition(photo) }}
-                            alt=""
-                            loading="lazy"
-                            onError={(event) => {
-                              const image = event.currentTarget
-                              if (!image.dataset.fallback) {
-                                image.dataset.fallback = '1'
-                                image.src = photo.image_url
-                              } else image.classList.add('failed')
+              {mode === 'timeline' && (
+                <div className="explore-feed" aria-busy={loading}>
+                  {groups.map((group) => (
+                    <section key={group.label} className="explore-group">
+                      <h2>{group.label}</h2>
+                      <div className="explore-photos">
+                        {group.photos.map((photo) => (
+                          <a
+                            key={photo.photo_id}
+                            href={pathFor(postStub(photo))}
+                            className="explore-photo"
+                            onClick={(event) => {
+                              if (
+                                !event.metaKey &&
+                                !event.ctrlKey &&
+                                !event.shiftKey &&
+                                !event.altKey &&
+                                event.button === 0
+                              ) {
+                                event.preventDefault()
+                                updateQuery({ post: photo.post_id, photo: photo.photo_id }, false, {
+                                  discoveryOverlay: true,
+                                })
+                              }
                             }}
-                          />
-                          <div>
-                            <strong>{photo.title}</strong>
-                            {content.thumbnail_show_location !== false && (
-                              <span>{photo.location}</span>
-                            )}
-                            {photo.time && content.thumbnail_show_time !== false && (
-                              <time dateTime={photo.time.replace(' ', 'T')}>
-                                {photo.time.slice(0, 10)}
-                              </time>
-                            )}
-                          </div>
-                        </a>
-                      ))}
+                          >
+                            <img
+                              src={imageURL(photo, content, 'thumbnail', 640)}
+                              style={{ objectPosition: focusPosition(photo) }}
+                              alt=""
+                              loading="lazy"
+                              onError={(event) => {
+                                const image = event.currentTarget
+                                if (!image.dataset.fallback) {
+                                  image.dataset.fallback = '1'
+                                  image.src = photo.image_url
+                                } else image.classList.add('failed')
+                              }}
+                            />
+                            <div>
+                              <strong>{photo.title}</strong>
+                              {content.thumbnail_show_location !== false && (
+                                <span>{photo.location}</span>
+                              )}
+                              {photo.time && content.thumbnail_show_time !== false && (
+                                <time dateTime={photo.time.replace(' ', 'T')}>
+                                  {photo.time.slice(0, 10)}
+                                </time>
+                              )}
+                            </div>
+                          </a>
+                        ))}
+                      </div>
+                    </section>
+                  ))}
+                  {!photos.length && !loading && !error && (
+                    <div className="explore-status">
+                      {mode === 'map'
+                        ? '这里还没有公开位置的照片。试试其他区域或年份。'
+                        : '这个年份还没有照片。'}
+                      {mode === 'map' && (
+                        <button onClick={() => map.current?.reset()}>查看全部位置</button>
+                      )}
                     </div>
-                  </section>
-                ))}
-                {!photos.length && !loading && !error && (
-                  <div className="explore-status">
-                    {mode === 'map'
-                      ? '这里还没有公开位置的照片。试试其他区域或年份。'
-                      : '这个年份还没有照片。'}
-                    {mode === 'map' && (
-                      <button onClick={() => map.current?.reset()}>查看全部位置</button>
+                  )}
+                  {error && (
+                    <div className="explore-status" role="alert">
+                      {error}
+                      <button
+                        onClick={() => {
+                          void load(true)
+                          void loadYears()
+                        }}
+                      >
+                        重试
+                      </button>
+                    </div>
+                  )}
+                  <div className="explore-more">
+                    {loading ? (
+                      <span role="status">正在加载照片…</span>
+                    ) : (
+                      photos.length < total &&
+                      !error && <button onClick={() => void load()}>加载更多</button>
                     )}
                   </div>
-                )}
-                {error && (
-                  <div className="explore-status" role="alert">
-                    {error}
-                    <button
-                      onClick={() => {
-                        void load(true)
-                        void loadYears()
-                      }}
-                    >
-                      重试
-                    </button>
-                  </div>
-                )}
-                <div className="explore-more">
-                  {loading ? (
-                    <span role="status">正在加载照片…</span>
-                  ) : (
-                    photos.length < total &&
-                    !error && <button onClick={() => void load()}>加载更多</button>
-                  )}
                 </div>
-              </div>
+              )}
             </div>
           </>
         )}

@@ -53,6 +53,10 @@ func TestDiscoveryPrivacyPrecisionInheritanceAndPagination(t *testing.T) {
 	}
 	seenApprox := false
 	for _, p := range points {
+		cover := object(p)["image_url"]
+		if cover != "https://example.com/inherit.jpg" && cover != "https://example.com/exact.jpg" {
+			t.Fatal("cluster thumbnail must come from a public photo", cover)
+		}
 		if object(p)["latitude"] == 30.2 {
 			seenApprox = true
 			if object(p)["longitude"] != 118.2 {

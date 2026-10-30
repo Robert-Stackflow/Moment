@@ -1,0 +1,29 @@
+{
+  "oneui": "0.6.18",
+  "scope": ["full-width viewport map", "thumbnail markers", "hover and touch photo previews", "shared year filter", "loading and error recovery", "public scrollbars"],
+  "browser": {
+    "viewportWidths": [1280, 390, 320],
+    "passedMatrices": 3,
+    "runtimeErrors": 0,
+    "productionWrites": 0,
+    "mapHasNoPageScroll": true,
+    "previewKeepsMarkerAccessible": true,
+    "photoOpensExistingLightbox": true,
+    "timelineAndSpaNavigationPreserved": true,
+    "rootErrorRetryRecovers": true
+  },
+  "liveDev": {
+    "url": "http://127.0.0.1:3100/map",
+    "provider": "amap",
+    "desktopWidth": 1280,
+    "mobileWidth": 390,
+    "mapFillsViewportWidth": true,
+    "documentHeightMatchesViewport": true
+  },
+  "backend": {
+    "check": "go test ./internal/moment -run Discovery -count=1",
+    "passed": true,
+    "representativeImageRespectsPublicPhotoFilter": true
+  },
+  "productionBuild": "passed"
+}

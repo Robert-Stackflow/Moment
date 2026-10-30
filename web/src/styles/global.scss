@@ -63,15 +63,17 @@ body {
 .cus-scroll-x,
 .cus-scroll-y {
   &::-webkit-scrollbar-thumb {
-    background-color: transparent;
-    border-radius: 4px;
+    background-color: var(--gallery-scroll-thumb, #93a3b04d);
+    background-clip: padding-box;
+    border: 2px solid transparent;
+    border-radius: 20px;
   }
   &:hover {
     &::-webkit-scrollbar-thumb {
-      background: #bfbfbf;
+      background-color: var(--gallery-scroll-hover, #adbdcb80);
     }
     &::-webkit-scrollbar-thumb:hover {
-      background: var(--primary-color);
+      background-color: var(--gallery-scroll-hover, #adbdcb80);
     }
   }
 }

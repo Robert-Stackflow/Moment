@@ -1,6 +1,7 @@
 import L from 'leaflet'
 import land from '../../../shared/map/land.json'
 import { exploreRequest } from './api'
+import { createPhotoMarker } from './map-markers'
 export function createPhotoMap(host, getProps, emit, update) {
   let map,
     markers,
@@ -59,7 +60,7 @@ export function createPhotoMap(host, getProps, emit, update) {
         ])
         if (fitPoints.length) {
           map.fitBounds(fitPoints, {
-            padding: [45, 45],
+            padding: [80, 80],
             maxZoom: 7,
             animate: false,
           })
@@ -69,39 +70,17 @@ export function createPhotoMap(host, getProps, emit, update) {
       }
       markers.clearLayers()
       for (const point of data.points) {
-        const button = document.createElement('button')
-        button.type = 'button'
-        button.className = 'explore-map-marker'
-        button.textContent = String(point.count)
-        button.setAttribute('aria-label', `${point.count} 张照片，查看此处`)
+        const button = createPhotoMarker(point, getProps, emit)
         L.marker([Math.max(-85, Math.min(85, point.latitude)), point.longitude], {
           icon: L.divIcon({
             html: button,
             className: 'explore-marker-host',
-            iconSize: [40, 40],
-            iconAnchor: [20, 20],
+            iconSize: [52, 52],
+            iconAnchor: [26, 58],
           }),
           keyboard: false,
         }).addTo(markers)
         L.DomEvent.disableClickPropagation(button)
-        button.addEventListener('click', () => {
-          if (
-            point.count > 1 &&
-            (point.north - point.south > 0.0001 || point.east - point.west > 0.0001)
-          )
-            map.fitBounds(
-              [
-                [point.south, point.west],
-                [point.north, point.east],
-              ],
-              {
-                padding: [70, 70],
-                maxZoom: Math.min(18, map.getZoom() + 3),
-                animate: !matchMedia('(prefers-reduced-motion: reduce)').matches,
-              },
-            )
-          else emit('select', [point.west, point.south, point.east, point.north].join(','))
-        })
       }
       if (data.truncated)
         update({
@@ -219,6 +198,18 @@ export function createPhotoMap(host, getProps, emit, update) {
     accept,
     zoomIn: () => map.zoomIn(),
     zoomOut: () => map.zoomOut(),
+    focus: (point) =>
+      map.fitBounds(
+        [
+          [point.south, point.west],
+          [point.north, point.east],
+        ],
+        {
+          padding: [70, 70],
+          maxZoom: Math.min(18, map.getZoom() + 3),
+          animate: !matchMedia('(prefers-reduced-motion: reduce)').matches,
+        },
+      ),
     dispose() {
       disposed = true
       generation++

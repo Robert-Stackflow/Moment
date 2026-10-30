@@ -122,6 +122,11 @@ export async function installFixtures(page) {
         points: [
           {
             count: 7,
+            image_url: data.posts[0].images[0].image_url,
+            title: data.posts[0].title,
+            location: data.posts[0].location,
+            focus_x: 50,
+            focus_y: 50,
             latitude: 30.2,
             longitude: 120.1,
             south: 30.2,

@@ -1,6 +1,7 @@
 import { Component, lazy, Suspense, useLayoutEffect, useRef } from 'react'
 import { Link, Route, Routes, useLocation, useNavigationType } from 'react-router-dom'
 import { useSettings } from './state/settings'
+import GalleryStatus from './components/gallery/GalleryStatus'
 const GalleryShell = lazy(() => import('./pages/GalleryShell'))
 const GalleryWall = lazy(() => import('./pages/GalleryWall'))
 const Explore = lazy(() => import('./pages/Explore'))
@@ -30,14 +31,7 @@ class ErrorBoundary extends Component {
     return { failed: true }
   }
   render() {
-    return this.state.failed ? (
-      <>
-        <p>相册暂时无法加载，请稍后重试。</p>
-        <button onClick={() => window.location.reload()}>重新加载</button>
-      </>
-    ) : (
-      this.props.children
-    )
+    return this.state.failed ? <GalleryStatus /> : this.props.children
   }
 }
 export default function App() {

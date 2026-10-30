@@ -4,13 +4,14 @@
   color: var(--moment-background);
 }
 
-html { color-scheme: dark; scrollbar-color: #ffffff30 #202226; scrollbar-width: thin; }
-.gallery-category-menu,.about-panel,.viewer-thumbnails,.viewer-caption { scrollbar-width: thin; scrollbar-color: #ffffff30 transparent; }
-::-webkit-scrollbar { width: 6px; height: 6px; }
-::-webkit-scrollbar-track { background: transparent; margin: 10px; }
-::-webkit-scrollbar-thumb { background: #ffffff30; border-radius: 20px; }
-::-webkit-scrollbar-thumb:hover { background: #ffffff50; }
-::-webkit-scrollbar-button { display: none; width: 0; height: 0; }
+:root { --gallery-scroll-thumb: #93a3b04d; --gallery-scroll-hover: #adbdcb80; }
+html { color-scheme: dark; scrollbar-color: var(--gallery-scroll-thumb) transparent; scrollbar-width: thin; }
+.gallery-category-menu,.about-panel,.viewer-thumbnails,.viewer-caption,.map-photo-popup { scrollbar-width: thin; scrollbar-color: var(--gallery-scroll-thumb) transparent; }
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--gallery-scroll-thumb); background-clip: padding-box; border: 2px solid transparent; border-radius: 20px; }
+::-webkit-scrollbar-thumb:hover { background-color: var(--gallery-scroll-hover); }
+::-webkit-scrollbar-button,::-webkit-scrollbar-button:single-button { display: none; width: 0; height: 0; }
 ::-webkit-scrollbar-corner { background: transparent; }
 
 @-ms-viewport {
