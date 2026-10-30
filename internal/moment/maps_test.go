@@ -91,3 +91,20 @@ func TestMapBinaryResponsesKeepTheirContentType(t *testing.T) {
 		}
 	}
 }
+
+func TestMapGeocoderJSONPHasScriptContentType(t *testing.T) {
+	proxy := amapProxy("key", "secret", mapRoundTripper(func(r *http.Request) (*http.Response, error) {
+		return &http.Response{StatusCode: 200, Header: http.Header{"Content-Type": []string{"application/json;charset=utf-8"}}, Body: io.NopCloser(strings.NewReader(`callback_1({"status":"1"})`)), Request: r}, nil
+	}))
+	for _, query := range []string{"", "?callback=callback_1"} {
+		w := httptest.NewRecorder()
+		proxy.ServeHTTP(w, httptest.NewRequest("GET", "/_AMapService/v3/geocode/regeo"+query, nil))
+		want := "application/json"
+		if query != "" {
+			want = "application/javascript"
+		}
+		if !strings.HasPrefix(w.Header().Get("Content-Type"), want) {
+			t.Fatal("incorrect geocoder MIME")
+		}
+	}
+}

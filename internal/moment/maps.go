@@ -62,10 +62,10 @@ func amapProxy(key, secret string, transport http.RoundTripper) *httputil.Revers
 		Transport: transport,
 		ModifyResponse: func(response *http.Response) error {
 			// The SDK loads some JSONP endpoints as scripts, although AMap labels
-			// them octet-stream. Keep nosniff and correct only callback responses.
+			// them JSON or octet-stream. Keep nosniff and correct only callback responses.
 			callback := response.Request.URL.Query().Get("callback")
 			kind := strings.ToLower(strings.Split(response.Header.Get("Content-Type"), ";")[0])
-			if response.StatusCode == http.StatusOK && mapCallback.MatchString(callback) && (kind == "application/octet-stream" || kind == "text/plain") {
+			if response.StatusCode == http.StatusOK && mapCallback.MatchString(callback) && (kind == "application/octet-stream" || kind == "text/plain" || kind == "application/json") {
 				response.Header.Set("Content-Type", "application/javascript; charset=utf-8")
 			}
 			return nil

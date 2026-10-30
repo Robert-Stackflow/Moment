@@ -10,7 +10,8 @@ import { useState } from "react";
 import type { Photo, Settings } from "../types";
 import { datetime } from "../types";
 import { DateTimePicker } from "./DateTimePicker";
-import { DiscoveryEditor } from "./DiscoveryEditor";
+import { defaultDiscovery, DiscoveryEditor } from "./DiscoveryEditor";
+import { LocationField } from "./LocationField";
 import { FocusPicker } from "./FocusPicker";
 import { usePendingChanges } from "./PendingChanges";
 import { Toggle as Switch } from "./Toggle";
@@ -79,11 +80,10 @@ export function PhotoDetails({
         value={draft.desc || ""}
         onChange={(e) => field("desc", e.currentTarget.value)}
       />
-      <Input
-        label="图片地点"
-        value={draft.location || ""}
-        onChange={(e) => field("location", e.currentTarget.value)}
-      />
+      <LocationField label="图片地点" value={draft.location || ""} onChange={value => field("location", value)}
+        onPlace={place => setDraft(current => ({...current, location: place.label,
+          discovery: {...(current.discovery || defaultDiscovery(true)), latitude: place.latitude, longitude: place.longitude,
+            precision: current.discovery?.precision === "inherit" || !current.discovery ? "private" : current.discovery.precision}}))} />
       <DateTimePicker
         label="图片拍摄时间"
         value={datetime(draft.time)}
@@ -97,6 +97,7 @@ export function PhotoDetails({
         onChange={(e) => field("metadata", e.currentTarget.value)}
       />
       <DiscoveryEditor
+        onPlace={(place, discovery) => setDraft(current => ({...current, location: place.label, discovery}))}
         image
         value={draft.discovery}
         onChange={(value) => field("discovery", value)}

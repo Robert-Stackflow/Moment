@@ -1,0 +1,38 @@
+{
+  "date": "2026-10-30",
+  "scope": "Moment admin shooting-location editing",
+  "oneui": "0.5.0",
+  "implementation": [
+    "Shared AMap SDK and WGS84/GCJ02 conversion used by public map and admin picker",
+    "Geocoder extensions=all: clicked address + nearby POIs + roads",
+    "OneUI Combobox mode=input, async suggestions, custom text, clear option",
+    "Post and photo details reuse LocationField, DiscoveryEditor and MapPicker",
+    "Flat form layout, full-width selects, latitude/longitude on one row using OneUI Input",
+    "Original ghost IconButton with full description tooltip; clicking opens no overlay",
+    "Only safe JSONP callback responses normalize upstream application/json to JavaScript MIME; nosniff remains"
+  ],
+  "verified": {
+    "typescriptBuild": true,
+    "publicBuild": true,
+    "webLint": true,
+    "mapBackendTests": true,
+    "serviceAndCoordinateUnitTests": 4,
+    "adminUnitTests": 6,
+    "realAMapReverseGeocoding": true,
+    "realAMapAutocomplete": true,
+    "candidateAppliesNameAndWGS84": true,
+    "privatePrecisionPreserved": true,
+    "customTextByEnter": true,
+    "outOfRangeCoordinateRejected": true,
+    "infoKeyboardTooltip": true,
+    "infoClickOpensOverlay": false,
+    "negativeFractionInputPreserved": true,
+    "coordinateSameRowGapCSSPx": 12,
+    "mobile390DarkNoHorizontalOverflow": true,
+    "customLocationClear": true
+  },
+  "productionWritesDuringLocalVerification": 0,
+  "userPostEditingTabReloaded": false,
+  "deployment": "pending",
+  "localTestDraftCleaned": true
+}

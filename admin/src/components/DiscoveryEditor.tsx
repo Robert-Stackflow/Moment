@@ -1,14 +1,9 @@
-import {
-  Button,
-  Dialog,
-  FormField,
-  Accordion,
-  NumberInput,
-  LoadingState,
-  Select,
-} from "@robert-stackflow/oneui";
+import { Button, Dialog, LoadingState, Select } from "@robert-stackflow/oneui";
 import { MapPin } from "lucide-react";
-import { lazy, Suspense, useState } from "react";
+import { lazy, Suspense, useId, useState } from "react";
+import type { MapPlace } from "../../../shared/map/amap-services";
+import { CoordinateField } from "./CoordinateField";
+import { FieldInfo } from "./FieldInfo";
 import type { Discovery } from "../types";
 import { selectOptions } from "../ui-data";
 const MapPicker = lazy(() => import("./MapPicker"));
@@ -22,146 +17,106 @@ export function DiscoveryEditor({
   value,
   onChange,
   image = false,
+  onPlace,
 }: {
   value?: Discovery;
   onChange: (value: Discovery) => void;
   image?: boolean;
+  onPlace?: (place: MapPlace, discovery: Discovery) => void;
 }) {
-  const data = value || defaultDiscovery(image);
-  const [open, setOpen] = useState(false);
+  const data = value || defaultDiscovery(image),
+    id = useId();
   const [mapOpen, setMapOpen] = useState(false);
   function field<K extends keyof Discovery>(key: K, next: Discovery[K]) {
     onChange({ ...data, [key]: next });
   }
   const inherit = image ? [{ value: "inherit", label: "沿用帖子" }] : [];
+  const privacyInfo =
+    data.precision === "inherit"
+      ? "使用帖子的地图坐标与公开方式。"
+      : `${data.precision === "private" ? "坐标仅保存在后台，不会出现在公开地图。" : data.precision === "approximate" ? "公开坐标四舍五入至 0.1°，纬度约 11 公里一格。" : "访客能够查看精确坐标。"}使用 WGS84 坐标；不会删除地点文字或照片 EXIF。`;
   return (
     <div className="discovery-editor">
-      <Accordion title="地图与时间线" open={open} onChange={setOpen}>
-        <div
-          className="ui-stack"
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            gap: 16,
-            paddingTop: 16,
-          }}
-        >
-          <FormField label={"地图位置"}>
-            <Select
-              label="地图位置"
-              onChange={(v) => field("precision", v as Discovery["precision"])}
-              options={selectOptions([
-                ...inherit,
-                { value: "private", label: "不公开" },
-                { value: "approximate", label: "模糊位置" },
-                { value: "exact", label: "精确位置" },
-              ])}
-              value={data.precision ?? ""}
-            />
-          </FormField>
-          {data.precision !== "inherit" && (
-            <>
-              <div
-                className="ui-row"
-                style={{
-                  display: "flex",
-                  alignItems: "start",
-                  flexWrap: "wrap",
-                  gap: 6,
-                }}
-              >
-                <FormField label={"纬度"}>
-                  <NumberInput
-                    label="纬度"
-                    nullable
-                    placeholder="未设置"
-                    step={0.000001}
-                    min={-90}
-                    max={90}
-                    value={data.latitude}
-                    onChange={(value) => field("latitude", value)}
-                  />
-                </FormField>
-                <FormField label={"经度"}>
-                  <NumberInput
-                    label="经度"
-                    nullable
-                    placeholder="未设置"
-                    step={0.000001}
-                    min={-180}
-                    max={180}
-                    value={data.longitude}
-                    onChange={(value) => field("longitude", value)}
-                  />
-                </FormField>
-              </div>
-              <div
-                className="ui-row"
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  flexWrap: "wrap",
-                  gap: 6,
-                }}
-              >
-                <Button
-                  size="small"
-                  onClick={() => setMapOpen(true)}
-                  variant="secondary"
-                >
-                  {<MapPin size={14} />}
-                  在地图上选点
-                </Button>
-                <Button
-                  size="small"
-                  disabled={data.latitude === null && data.longitude === null}
-                  onClick={() =>
-                    onChange({ ...data, latitude: null, longitude: null })
-                  }
-                  variant="ghost"
-                >
-                  清空坐标
-                </Button>
-              </div>
-              <p
-                className="ui-text"
-                style={{
-                  fontSize: 12,
-                  color: "var(--muted)",
-                }}
-              >
-                {data.precision === "private"
-                  ? "坐标仅保存在后台，不会出现在公开地图。"
-                  : data.precision === "approximate"
-                    ? "公开坐标四舍五入至 0.1°，纬度约 11 公里一格，不代表精确拍摄点。"
-                    : "访客能够查看精确坐标。"}{" "}
-                使用 WGS84 坐标；文字地点与原始照片中的 EXIF 不会被此设置删除。
-              </p>
-            </>
-          )}
-          <FormField label={"时间线"}>
-            <Select
-              label="时间线"
-              onChange={(v) => field("timeline", v as Discovery["timeline"])}
-              options={selectOptions([
-                ...inherit,
-                { value: "show", label: "在时间线中显示" },
-                { value: "hide", label: "从时间线排除" },
-              ])}
-              value={data.timeline ?? ""}
-            />
-          </FormField>
-          <p
-            className="ui-text"
-            style={{
-              fontSize: 12,
-              color: "var(--muted)",
-            }}
-          >
-            仅影响浏览入口；照片墙与大图仍按原有设置显示拍摄时间。没有时间的照片归入「日期未记录」。
-          </p>
+      <div className="discovery-field">
+        <div className="discovery-label">
+          <label htmlFor={id + "-privacy"}>地图位置</label>
+          <FieldInfo label="地图位置说明" content={privacyInfo} />
         </div>
-      </Accordion>
+        <Select
+          id={id + "-privacy"}
+          label="地图位置"
+          value={data.precision}
+          onChange={(value) =>
+            field("precision", value as Discovery["precision"])
+          }
+          options={selectOptions([
+            ...inherit,
+            { value: "private", label: "不公开" },
+            { value: "approximate", label: "模糊位置" },
+            { value: "exact", label: "精确位置" },
+          ])}
+        />
+      </div>
+      {data.precision !== "inherit" && (
+        <>
+          <div className="discovery-coordinates">
+            <CoordinateField
+              label="纬度"
+              limit={90}
+              value={data.latitude}
+              onChange={(value) => field("latitude", value)}
+            />
+            <CoordinateField
+              label="经度"
+              limit={180}
+              value={data.longitude}
+              onChange={(value) => field("longitude", value)}
+            />
+          </div>
+          <div className="discovery-actions">
+            <Button
+              size="small"
+              variant="secondary"
+              onClick={() => setMapOpen(true)}
+            >
+              <MapPin size={14} />
+              在地图上选点
+            </Button>
+            <Button
+              size="small"
+              variant="ghost"
+              disabled={data.latitude === null && data.longitude === null}
+              onClick={() =>
+                onChange({ ...data, latitude: null, longitude: null })
+              }
+            >
+              清空坐标
+            </Button>
+          </div>
+        </>
+      )}
+      <div className="discovery-field">
+        <div className="discovery-label">
+          <label htmlFor={id + "-timeline"}>时间线</label>
+          <FieldInfo
+            label="时间线说明"
+            content="仅控制时间线入口；照片墙与大图仍按原设置显示拍摄时间。没有时间的照片归入「日期未记录」。"
+          />
+        </div>
+        <Select
+          id={id + "-timeline"}
+          label="时间线"
+          value={data.timeline}
+          onChange={(value) =>
+            field("timeline", value as Discovery["timeline"])
+          }
+          options={selectOptions([
+            ...inherit,
+            { value: "show", label: "在时间线中显示" },
+            { value: "hide", label: "从时间线排除" },
+          ])}
+        />
+      </div>
       <Dialog
         open={mapOpen}
         onClose={() => setMapOpen(false)}
@@ -171,14 +126,18 @@ export function DiscoveryEditor({
         <Suspense
           fallback={<LoadingState label="加载地图" showLabel={false} />}
         >
-          <MapPicker
-            latitude={data.latitude}
-            longitude={data.longitude}
-            onApply={(latitude, longitude) => {
-              onChange({ ...data, latitude, longitude });
-              setMapOpen(false);
-            }}
-          />
+          {mapOpen && (
+            <MapPicker
+              latitude={data.latitude}
+              longitude={data.longitude}
+              onApply={(latitude, longitude, place) => {
+                const next = { ...data, latitude, longitude };
+                if (place && onPlace) onPlace(place, next);
+                else onChange(next);
+                setMapOpen(false);
+              }}
+            />
+          )}
         </Suspense>
       </Dialog>
     </div>

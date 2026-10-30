@@ -1558,10 +1558,12 @@ h4.ui-title {
     flex-wrap: wrap;
   }
 }
-.discovery-editor {
-  margin-top: 24px;
-}
-.location-map-picker.leaflet-container {
+.discovery-editor { display: grid; gap: 16px; min-width: 0; --select-width: 100%; --field-trigger-width: 100%; }
+.discovery-field { display: grid; gap: 8px; min-width: 0; }
+.discovery-label { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.discovery-coordinates { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.discovery-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.location-map-picker {
   height: 350px;
   min-height: 260px;
   border-radius: var(--card-radius);
@@ -2181,3 +2183,9 @@ h4.ui-title {
     margin-bottom: 24px;
   }
 }
+
+.map-picker-content { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.map-picker-loading { position: absolute; inset: 0; display: grid; place-items: center; background: var(--moment-canvas); border-radius: var(--card-radius); }
+.map-picker-footer { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; font-size: 13px; }
+.map-picker-frame[data-hide-attribution="true"] .amap-logo,
+.map-picker-frame[data-hide-attribution="true"] .amap-copyright { display: none !important; }

@@ -9,7 +9,7 @@ COPY web ./web
 COPY admin ./admin
 COPY shared ./shared
 ARG VITE_AMAP_HIDE_ATTRIBUTION=false
-RUN VITE_AMAP_HIDE_ATTRIBUTION=$VITE_AMAP_HIDE_ATTRIBUTION npm --prefix web run build && npm --prefix admin run build
+RUN VITE_AMAP_HIDE_ATTRIBUTION=$VITE_AMAP_HIDE_ATTRIBUTION npm --prefix web run build && VITE_AMAP_HIDE_ATTRIBUTION=$VITE_AMAP_HIDE_ATTRIBUTION npm --prefix admin run build
 
 FROM golang:1.26-alpine AS backend
 WORKDIR /build

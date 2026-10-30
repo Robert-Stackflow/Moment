@@ -9,6 +9,7 @@ export default defineConfig({
   server: {
     port: 5174,
     proxy: {
+      "/_AMapService": { target: process.env.MOMENT_DEV_API || "http://127.0.0.1:9999" },
       "/api": {
         target: process.env.MOMENT_DEV_API || "http://127.0.0.1:9999",
         changeOrigin: false,

@@ -1,10 +1,20 @@
-import { Alert, Button, IconButton } from "@robert-stackflow/oneui";
+import {
+  Alert,
+  Button,
+  IconButton,
+  LoadingState,
+  RadioGroup,
+} from "@robert-stackflow/oneui";
 import { Minus, Plus } from "lucide-react";
-import type { GeoJsonObject } from "geojson";
-import L from "leaflet";
-import "leaflet/dist/leaflet.css";
-import { useEffect, useRef, useState } from "react";
-import land from "../../../shared/map/land.json";
+import { lazy, Suspense, useEffect, useRef, useState } from "react";
+import {
+  createPickerMap,
+  getMapConfig,
+  nearbyPlaces,
+  type MapPlace,
+  type PickerMap,
+} from "../../../shared/map/amap-services";
+const LocalMapPicker = lazy(() => import("./LocalMapPicker"));
 export default function MapPicker({
   latitude,
   longitude,
@@ -12,174 +22,179 @@ export default function MapPicker({
 }: {
   latitude: number | null;
   longitude: number | null;
-  onApply: (lat: number, lng: number) => void;
+  onApply: (latitude: number, longitude: number, place?: MapPlace) => void;
 }) {
-  const node = useRef<HTMLDivElement>(null);
-  const [point, setPoint] = useState<[number, number] | null>(
+  const node = useRef<HTMLDivElement>(null),
+    map = useRef<PickerMap | null>(null);
+  const initial = useRef<[number, number] | null>(
     latitude !== null && longitude !== null ? [latitude, longitude] : null,
   );
-  const [detailed, setDetailed] = useState(false);
-  const [error, setError] = useState(false);
-  const map = useRef<L.Map | null>(null);
-  const initial = useRef(point);
+  const [point, setPoint] = useState(initial.current),
+    [places, setPlaces] = useState<MapPlace[]>([]);
+  const [selected, setSelected] = useState(""),
+    [busy, setBusy] = useState(true),
+    [lookup, setLookup] = useState(false);
+  const [local, setLocal] = useState(false),
+    [error, setError] = useState(""),
+    [lookupError, setLookupError] = useState("");
+  const [retry, setRetry] = useState(0);
   useEffect(() => {
-    if (!node.current) return;
-    const m = L.map(node.current, {
-      minZoom: 1,
-      maxZoom: 18,
-      maxBounds: [
-        [-85, -180],
-        [85, 180],
-      ],
-      maxBoundsViscosity: 1,
-      zoomControl: false,
-    }).setView(initial.current || [25, 105], initial.current ? 6 : 2);
-    map.current = m;
-    L.geoJSON(land as unknown as GeoJsonObject, {
-      interactive: false,
-      style: {
-        color: "var(--muted)",
-        weight: 1,
-        fillColor: "var(--line)",
-        fillOpacity: 0.24,
-      },
-    }).addTo(m);
-    m.attributionControl.setPrefix(false);
-    m.attributionControl.addAttribution(
-      '<a href="https://www.naturalearthdata.com/" target="_blank" rel="noreferrer">Natural Earth</a>',
-    );
-    let marker: L.CircleMarker | undefined;
-    function show(p: [number, number]) {
-      marker?.remove();
-      marker = L.circleMarker(p, {
-        radius: 7,
-        color: "var(--accent)",
-        fillColor: "var(--accent)",
-        fillOpacity: 1,
-        weight: 3,
-      }).addTo(m);
-    }
-    if (initial.current) show(initial.current);
-    m.on("click", (e) => {
-      const p: [number, number] = [
-        Number(e.latlng.lat.toFixed(6)),
-        Number(e.latlng.wrap().lng.toFixed(6)),
-      ];
-      setPoint(p);
-      show(p);
-    });
-    const resize = new ResizeObserver(() => m.invalidateSize());
-    resize.observe(node.current);
+    let disposed = false,
+      controller: PickerMap | undefined;
+    setBusy(true);
+    setError("");
+    void getMapConfig()
+      .then(async (config) => {
+        if (disposed) return;
+        if (config.provider !== "amap") {
+          setLocal(true);
+          setBusy(false);
+          return;
+        }
+        controller = await createPickerMap(
+          node.current!,
+          config,
+          initial.current,
+          (lat, lng) => {
+            setSelected("");
+            setPlaces([]);
+            setPoint([lat, lng]);
+          },
+        );
+        if (disposed) controller.destroy();
+        else {
+          map.current = controller;
+          setBusy(false);
+        }
+      })
+      .catch(() => {
+        if (!disposed) {
+          setError("地图暂时无法加载");
+          setBusy(false);
+        }
+      });
     return () => {
-      resize.disconnect();
-      m.remove();
+      disposed = true;
+      controller?.destroy();
       map.current = null;
     };
-  }, []);
+  }, [retry]);
   useEffect(() => {
-    if (!detailed || !map.current) return;
-    const tiles = L.tileLayer(
-      "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
-      {
-        maxZoom: 19,
-        noWrap: true,
-        referrerPolicy: "strict-origin-when-cross-origin",
-        attribution:
-          '© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">OpenStreetMap</a>',
-      },
-    ).addTo(map.current);
-    tiles.on("tileerror", () => setError(true));
+    if (!point || busy || local) return;
+    let disposed = false;
+    setLookup(true);
+    setLookupError("");
+    const timer = setTimeout(() => {
+      void nearbyPlaces(...point)
+        .then((items) => {
+          if (!disposed) {
+            setPlaces(items);
+            setSelected(items[0]?.id || "");
+          }
+        })
+        .catch(() => {
+          if (!disposed)
+            setLookupError("附近地点查询失败，仍可使用坐标或手动填写地点。");
+        })
+        .finally(() => {
+          if (!disposed) setLookup(false);
+        });
+    }, 250);
     return () => {
-      tiles.remove();
+      disposed = true;
+      clearTimeout(timer);
     };
-  }, [detailed]);
+  }, [point, busy, local]);
+  if (local)
+    return (
+      <Suspense fallback={<LoadingState />}>
+        <LocalMapPicker
+          latitude={latitude}
+          longitude={longitude}
+          onApply={onApply}
+        />
+      </Suspense>
+    );
+  const choice = places.find((item) => item.id === selected);
   return (
-    <div
-      className="ui-stack"
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        gap: 16,
-      }}
-    >
-      <p
-        className="ui-text"
-        style={{
-          fontSize: 13,
-          color: "var(--muted)",
-        }}
+    <div className="map-picker-content">
+      <div
+        className="map-picker-frame"
+        data-hide-attribution={
+          import.meta.env.VITE_AMAP_HIDE_ATTRIBUTION === "true" || undefined
+        }
       >
-        拖动、缩放后点击选点，也可以关闭地图直接填写经纬度。
-      </p>
-      <div className="map-picker-frame">
         <div
           ref={node}
           className="location-map-picker"
           aria-label="拍摄位置地图"
         />
-        <div className="map-picker-zoom" role="group" aria-label="地图缩放">
-          <IconButton label="放大地图" onClick={() => map.current?.zoomIn()}>
-            <Plus />
-          </IconButton>
-          <IconButton label="缩小地图" onClick={() => map.current?.zoomOut()}>
-            <Minus />
-          </IconButton>
-        </div>
+        {busy && (
+          <div className="map-picker-loading">
+            <LoadingState label="加载地图" />
+          </div>
+        )}
+        {!busy && !error && (
+          <div className="map-picker-zoom" role="group" aria-label="地图缩放">
+            <IconButton label="放大地图" onClick={() => map.current?.zoomIn()}>
+              <Plus />
+            </IconButton>
+            <IconButton label="缩小地图" onClick={() => map.current?.zoomOut()}>
+              <Minus />
+            </IconButton>
+          </div>
+        )}
       </div>
-      {!detailed ? (
-        <div className="map-network-choice">
-          <p
-            className="ui-text"
-            style={{
-              fontSize: 12,
-              color: "var(--muted)",
-            }}
-          >
-            加载详细地图会向 OpenStreetMap 发送当前地图区域和网络地址。
-          </p>
-          <Button
-            size="small"
-            onClick={() => {
-              setDetailed(true);
-              setError(false);
-            }}
-            variant="secondary"
-          >
-            加载详细地图
-          </Button>
-        </div>
-      ) : (
-        <Button size="small" onClick={() => setDetailed(false)} variant="ghost">
-          仅使用本地轮廓
-        </Button>
-      )}
-      {error && detailed && (
-        <Alert tone="warning">详细地图加载失败，仍可选点或切回本地轮廓。</Alert>
-      )}
-      <div
-        className="ui-row"
-        style={{
-          display: "flex",
-          alignItems: "center",
-          flexWrap: "wrap",
-          gap: 10,
-          justifyContent: "space-between",
-        }}
-      >
-        <p
-          className="ui-text"
-          style={{
-            fontSize: 13,
-          }}
+      {error && (
+        <Alert
+          tone="warning"
+          action={
+            <Button size="small" onClick={() => setRetry((v) => v + 1)}>
+              重试
+            </Button>
+          }
         >
+          {error}
+        </Alert>
+      )}
+      {lookup ? (
+        <LoadingState label="查找附近地点" />
+      ) : (
+        places.length > 0 && (
+          <RadioGroup
+            label="参考地点"
+            orientation="vertical"
+            value={selected}
+            onChange={(id) => {
+              setSelected(id);
+              const item = places.find((place) => place.id === id);
+              if (item) map.current?.show(item.latitude, item.longitude, true);
+            }}
+            options={places.map((item) => ({
+              value: item.id,
+              label: item.label,
+            }))}
+          />
+        )
+      )}
+      {lookupError && <Alert tone="warning">{lookupError}</Alert>}
+      <div className="map-picker-footer">
+        <span>
           {point
-            ? `${point[0].toFixed(6)}, ${point[1].toFixed(6)}`
-            : "尚未选点"}
-        </p>
+            ? `${(choice?.latitude ?? point[0]).toFixed(6)}, ${(choice?.longitude ?? point[1]).toFixed(6)}`
+            : "点击地图选择拍摄位置"}
+        </span>
         <Button
-          disabled={!point}
-          onClick={() => point && onApply(...point)}
           variant="primary"
+          disabled={!point || busy || !!error || lookup}
+          onClick={() => {
+            if (point)
+              onApply(
+                choice?.latitude ?? point[0],
+                choice?.longitude ?? point[1],
+                choice,
+              );
+          }}
         >
           使用此位置
         </Button>

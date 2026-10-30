@@ -48,6 +48,7 @@ import { PageTitle } from "./Common";
 import { localDateTime } from "./dateTime";
 import { DateTimePicker } from "./DateTimePicker";
 import { defaultDiscovery, DiscoveryEditor } from "./DiscoveryEditor";
+import { LocationField } from "./LocationField";
 import { PhotoDetails } from "./PhotoDetails";
 import { ScheduleDialog, scheduleTime } from "./ScheduleDialog";
 import { Toggle as Switch } from "./Toggle";
@@ -901,12 +902,9 @@ export function PostEditor({
                       value={draft.time}
                       onChange={(value) => field("time", value)}
                     />
-                    <Input
-                      label="拍摄地点"
-                      placeholder="这组照片在哪里拍摄？"
-                      value={draft.location}
-                      onChange={(e) => field("location", e.currentTarget.value)}
-                    />
+                    <LocationField value={draft.location} onChange={value => field("location", value)}
+                      onPlace={place => setDraft(current => ({...current, location: place.label,
+                        discovery: {...current.discovery, latitude: place.latitude, longitude: place.longitude}}))} />
                     <CategoryMultiSelect
                       categories={categories}
                       value={draft.category_ids}
@@ -914,6 +912,7 @@ export function PostEditor({
                     />
                   </div>
                   <DiscoveryEditor
+                    onPlace={(place, discovery) => setDraft(current => ({...current, location: place.label, discovery}))}
                     value={draft.discovery}
                     onChange={(value) => field("discovery", value)}
                   />

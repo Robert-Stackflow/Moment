@@ -1,0 +1,50 @@
+import { Combobox, FormField } from "@robert-stackflow/oneui";
+import { useRef } from "react";
+import { searchPlaces, type MapPlace } from "../../../shared/map/amap-services";
+export function LocationField({
+  label = "拍摄地点",
+  value,
+  onChange,
+  onPlace,
+}: {
+  label?: string;
+  value: string;
+  onChange(value: string): void;
+  onPlace(place: MapPlace): void;
+}) {
+  const candidates = useRef<Map<string, MapPlace>>(new Map());
+  return (
+    <FormField label={label}>
+      <Combobox
+        label={label}
+        mode="input"
+        value={value}
+        placeholder="输入地点后回车，或选择候选"
+        onCreate={(text) => text}
+        loadOptions={async (query, signal) => {
+          const places = await searchPlaces(query, signal);
+          if (signal.aborted) return [];
+          candidates.current = new Map(
+            places.map((place) => [place.id, place]),
+          );
+          return !query.trim() && value
+            ? [{ value: "__moment_clear_location__", label: "不设置地点" }]
+            : places.map((place) => ({
+                value: place.id,
+                label: place.label,
+                description: place.description,
+              }));
+        }}
+        onChange={(value) => {
+          if (value === "__moment_clear_location__") {
+            onChange("");
+            return;
+          }
+          const place = candidates.current.get(value);
+          if (place) onPlace(place);
+          else onChange(value);
+        }}
+      />
+    </FormField>
+  );
+}
