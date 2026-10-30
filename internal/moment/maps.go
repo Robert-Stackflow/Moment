@@ -24,7 +24,7 @@ func registerMaps(r *gin.Engine) {
 			ok(c, Object{"provider": "local"})
 			return
 		}
-		ok(c, Object{"provider": "amap", "key": key, "serviceHost": "/_AMapService", "style": "amap://styles/whitesmoke"})
+		ok(c, Object{"provider": "amap", "key": key, "serviceHost": "/_AMapService", "style": "amap://styles/fresh"})
 	})
 	transport := http.DefaultTransport.(*http.Transport).Clone()
 	transport.ResponseHeaderTimeout = 15 * time.Second

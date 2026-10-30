@@ -128,7 +128,7 @@ export function createAMap(host, getProps, emit, update, config) {
         map = new AMap.Map(host, {
           viewMode: '2D',
           mapStyle: config.style,
-          features: ['bg', 'road'],
+          features: ['bg', 'road', 'point'],
           center: saved ? toAMap([+lng, +lat]) : [104, 35],
           zoom: saved ? +z : 3,
           zooms: [2, 18],

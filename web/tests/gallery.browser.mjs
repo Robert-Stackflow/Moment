@@ -13,6 +13,17 @@ const web = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..'),
 const port = Number(process.env.MOMENT_GALLERY_TEST_PORT || 5183),
   base = `http://127.0.0.1:${port}`
 const adminServer = createServer((request, response) => {
+  if (request.url === '/api/admin/setup') {
+    response.writeHead(200, { 'Content-Type': 'application/json' })
+    response.end(
+      JSON.stringify({
+        host: request.headers.host,
+        origin: request.headers.origin,
+        cookie: request.headers.cookie,
+      }),
+    )
+    return
+  }
   if (!request.url.startsWith('/admin/')) return response.writeHead(404).end()
   response.writeHead(200, { 'Content-Type': 'text/html' })
   response.end('<h1>Admin application</h1>')
@@ -25,7 +36,11 @@ const server = spawn(
     cwd: web,
     windowsHide: true,
     stdio: ['ignore', 'pipe', 'pipe'],
-    env: { ...process.env, MOMENT_DEV_API: `http://127.0.0.1:${adminServer.address().port}` },
+    env: {
+      ...process.env,
+      MOMENT_DEV_API: `http://127.0.0.1:${adminServer.address().port}`,
+      MOMENT_DEV_ADMIN_API: `http://127.0.0.1:${adminServer.address().port}`,
+    },
   },
 )
 let logs = ''
@@ -324,11 +339,17 @@ try {
   const adminResponse = await fetch(base + '/admin/login?next=%2Fadmin%2Fposts', {
     redirect: 'manual',
   })
-  assert.equal(adminResponse.status, 302)
-  const adminTarget = new URL(adminResponse.headers.get('location'))
-  assert.notEqual(adminTarget.origin, base)
-  assert.equal(adminTarget.pathname, '/admin/login')
-  assert.equal(adminTarget.searchParams.get('next'), '/admin/posts')
+  assert.equal(adminResponse.status, 200)
+  assert.equal(adminResponse.headers.get('location'), null)
+  assert.ok((await adminResponse.text()).includes('Admin application'))
+  const adminAPI = await fetch(base + '/api/admin/setup', {
+    headers: { Origin: base, Cookie: 'moment_session=local-only' },
+  })
+  assert.deepEqual(await adminAPI.json(), {
+    host: new URL(base).host,
+    origin: base,
+    cookie: 'moment_session=local-only',
+  })
   const adminContext = await browser.newContext()
   const adminPage = await adminContext.newPage()
   activePage = adminPage
@@ -340,7 +361,12 @@ try {
   await adminPage.goto(base + '/admin/login?next=%2Fadmin%2Fposts')
   await expect(adminPage.getByRole('heading', { name: 'Admin application' })).toBeVisible()
   await adminPage.waitForTimeout(600)
-  assert.equal(documents, 2, 'one handoff to the admin application, without a reload loop')
+  assert.equal(
+    documents,
+    1,
+    'the admin application loads locally, without a redirect or reload loop',
+  )
+  assert.equal(new URL(adminPage.url()).origin, base)
   await adminPage.goto(base)
   await expect(adminPage.locator('.thumb-a').first()).toBeVisible()
   const documentStamp = await adminPage.evaluate(() => {
@@ -357,7 +383,7 @@ try {
     JSON.stringify({
       checks: checks.length,
       animatedTransitions: true,
-      adminHandoffWithoutReloadLoop: true,
+      localAdminWithoutRedirectOrReloadLoop: true,
       errors: errors.length,
       productionWrites: 0,
     }),
