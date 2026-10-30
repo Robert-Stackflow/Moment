@@ -22,11 +22,12 @@ import { AppearanceProvider } from "./appearance";
 import { PendingChangesProvider } from "./components/PendingChanges";
 import { Shell } from "./components/Shell";
 import { OrganizeLayout } from "./components/OrganizeLayout";
+import { DocumentTitle } from "./components/DocumentTitle";
 import { notifications } from "./notifications";
 import { Login } from "./pages/Login";
 import { AuthProvider, RequireAuth } from "./session";
 import "./styles.css";
-const Dashboard = lazy(() => import("./pages/Dashboard"));
+const Overview = lazy(() => import("./pages/Overview"));
 const Posts = lazy(() => import("./pages/Posts"));
 const Editor = lazy(() => import("./pages/Editor"));
 const NewPost = lazy(() =>
@@ -69,8 +70,9 @@ const router = createBrowserRouter(
       <Route path="login" element={<Login />} />
       <Route element={<RequireAuth />}>
         <Route element={<Shell />}>
-          <Route index element={<Navigate to="/workbench" replace />} />
-          <Route path="workbench" element={<Dashboard />} />
+          <Route index element={<Navigate to="/overview" replace />} />
+          <Route path="overview" element={<Overview />} />
+          <Route path="workbench" element={<Navigate to="/overview" replace />} />
           <Route path="posts" element={<Posts />} />
           <Route path="posts/new" element={<NewPost />} />
           <Route path="posts/:id" element={<Editor />} />
@@ -115,7 +117,7 @@ const router = createBrowserRouter(
             element={
               <EmptyState
                 title="找不到这个页面"
-                action={<Button href="/admin/workbench">返回工作台</Button>}
+                action={<Button href="/admin/overview">返回概览</Button>}
               />
             }
           />
@@ -131,6 +133,7 @@ createRoot(document.getElementById("root")!).render(
       <UIProvider toastPosition="top-right">
         <ToastProvider controller={notifications}>
           <QueryClientProvider client={queryClient}>
+            <DocumentTitle />
             <PendingChangesProvider>
               <RouterProvider router={router} />
             </PendingChangesProvider>

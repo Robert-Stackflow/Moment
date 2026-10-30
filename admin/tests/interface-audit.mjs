@@ -99,7 +99,7 @@ export async function auditInterface({
   await mutate("/backups", "POST", {});
   const share = (await api("/shares"))[0];
   const routes = [
-    "workbench",
+    "overview",
     "posts",
     "posts/new",
     `posts/${postId}`,
@@ -229,7 +229,7 @@ export async function auditInterface({
           page.getByRole("heading", { name: "找不到这个页面" }),
         ).toBeVisible();
         await expect(
-          page.getByRole("link", { name: "返回工作台" }),
+          page.getByRole("link", { name: "返回概览" }),
         ).toBeVisible();
 
         await visit("categories");
@@ -383,12 +383,12 @@ export async function auditInterface({
           await page
             .getByRole("button", { name: "打开导航", exact: true })
             .click();
-        await page.getByRole("link", { name: "工作台", exact: true }).click();
+        await page.getByRole("link", { name: "概览", exact: true }).click();
         dialog = await inspect("离开当前页面？");
         await dialog
           .getByRole("button", { name: "离开页面", exact: true })
           .click();
-        await page.waitForURL("**/workbench");
+        await page.waitForURL("**/overview");
         await visit("account/security");
         await open(
           page.getByRole("button", { name: "添加通行密钥", exact: true }),
@@ -686,7 +686,7 @@ export async function auditInterface({
     await page.evaluate(() =>
       localStorage.setItem("moment.admin.color-mode", "system"),
     );
-    await visit("workbench");
+    await visit("overview");
     for (const colorScheme of ["dark", "light"]) {
       await page.emulateMedia({ colorScheme });
       await expect(page.locator("html")).toHaveAttribute(
@@ -698,7 +698,7 @@ export async function auditInterface({
     await page.evaluate(() =>
       localStorage.setItem("moment.admin.color-mode", "dark"),
     );
-    await visit("workbench");
+    await visit("overview");
     await page.emulateMedia({ colorScheme: "light" });
     await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
     await page.setViewportSize({ width: 320, height: 844 });

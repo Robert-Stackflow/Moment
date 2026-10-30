@@ -1,7 +1,14 @@
-import { defineConfig } from "vite";
+import { defineConfig, loadEnv } from "vite";
+import { fileURLToPath } from "node:url";
 import react from "@vitejs/plugin-react";
 
-export default defineConfig({
+export default defineConfig(({ mode }) => {
+  const siteDefaults = loadEnv(mode, fileURLToPath(new URL("../web", import.meta.url)), "VITE_");
+  return {
+  define: {
+    "import.meta.env.VITE_SITE_NAME": JSON.stringify(siteDefaults.VITE_TITLE || "Moment"),
+    "import.meta.env.VITE_SITE_SPLITTER": JSON.stringify(siteDefaults.VITE_TITLE_SPLITTER || "|"),
+  },
   base: "/admin/",
   cacheDir: process.env.MOMENT_UI_TEST_CACHE || undefined,
   plugins: [react()],
@@ -29,4 +36,5 @@ export default defineConfig({
     },
   },
   build: { outDir: "../dist/admin", emptyOutDir: true },
+  };
 });

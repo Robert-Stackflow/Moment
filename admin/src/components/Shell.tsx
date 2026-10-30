@@ -39,7 +39,7 @@ const navItem = (label: string, path: string, Icon: LucideIcon) => ({
   icon: <Icon />,
 });
 const navigationGroups: NavigationGroup[] = [
-  { id: "overview", items: [navItem("工作台", "/workbench", Grid2X2)] },
+  { id: "overview", items: [navItem("概览", "/overview", Grid2X2)] },
   {
     id: "content",
     label: "内容管理",
@@ -192,11 +192,11 @@ export function Shell() {
     <AppShell
       navigation={items}
       navigationGroups={navigationGroups}
-      active={selected?.path || "/workbench"}
+      active={selected?.path || "/overview"}
       title={selected?.label || "Moment"}
       brandName="Moment"
       brand={<Brand wordmark />}
-      homePath="/workbench"
+      homePath="/overview"
       basePath="/admin"
       showHeader={false}
       onNavigate={navigate}

@@ -38,7 +38,7 @@ export async function auditMediaCards({
         (value) => localStorage.setItem("moment.admin.color-mode", value),
         mode,
       );
-      await page.goto(base + "/workbench");
+      await page.goto(base + "/overview");
       let card = cardForPost();
       await expect(card).toBeVisible();
       await expect(card.locator("img")).toBeVisible();

@@ -13,7 +13,7 @@ import { api } from "../api";
 import { Empty, ErrorState, Loading, PageTitle } from "../components/Common";
 import type { Post, Settings } from "../types";
 import { adminHref, gridStyle } from "../ui-data";
-export default function Dashboard() {
+export default function Overview() {
   const stats = useQuery({
     queryKey: ["stats"],
     queryFn: () =>
@@ -40,7 +40,7 @@ export default function Dashboard() {
   ] as const;
   return (
     <>
-      <PageTitle title="工作台">
+      <PageTitle title="概览">
         <Button href={adminHref("/posts/new")} variant="primary">
           {<Plus size={18} />}
           新建帖子

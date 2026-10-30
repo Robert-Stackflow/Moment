@@ -165,7 +165,10 @@ try {
       .fill("migration@example.test");
     await page.getByLabel("密码", { exact: true }).fill("Migration.Test.2026");
     await page.getByRole("button", { name: "创建账户并进入" }).click();
-    await page.waitForURL("**/workbench");
+    await page.waitForURL("**/overview");
+    await page.goto(base + "/workbench");
+    await page.waitForURL("**/overview");
+    await page.getByRole("heading", { name: "概览", exact: true }).waitFor();
   });
   await check(
     "category form validation, child creation and shared tree table",
@@ -300,9 +303,15 @@ try {
       .getByRole("button", { name: "紧凑列表" })
       .click();
     await page.getByRole("table", { name: "帖子列表" }).waitFor();
-    assert.equal(await page.locator(".desktop-table").evaluate(el => getComputedStyle(el).borderTopWidth), "0px", "table layout wrapper must not add another frame");
+    assert.equal(
+      await page
+        .locator(".desktop-table")
+        .evaluate((el) => getComputedStyle(el).borderTopWidth),
+      "0px",
+      "table layout wrapper must not add another frame",
+    );
     for (const route of [
-      "workbench",
+      "overview",
       "organize",
       "organize/tags",
       "drafts",
@@ -412,8 +421,16 @@ try {
       await page
         .getByRole("textbox", { name: "网站名称", exact: true })
         .fill("视觉验证");
-      await page.getByRole("combobox", { name: "选择颜色 · 相册主题色", exact: true }).click();
-      const themeColor = page.getByRole("textbox", { name: "相册主题色 HEX", exact: true });
+      await page
+        .getByRole("textbox", { name: "标题分隔符", exact: true })
+        .fill("|");
+      await page
+        .getByRole("combobox", { name: "选择颜色 · 相册主题色", exact: true })
+        .click();
+      const themeColor = page.getByRole("textbox", {
+        name: "相册主题色 HEX",
+        exact: true,
+      });
       await themeColor.fill("#3478AB");
       await themeColor.press("Tab");
       await page.keyboard.press("Escape");
@@ -481,6 +498,9 @@ try {
       const settings = await api("/settings");
       assert.equal(settings.meta.entries[0].name, "主页");
       assert.equal(settings.meta.primary_color.toLowerCase(), "#3478ab");
+      await page.waitForFunction(
+        () => document.title === "视觉验证 | 管理后台",
+      );
       await page
         .locator("main")
         .evaluate((main) => (main.scrollTop = main.scrollHeight));
@@ -731,7 +751,7 @@ try {
       await page.goto(base + "/account/sessions");
       await noOverflow();
       for (const route of [
-        "workbench",
+        "overview",
         "drafts",
         "schedules",
         "shares",
@@ -751,8 +771,8 @@ try {
         await noOverflow();
       }
       await page.getByRole("button", { name: "打开导航", exact: true }).click();
-      await page.getByRole("link", { name: "工作台", exact: true }).click();
-      await page.waitForURL("**/workbench");
+      await page.getByRole("link", { name: "概览", exact: true }).click();
+      await page.waitForURL("**/overview");
     },
   );
   await check("shared built-in entry icon catalog", async () => {

@@ -68,7 +68,7 @@ export function Login() {
     !from.startsWith("//") &&
     from !== "/login"
       ? from
-      : "/workbench";
+      : "/overview";
   if (auth.user) return <Navigate to={destination} replace />;
   const initializing = setup.data?.data.needs_setup === true;
   const correctOrigin = passkeys.data?.data.origin === window.location.origin;

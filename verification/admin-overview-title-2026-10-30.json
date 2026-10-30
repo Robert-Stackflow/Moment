@@ -1,0 +1,20 @@
+{
+  "route": "/admin/overview",
+  "label": "概览",
+  "legacyRoute": "/admin/workbench",
+  "legacyRedirectVerified": true,
+  "loginBrandAndMobileNavigation": "overview",
+  "documentTitle": "网站名称 + 标题分隔符 + 管理后台",
+  "defaultMetadata": "same VITE_TITLE and VITE_TITLE_SPLITTER as the public frontend",
+  "localBrowserTitle": "时光 | 管理后台",
+  "settingsSaveTitleVerified": "视觉验证 | 管理后台",
+  "validation": {
+    "types": true,
+    "productionBuild": true,
+    "loginAndLegacyRoute": true,
+    "allAuthenticatedRoutes": true,
+    "mobileNavigation": true,
+    "lightDarkMediaCardMatrices": 6,
+    "browserErrors": 0
+  }
+}
