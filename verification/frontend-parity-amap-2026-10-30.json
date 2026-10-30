@@ -8,8 +8,8 @@
   "intentionalChanges": [
     "36px header icon buttons including fullscreen",
     "OneUI 0.5.0 Tooltip instead of private tooltip",
-    "AMap JS API 2.0 whitesmoke map when configured",
-    "admin app handoff without self-navigation reload loop"
+    "AMap JS API 2.0 fresh map when configured",
+    "same-origin local admin proxy without reload or production redirect"
   ],
   "parity": {
     "states": 60,
@@ -89,12 +89,6 @@
     "errors": [],
     "failedResponses": []
   },
-  "adminHandoff": {
-    "documents": 2,
-    "automaticReloads": 0,
-    "loginVisible": true,
-    "errors": []
-  },
   "checks": {
     "publicBrowserMatrix": 3,
     "coordinatesRoundTrip": "passed",
@@ -103,7 +97,40 @@
     "npmAuditVulnerabilities": 0,
     "publicAndAdminProductionBuilds": "passed",
     "adminHandoffRegression": "passed",
-    "credentialScanSourceAndBuild": "passed"
+    "credentialScanSourceAndBuild": "passed",
+    "localAdminProxyRegression": "passed",
+    "sdkJSONPMIME": "passed"
   },
-  "credentialHandling": "server environment only; public key and same-origin serviceHost sent to browser; security code excluded from git, archives and bundles"
+  "credentialHandling": "server environment only; public key and same-origin serviceHost sent to browser; security code excluded from git, archives and bundles",
+  "localAdmin": {
+    "documents": 1,
+    "automaticReloads": 0,
+    "loginVisible": true,
+    "origin": "http://127.0.0.1:3100",
+    "errors": []
+  },
+  "localDemoData": {
+    "account": "demo",
+    "originalAdminPreserved": true,
+    "posts": 6,
+    "photos": 8,
+    "newCategories": 6,
+    "postIds": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6
+    ],
+    "destination": "http://127.0.0.1:3100",
+    "sampleCoordinates": "public landmarks used as demonstration locations",
+    "productionWrites": 0
+  },
+  "presentation": {
+    "mapStyle": "amap://styles/fresh",
+    "placeLabels": true,
+    "attributionHiddenForAuthorizedDeployment": true,
+    "publicBuildFlag": "VITE_AMAP_HIDE_ATTRIBUTION=true"
+  }
 }
