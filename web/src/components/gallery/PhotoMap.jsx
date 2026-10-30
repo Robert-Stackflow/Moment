@@ -68,7 +68,12 @@ export default function PhotoMap({ year, initial, onBounds, onSelect, ref }) {
     if (state.consent) consentCard.current?.focus()
   }, [state.consent])
   return (
-    <div className="explore-map-wrap" data-provider={state.provider} aria-busy={state.busy}>
+    <div
+      className="explore-map-wrap"
+      data-provider={state.provider}
+      data-hide-attribution={import.meta.env.VITE_AMAP_HIDE_ATTRIBUTION === 'true' || undefined}
+      aria-busy={state.busy}
+    >
       <div
         ref={host}
         className="photo-map-canvas"

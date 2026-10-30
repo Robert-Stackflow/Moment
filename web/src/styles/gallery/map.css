@@ -13,6 +13,10 @@
 .explore-map-wrap[data-provider='amap'] {
   background: #f2f3f1;
 }
+.explore-map-wrap[data-provider='amap'][data-hide-attribution='true'] .amap-logo,
+.explore-map-wrap[data-provider='amap'][data-hide-attribution='true'] .amap-copyright {
+  display: none !important;
+}
 .explore-map-wrap[data-provider='amap'] .photo-map-canvas {
   background: #f2f3f1;
 }
