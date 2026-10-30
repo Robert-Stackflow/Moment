@@ -1,0 +1,63 @@
+{
+  "runtime": {
+    "image": "ruida/moment:dev",
+    "imageId": "sha256:fa98e6466708debb19147e77598cca8590a265ae50f77311ea0e8c2051c7e307",
+    "health": "healthy",
+    "sourceCommit": "925c7d438dd761f0611b17fd355208bafdc38707",
+    "release": "20261030-location-nearby",
+    "ports": {
+      "9999/tcp": [
+        {
+          "HostIp": "127.0.0.1",
+          "HostPort": "3010"
+        }
+      ]
+    },
+    "memory": 805306368,
+    "memorySwap": 805306368,
+    "nanoCpus": 1000000000,
+    "pids": 256,
+    "logging": {
+      "Type": "json-file",
+      "Config": {
+        "max-file": "3",
+        "max-size": "10m"
+      }
+    }
+  },
+  "coreTableCounts": {
+    "blog": 45,
+    "blog_image": 57,
+    "category": 13,
+    "user": 1
+  },
+  "fingerprintsPreserved": true,
+  "candidateValidated": true,
+  "servedAdminMatchesContainer": true,
+  "servedIndexMatchesContainer": true,
+  "indexSha256": "26b877198bd4982ccca817a708bfa08e83046668be12ecb84ead2d3daf16192a",
+  "activation": {
+    "release": "20261030-location-nearby",
+    "image": "ruida/moment:dev",
+    "backup": "/home/apps/moment/backups/20261030-location-nearby",
+    "dataPreserved": true,
+    "https": true
+  },
+  "releaseDirectories": [
+    "20261030-admin-amap",
+    "20261030-location-nearby"
+  ],
+  "deployedAtVerified": "2026-10-30T20:12:18+08:00",
+  "server": "43.156.71.44",
+  "directory": "/home/apps/moment",
+  "url": "https://moment.cloudchewie.com",
+  "cleanup": {
+    "retainedReleases": [
+      "20261030-admin-amap",
+      "20261030-location-nearby"
+    ],
+    "removedObsoleteReleases": 4,
+    "removedObsoleteImages": 4,
+    "dataAndBackupsRetained": true
+  }
+}

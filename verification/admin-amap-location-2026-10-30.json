@@ -36,6 +36,12 @@
   },
   "productionWritesDuringLocalVerification": 0,
   "userPostEditingTabReloaded": false,
-  "deployment": "pending",
+  "deployment": {
+    "release": "20261030-location-nearby",
+    "sourceCommit": "925c7d438dd761f0611b17fd355208bafdc38707",
+    "healthy": true,
+    "publicAndAdminResourcesVerified": true,
+    "dataPreserved": true
+  },
   "localTestDraftCleaned": true
 }
