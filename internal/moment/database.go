@@ -173,7 +173,7 @@ func query(q querier, statement string, args ...any) ([]Object, error) {
 			if key == "is_hidden" || key == "revoked" || key == "password_required" {
 				value = integer(value) != 0
 			}
-			if key == "remark" || key == "general" || key == "meta" || key == "content" || key == "storage" {
+			if key == "remark" || key == "general" || key == "meta" || key == "content" || key == "storage" || key == "maps" {
 				if text, ok := value.(string); ok {
 					var decoded any
 					if json.Unmarshal([]byte(text), &decoded) == nil {

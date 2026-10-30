@@ -114,7 +114,7 @@ export interface Result<T> {
   page?: number;
   page_size?: number;
 }
-export type Section = "meta" | "content" | "storage" | "general";
+export type Section = "meta" | "content" | "storage" | "general" | "maps";
 export type Settings = Record<Section, Record<string, unknown>>;
 export const orders = [
   { value: "created_at_desc", label: "最近创建" },

@@ -22,5 +22,3 @@ services:
     environment:
       TZ: Asia/Shanghai
       MOMENT_COOKIE_SECURE: "true"
-      MOMENT_AMAP_KEY: ${MOMENT_AMAP_KEY:-}
-      MOMENT_AMAP_SECURITY_CODE: ${MOMENT_AMAP_SECURITY_CODE:-}

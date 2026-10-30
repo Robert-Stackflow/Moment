@@ -34,7 +34,7 @@ func (a *App) Router() http.Handler {
 		}
 		ok(c, Object{"status": "ok"})
 	})
-	registerMaps(r)
+	a.registerMaps(r)
 	admin := r.Group("/api/admin", sameOrigin)
 	admin.GET("/setup", a.setupStatus)
 	admin.POST("/setup", a.setup)

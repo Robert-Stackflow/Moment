@@ -14,10 +14,10 @@ type mapRoundTripper func(*http.Request) (*http.Response, error)
 func (f mapRoundTripper) RoundTrip(r *http.Request) (*http.Response, error) { return f(r) }
 
 func TestMapConfigurationAndRoutes(t *testing.T) {
-	t.Setenv("MOMENT_AMAP_KEY", "browser-key")
-	t.Setenv("MOMENT_AMAP_SECURITY_CODE", "server-only-code")
-	_, handler, _ := testApp(t)
-	w, _ := call(t, handler, "GET", "/api/v1/visitor/maps/config", nil, nil)
+	a, handler, cookie := testApp(t)
+	w, _ := call(t, handler, "PATCH", "/api/admin/settings/maps", Object{"source": "custom", "key": "browser-key", "security_code": "server-only-code"}, cookie)
+	status(t, w, 200)
+	w, _ = call(t, handler, "GET", "/api/v1/visitor/maps/config", nil, nil)
 	if w.Code != 200 || !strings.Contains(w.Body.String(), "browser-key") || strings.Contains(w.Body.String(), "server-only-code") {
 		t.Fatal("public configuration must expose only the browser key")
 	}
@@ -28,8 +28,9 @@ func TestMapConfigurationAndRoutes(t *testing.T) {
 			t.Fatal("unexpected proxy route", path, w.Code)
 		}
 	}
-	t.Setenv("MOMENT_AMAP_SECURITY_CODE", "")
-	_, handler, _ = testApp(t)
+	if _, err := a.db.Exec(`UPDATE setting SET maps='{}'`); err != nil {
+		t.Fatal(err)
+	}
 	w, _ = call(t, handler, "GET", "/api/v1/visitor/maps/config", nil, nil)
 	if strings.Contains(w.Body.String(), "browser-key") || !strings.Contains(w.Body.String(), "local") {
 		t.Fatal("incomplete configuration must not enable AMap")
@@ -38,6 +39,50 @@ func TestMapConfigurationAndRoutes(t *testing.T) {
 	handler.ServeHTTP(w, httptest.NewRequest("GET", "/_AMapService/v3/config", nil))
 	if w.Code != 404 {
 		t.Fatal("unconfigured proxy must be unavailable")
+	}
+}
+
+func TestMapSettingsLifecycle(t *testing.T) {
+	t.Setenv("MOMENT_AMAP_KEY", "unused-environment-key")
+	t.Setenv("MOMENT_AMAP_SECURITY_CODE", "unused-environment-secret")
+	_, h, cookie := testApp(t)
+	w, _ := call(t, h, "GET", "/api/v1/visitor/maps/config", nil, nil)
+	if strings.Contains(w.Body.String(), "unused-environment") || !strings.Contains(w.Body.String(), "local") {
+		t.Fatal("environment variables must not configure maps")
+	}
+	w, _ = call(t, h, "PATCH", "/api/admin/settings/maps", Object{"source": "custom", "key": "saved-key", "security_code": "saved-secret"}, nil)
+	status(t, w, 401)
+	for _, changes := range []Object{
+		{"source": "environment"}, {"source": "custom", "key": "missing-secret"},
+		{"source": "custom", "security_code": 42}, {"unknown": "value"},
+	} {
+		w, _ = call(t, h, "PATCH", "/api/admin/settings/maps", changes, cookie)
+		status(t, w, 400)
+	}
+	w, _ = call(t, h, "PATCH", "/api/admin/settings/maps", Object{"source": "custom", "key": " saved-key ", "security_code": " saved-secret "}, cookie)
+	status(t, w, 200)
+	w, result := call(t, h, "GET", "/api/admin/settings", nil, cookie)
+	maps := object(object(result["data"])["maps"])
+	if strings.Contains(w.Body.String(), "saved-secret") || maps["security_code_configured"] != true || text(maps["key"]) != "saved-key" {
+		t.Fatal("admin settings must mask the saved security code")
+	}
+	w, _ = call(t, h, "PATCH", "/api/admin/settings/maps", Object{"source": "custom", "key": "next-key", "security_code": ""}, cookie)
+	status(t, w, 200)
+	w, _ = call(t, h, "GET", "/api/v1/visitor/maps/config", nil, nil)
+	if !strings.Contains(w.Body.String(), "next-key") || strings.Contains(w.Body.String(), "saved-secret") {
+		t.Fatal("configuration changes must take effect without restart")
+	}
+	for _, section := range []string{"general", "meta", "content", "maps"} {
+		w, _ = call(t, h, "GET", "/api/v1/visitor/settings/"+section, nil, nil)
+		if strings.Contains(w.Body.String(), "saved-secret") || strings.Contains(w.Body.String(), "next-key") {
+			t.Fatal("map credentials exposed through public settings")
+		}
+	}
+	w, _ = call(t, h, "PATCH", "/api/admin/settings/maps", Object{"source": "disabled"}, cookie)
+	status(t, w, 200)
+	w, _ = call(t, h, "GET", "/api/v1/visitor/maps/config", nil, nil)
+	if !strings.Contains(w.Body.String(), "local") {
+		t.Fatal("disabling AMap must use the local map")
 	}
 }
 

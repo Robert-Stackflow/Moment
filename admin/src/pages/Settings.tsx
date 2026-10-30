@@ -14,7 +14,7 @@ import {
   Textarea,
 } from "@robert-stackflow/oneui";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Archive, Code2, Database, Globe, Image, Save } from "lucide-react";
+import { Archive, Code2, Database, Globe, Image, MapPin, Save } from "lucide-react";
 import { lazy, useState } from "react";
 import { Navigate, useNavigate, useParams } from "react-router-dom";
 import { api, json, notifyError, notifySuccess } from "../api";
@@ -46,11 +46,31 @@ const Backups = lazy(() => import("./Backups"));
 const sections = [
   { key: "meta", label: "网站信息", icon: Globe },
   { key: "content", label: "相册展示", icon: Image },
+  { key: "maps", label: "地图服务", icon: MapPin },
   { key: "storage", label: "图片存储", icon: Database },
   { key: "general", label: "个性化", icon: Code2 },
   { key: "backups", label: "备份与恢复", icon: Archive },
 ] as const;
 const fields: Record<Section, Field[]> = {
+  maps: [
+    {
+      key: "source",
+      label: "地图服务",
+      kind: "select",
+      fallback: "custom",
+      options: [
+        { value: "custom", label: "高德地图" },
+        { value: "disabled", label: "停用高德地图" },
+      ],
+    },
+    { key: "key", label: "API Key" },
+    {
+      key: "security_code",
+      label: "安全密钥",
+      kind: "password",
+      description: "仅由服务器使用，留空保留已保存的密钥",
+    },
+  ],
   meta: [
     { key: "site_name", label: "网站名称" },
     { key: "site_desc", label: "网站描述", kind: "textarea" },
@@ -237,7 +257,7 @@ export default function SettingsPage() {
           {
             id: "site",
             items: sections
-              .filter((item) => ["meta", "content"].includes(item.key))
+              .filter((item) => ["meta", "content", "maps"].includes(item.key))
               .map(({ key, label, icon: Icon }) => ({
                 id: `/settings/${key}`,
                 path: `/settings/${key}`,
@@ -303,7 +323,10 @@ function SettingsForm({
   const sharedForm = useModelForm(
     values,
     Object.fromEntries(
-      fields[section]
+      [...(section === "maps" && values.source === "custom" ? [
+        ["key", { label: "API Key", required: true, maxLength: 512 }],
+        ["security_code", { label: "安全密钥", required: initial.security_code_configured !== true, maxLength: 512 }],
+      ] : []), ...fields[section]
         .filter((field) => field.kind === "number")
         .map((field) => [
           field.key,
@@ -322,7 +345,7 @@ function SettingsForm({
                   ? 600
                   : 100,
           },
-        ]),
+        ])],
     ),
   );
   const [entries, setEntries] = useState<EditableEntry[]>(
@@ -352,6 +375,8 @@ function SettingsForm({
       setValues((current) =>
         section === "storage"
           ? { ...current, access_id: "", secret_key: "" }
+          : section === "maps"
+            ? { ...current, security_code: "" }
           : current,
       );
       await client.invalidateQueries({ queryKey: ["settings"] });
@@ -547,6 +572,13 @@ function SettingsForm({
                   ),
                 )}
             </>
+          ) : section === "maps" ? (
+            <Card title="高德地图" description="保存后生效；已打开的地图重新加载后使用新配置。">
+              <div className="settings-rows">
+                {renderField(fields.maps[0])}
+                {values.source === "custom" && fields.maps.slice(1).map(renderField)}
+              </div>
+            </Card>
           ) : section === "content" ? (
             <>
               {group(

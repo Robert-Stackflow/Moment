@@ -170,6 +170,31 @@ try {
     await page.waitForURL("**/overview");
     await page.getByRole("heading", { name: "概览", exact: true }).waitFor();
   });
+  await check("map settings credentials and responsive layout", async () => {
+    await page.goto(base + "/settings/maps");
+    await page.getByLabel("API Key", { exact: true }).fill("ui-map-key");
+    await page.getByLabel("安全密钥", { exact: true }).fill("ui-map-secret");
+    const saved = page.waitForResponse(r => r.url().endsWith("/api/admin/settings/maps") && r.request().method() === "PATCH");
+    await page.getByRole("button", { name: "保存设置", exact: true }).click();
+    assert.equal((await saved).status(), 200);
+    await page.getByText("已配置，留空保留当前凭据", { exact: true }).waitFor();
+    assert.equal(await page.getByLabel("安全密钥", { exact: true }).inputValue(), "");
+    const config = await page.request.get(new URL(base).origin + "/api/v1/visitor/maps/config");
+    const configText = await config.text();
+    assert.ok(configText.includes("ui-map-key"));
+    assert.ok(!configText.includes("ui-map-secret"));
+    for (const [width, theme] of [[1280, "light"], [390, "dark"]]) {
+      await page.setViewportSize({ width: 1280, height: 800 });
+      await page.getByRole("group", { name: "颜色模式", exact: true }).getByRole("button", { name: theme === "dark" ? "深色" : "浅色", exact: true }).click();
+      await page.waitForFunction(() => !document.documentElement.dataset.themeChanging);
+      await page.setViewportSize({ width, height: 800 });
+      await noOverflow();
+      assert.equal(await page.getByText("使用环境变量", { exact: true }).count(), 0);
+      await page.screenshot({ path: path.join(output, `maps-settings-${width}-${theme}.png`) });
+    }
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await page.getByRole("group", { name: "颜色模式", exact: true }).getByRole("button", { name: "浅色", exact: true }).click();
+  });
   await check(
     "category form validation, child creation and shared tree table",
     async () => {

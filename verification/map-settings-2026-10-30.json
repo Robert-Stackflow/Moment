@@ -1,0 +1,23 @@
+{
+  "route": "/admin/settings/maps",
+  "oneui": "0.6.18",
+  "controls": ["card SideBar", "SelectSettingRow", "TextSettingRow", "SettingRow", "PasswordField", "Form"],
+  "credentials": {
+    "storage": "setting.maps",
+    "securityCodeReturned": false,
+    "blankPreservesSavedCode": true,
+    "environmentConfigurationRemoved": true,
+    "restartRequired": false,
+    "existingMapReloadRequired": true
+  },
+  "checks": {
+    "allBackendTests": true,
+    "backupRestoreAndOlderSchemaUpgrade": true,
+    "authenticationAndValidation": true,
+    "publicSettingsDoNotExposeSecurityCode": true,
+    "desktopLightAndMobileDark": true,
+    "browserRuntimeErrors": 0,
+    "typecheck": true,
+    "productionBuild": true
+  }
+}

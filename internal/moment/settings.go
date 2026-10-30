@@ -11,7 +11,7 @@ import (
 )
 
 func (a *App) readSettings() (Object, error) {
-	rows, err := query(a.db, "SELECT general,meta,content,storage FROM setting ORDER BY id LIMIT 1")
+	rows, err := query(a.db, "SELECT general,meta,content,storage,maps FROM setting ORDER BY id LIMIT 1")
 	if err != nil {
 		return nil, err
 	}
@@ -39,11 +39,18 @@ func (a *App) settings(c *gin.Context) {
 		}
 	}
 	settings["storage"] = storage
+	maps := object(settings["maps"])
+	maps["security_code_configured"] = text(maps["security_code"]) != ""
+	maps["security_code"] = ""
+	if text(maps["source"]) == "" {
+		maps["source"] = "custom"
+	}
+	settings["maps"] = maps
 	ok(c, settings)
 }
 func (a *App) saveSettings(c *gin.Context) {
 	section := c.Param("section")
-	if section != "general" && section != "meta" && section != "content" && section != "storage" {
+	if section != "general" && section != "meta" && section != "content" && section != "storage" && section != "maps" {
 		fail(c, 400, "设置分组无效")
 		return
 	}
@@ -77,6 +84,21 @@ func (a *App) saveSettings(c *gin.Context) {
 		if strings.HasSuffix(key, "_configured") {
 			continue
 		}
+		if section == "maps" {
+			if key != "source" && key != "key" && key != "security_code" {
+				fail(c, 400, "地图设置字段无效")
+				return
+			}
+			v, valid := value.(string)
+			if !valid || len(v) > 512 {
+				fail(c, 400, "地图配置格式无效")
+				return
+			}
+			value = strings.TrimSpace(v)
+			if key == "security_code" && value == "" {
+				continue
+			}
+		}
 		if section == "storage" && (key == "secret_key" || key == "access_id") {
 			if value == "" {
 				continue
@@ -86,6 +108,17 @@ func (a *App) saveSettings(c *gin.Context) {
 			}
 		}
 		current[key] = value
+	}
+	if section == "maps" {
+		source := text(current["source"])
+		if source != "custom" && source != "disabled" {
+			fail(c, 400, "地图配置来源无效")
+			return
+		}
+		if source == "custom" && (text(current["key"]) == "" || text(current["security_code"]) == "") {
+			fail(c, 400, "请填写 API Key 和安全密钥")
+			return
+		}
 	}
 	if section == "content" {
 		for _, key := range []string{"map_enabled", "timeline_enabled"} {

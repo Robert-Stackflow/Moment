@@ -57,6 +57,7 @@ func TestBackupRoundTripAndRestoreSafety(t *testing.T) {
 	id, img := seedPost(t, a, "Preserved", false, false)
 	deleted, _ := seedPost(t, a, "In trash", true, false)
 	queries := []string{
+		`UPDATE setting SET maps='{"source":"custom","key":"backup-map-key","security_code":"backup-map-secret"}'`,
 		"CREATE TABLE legacy_backup_v1(id INTEGER, value TEXT)", "INSERT INTO legacy_backup_v1 VALUES(7,'old data')",
 		"INSERT INTO category(name,alias) VALUES('Category','category')",
 		fmt.Sprintf("INSERT INTO blog_category VALUES(%d,1)", id),
@@ -144,6 +145,10 @@ func TestBackupRoundTripAndRestoreSafety(t *testing.T) {
 	w, _ = call(t, h, "POST", "/api/admin/login", Object{"username": "tester", "password": testPassword}, nil)
 	status(t, w, 200)
 	newCookie := w.Result().Cookies()[0]
+	key, secret, mapErr := a.mapCredentials()
+	if mapErr != nil || key != "backup-map-key" || secret != "backup-map-secret" {
+		t.Fatal("map settings lost across restore", mapErr)
+	}
 	w, after := call(t, h, "GET", fmt.Sprintf("/api/admin/posts/%d", id), nil, newCookie)
 	status(t, w, 200)
 	if !reflect.DeepEqual(before["data"], after["data"]) {

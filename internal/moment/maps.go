@@ -1,11 +1,11 @@
 package moment
 
 import (
+	"encoding/json"
 	"io"
 	"log"
 	"net/http"
 	"net/http/httputil"
-	"os"
 	"regexp"
 	"strings"
 	"time"
@@ -16,11 +16,31 @@ import (
 var mapCallback = regexp.MustCompile(`^[A-Za-z_$][A-Za-z0-9_$]*$`)
 
 // Only the browser key is public. The JS security code stays on this service.
-func registerMaps(r *gin.Engine) {
-	key, secret := strings.TrimSpace(os.Getenv("MOMENT_AMAP_KEY")), strings.TrimSpace(os.Getenv("MOMENT_AMAP_SECURITY_CODE"))
-	enabled := key != "" && secret != ""
+func (a *App) mapCredentials() (string, string, error) {
+	var raw string
+	if err := a.db.QueryRow("SELECT maps FROM setting ORDER BY id LIMIT 1").Scan(&raw); err != nil {
+		return "", "", err
+	}
+	var settings Object
+	if err := json.Unmarshal([]byte(raw), &settings); err != nil {
+		return "", "", err
+	}
+	switch text(settings["source"]) {
+	case "disabled":
+		return "", "", nil
+	default:
+		return text(settings["key"]), text(settings["security_code"]), nil
+	}
+}
+
+func (a *App) registerMaps(r *gin.Engine) {
 	r.GET("/api/v1/visitor/maps/config", func(c *gin.Context) {
-		if !enabled {
+		key, secret, err := a.mapCredentials()
+		if err != nil {
+			databaseError(c, err)
+			return
+		}
+		if key == "" || secret == "" {
 			ok(c, Object{"provider": "local"})
 			return
 		}
@@ -28,9 +48,13 @@ func registerMaps(r *gin.Engine) {
 	})
 	transport := http.DefaultTransport.(*http.Transport).Clone()
 	transport.ResponseHeaderTimeout = 15 * time.Second
-	proxy := amapProxy(key, secret, transport)
 	r.GET("/_AMapService/*path", func(c *gin.Context) {
-		if !enabled {
+		key, secret, err := a.mapCredentials()
+		if err != nil {
+			databaseError(c, err)
+			return
+		}
+		if key == "" || secret == "" {
 			c.Status(http.StatusNotFound)
 			return
 		}
@@ -39,7 +63,7 @@ func registerMaps(r *gin.Engine) {
 			c.Status(http.StatusNotFound)
 			return
 		}
-		proxy.ServeHTTP(c.Writer, c.Request)
+		amapProxy(key, secret, transport).ServeHTTP(c.Writer, c.Request)
 	})
 }
 
