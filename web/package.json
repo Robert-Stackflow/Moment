@@ -14,7 +14,7 @@
   },
   "dependencies": {
     "@iconify/react": "6.0.3",
-    "@robert-stackflow/oneui": "0.6.18",
+    "@robert-stackflow/oneui": "0.6.19",
     "axios": "^1.20.0",
     "dayjs": "^1.11.9",
     "leaflet": "^1.9.4",

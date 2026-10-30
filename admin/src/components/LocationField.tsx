@@ -11,7 +11,7 @@ export function LocationField({
   longitude = null,
   allowCustom = true,
   clearable = true,
-  placeholder = "输入地点后回车，或选择候选",
+  placeholder = "输入地点，或选择候选",
   disabled = false,
   onChange,
   onPlace,
@@ -36,7 +36,7 @@ export function LocationField({
         value={value}
         placeholder={placeholder}
         disabled={disabled}
-        onCreate={allowCustom ? (text) => text : undefined}
+        allowCustomValue={allowCustom}
         loadOptions={async (query, signal) => {
           const point =
             latitude !== null && longitude !== null
@@ -58,7 +58,11 @@ export function LocationField({
             })),
           ];
         }}
-        onChange={(value) => {
+        onChange={(value, option) => {
+          if (!option) {
+            onChange?.(value);
+            return;
+          }
           if (value === "__moment_clear_location__") {
             onChange?.("");
             return;

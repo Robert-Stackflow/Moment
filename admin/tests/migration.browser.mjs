@@ -321,6 +321,34 @@ try {
       );
     },
   );
+  await check("manual locations persist without selecting an option", async () => {
+    for (const width of [1280, 390]) {
+      await page.setViewportSize({ width, height: 900 });
+      const before = await api(`/posts/${postId}`);
+      await page.goto(base + `/posts/${postId}`);
+      const location = page.getByRole("combobox", {name:"拍摄地点",exact:true});
+      await location.fill(`手写帖子地点 ${width}`);
+      await page.getByRole("heading", {name:"编辑帖子",exact:true}).click();
+      assert.equal(await location.inputValue(), `手写帖子地点 ${width}`);
+      await page.getByRole("button", {name:"编辑图片 1",exact:true}).click();
+      const drawer = page.getByRole("dialog", {name:"编辑图片信息",exact:true});
+      const photoLocation = drawer.getByRole("combobox", {name:"图片地点",exact:true});
+      await photoLocation.fill(`手写照片地点 ${width}`);
+      await drawer.getByRole("heading", {name:"编辑图片信息",exact:true}).click();
+      assert.equal(await photoLocation.inputValue(), `手写照片地点 ${width}`);
+      await drawer.getByRole("button", {name:"应用修改",exact:true}).click();
+      const published = page.waitForResponse(r => r.url().endsWith("/publish") && r.request().method() === "POST");
+      await page.getByRole("button", {name:"发布更新",exact:true}).click();
+      assert.equal((await published).status(),200);
+      const after = await api(`/posts/${postId}`);
+      assert.equal(after.location, `手写帖子地点 ${width}`);
+      assert.equal(after.images[0].location, `手写照片地点 ${width}`);
+      assert.deepEqual(after.discovery, before.discovery, "manual text must not replace coordinates");
+      assert.deepEqual(after.images[0].discovery, before.images[0].discovery);
+      await noOverflow();
+    }
+    await page.setViewportSize({width:1280,height:900});
+  });
   await check("shared table view and all authenticated routes", async () => {
     await page.goto(base + "/posts");
     await page

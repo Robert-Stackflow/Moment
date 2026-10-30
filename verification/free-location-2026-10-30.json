@@ -1,0 +1,16 @@
+{
+  "oneui": "0.6.19",
+  "behavior": "LocationField uses input Combobox allowCustomValue; only explicit candidate selection changes coordinates",
+  "checks": {
+    "registryIntegrityMatched": true,
+    "typecheck": true,
+    "productionBuild": true,
+    "viewportWidths": [1280, 390],
+    "postAndPhotoManualLocationsSaved": true,
+    "requiresOptionSelection": false,
+    "requiresEnter": false,
+    "coordinatesPreserved": true,
+    "browserRuntimeErrors": 0,
+    "productionWritesInTests": 0
+  }
+}
