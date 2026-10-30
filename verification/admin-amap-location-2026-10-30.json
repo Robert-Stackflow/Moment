@@ -9,15 +9,16 @@
     "Post and photo details reuse LocationField, DiscoveryEditor and MapPicker",
     "Flat form layout, full-width selects, latitude/longitude on one row using OneUI Input",
     "Original ghost IconButton with full description tooltip; clicking opens no overlay",
-    "Only safe JSONP callback responses normalize upstream application/json to JavaScript MIME; nosniff remains"
+    "Only safe JSONP callback responses normalize upstream application/json to JavaScript MIME; nosniff remains",
+    "Dropdown opens with nearby address/POIs/roads; typed suggestions prefer the current point; photo fields can inherit the post coordinates; nearby requests share a bounded 5-minute cache"
   ],
   "verified": {
     "typescriptBuild": true,
     "publicBuild": true,
     "webLint": true,
     "mapBackendTests": true,
-    "serviceAndCoordinateUnitTests": 4,
-    "adminUnitTests": 6,
+    "serviceAndCoordinateUnitTests": 5,
+    "adminUnitTests": 7,
     "realAMapReverseGeocoding": true,
     "realAMapAutocomplete": true,
     "candidateAppliesNameAndWGS84": true,
@@ -29,7 +30,9 @@
     "negativeFractionInputPreserved": true,
     "coordinateSameRowGapCSSPx": 12,
     "mobile390DarkNoHorizontalOverflow": true,
-    "customLocationClear": true
+    "customLocationClear": true,
+    "nearbyRecommendationsOnOpen": true,
+    "photoInheritedNearbyRecommendations": true
   },
   "productionWritesDuringLocalVerification": 0,
   "userPostEditingTabReloaded": false,

@@ -1,6 +1,10 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { nearbyPlaces, searchPlaces } from "../../shared/map/amap-services.js";
+import {
+  nearbyPlaces,
+  searchPlaces,
+  locationSuggestions,
+} from "../../shared/map/amap-services.js";
 import { toAMap } from "../../shared/map/coordinates.js";
 let result,
   status = "complete",
@@ -74,4 +78,39 @@ test("empty results and provider errors do not manufacture coordinates", async (
   assert.deepEqual(await nearbyPlaces(40, 116), []);
   status = "error";
   await assert.rejects(searchPlaces("北京"), /地点查询/);
+});
+
+test("opening location dropdown recommends nearby places; typed results prefer the current point", async () => {
+  status = "complete";
+  const gps = [120.3, 36.1],
+    gcj = toAMap(gps);
+  result = {
+    regeocode: {
+      formattedAddress: "青岛市",
+      pois: [
+        {
+          id: "local",
+          name: "附近公园",
+          location: { lng: gcj[0], lat: gcj[1] },
+        },
+      ],
+    },
+    tips: [
+      {
+        id: "far",
+        name: "公园",
+        district: "北京",
+        location: { lng: 116.4, lat: 39.9 },
+      },
+      { id: "local", name: "附近公园", location: { lng: gcj[0], lat: gcj[1] } },
+    ],
+  };
+  const point = { latitude: gps[1], longitude: gps[0] };
+  assert.equal((await locationSuggestions("", point))[1].id, "local");
+  const places = await locationSuggestions("公园", point);
+  assert.deepEqual(
+    places.map((place) => place.id),
+    ["local", "far"],
+  );
+  assert.deepEqual(await locationSuggestions("", null), []);
 });

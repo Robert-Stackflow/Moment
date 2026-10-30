@@ -71,7 +71,21 @@ function place(id, label, description, coordinates) {
     latitude: +coordinates[1].toFixed(6),
   };
 }
-export async function nearbyPlaces(latitude, longitude) {
+const nearbyCache = new Map();
+export function nearbyPlaces(latitude, longitude) {
+  const key = `${latitude.toFixed(6)},${longitude.toFixed(6)}`;
+  const cached = nearbyCache.get(key);
+  if (cached && cached.expires > Date.now()) return cached.promise;
+  const promise = lookupNearby(latitude, longitude).catch((error) => {
+    if (nearbyCache.get(key)?.promise === promise) nearbyCache.delete(key);
+    throw error;
+  });
+  nearbyCache.set(key, { promise, expires: Date.now() + 300000 });
+  if (nearbyCache.size > 24)
+    nearbyCache.delete(nearbyCache.keys().next().value);
+  return promise;
+}
+async function lookupNearby(latitude, longitude) {
   const AMap = await sdk("AMap.Geocoder");
   if (!AMap) return [];
   const result = await request((cb) =>
@@ -176,4 +190,49 @@ export async function createPickerMap(host, config, initial, onPoint) {
       map.destroy();
     },
   };
+}
+
+export async function locationSuggestions(query, point, signal) {
+  if (signal?.aborted) return [];
+  const term = query.trim().toLocaleLowerCase();
+  const tasks = [];
+  if (point)
+    tasks.push(
+      nearbyPlaces(point.latitude, point.longitude).then((places) =>
+        places.filter(
+          (place) =>
+            !term ||
+            `${place.label} ${place.description}`
+              .toLocaleLowerCase()
+              .includes(term),
+        ),
+      ),
+    );
+  if (term) tasks.push(searchPlaces(query, signal));
+  const results = await Promise.allSettled(tasks);
+  if (signal?.aborted) return [];
+  if (results.length && results.every((result) => result.status === "rejected"))
+    throw results[0].reason;
+  const places = results.flatMap((result) =>
+    result.status === "fulfilled" ? result.value : [],
+  );
+  const unique = places.filter(
+    (place, index) =>
+      places.findIndex(
+        (other) =>
+          other.id === place.id ||
+          (other.label === place.label &&
+            other.latitude === place.latitude &&
+            other.longitude === place.longitude),
+      ) === index,
+  );
+  if (point && term) {
+    const distance = (place) =>
+      (place.latitude - point.latitude) ** 2 +
+      ((place.longitude - point.longitude) *
+        Math.cos((point.latitude * Math.PI) / 180)) **
+        2;
+    unique.sort((a, b) => distance(a) - distance(b));
+  }
+  return unique;
 }

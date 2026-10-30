@@ -32,3 +32,9 @@ export function createPickerMap(
   initial: [number, number] | null,
   onPoint: (latitude: number, longitude: number) => void,
 ): Promise<PickerMap>;
+
+export function locationSuggestions(
+  query: string,
+  point: Pick<MapPlace, "latitude" | "longitude"> | null,
+  signal?: AbortSignal,
+): Promise<MapPlace[]>;

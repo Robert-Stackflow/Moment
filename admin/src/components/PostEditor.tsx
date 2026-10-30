@@ -902,7 +902,7 @@ export function PostEditor({
                       value={draft.time}
                       onChange={(value) => field("time", value)}
                     />
-                    <LocationField value={draft.location} onChange={value => field("location", value)}
+                    <LocationField latitude={draft.discovery.latitude} longitude={draft.discovery.longitude} value={draft.location} onChange={value => field("location", value)}
                       onPlace={place => setDraft(current => ({...current, location: place.label,
                         discovery: {...current.discovery, latitude: place.latitude, longitude: place.longitude}}))} />
                     <CategoryMultiSelect
@@ -1117,6 +1117,7 @@ export function PostEditor({
           <PhotoDetails
             key={current._key}
             photo={current}
+            inheritedDiscovery={draft.discovery}
             settings={settings}
             onApply={(photo) => {
               updatePhotos((current) =>

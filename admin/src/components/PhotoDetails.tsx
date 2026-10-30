@@ -7,7 +7,7 @@ import {
 } from "@robert-stackflow/oneui";
 import { Check } from "lucide-react";
 import { useState } from "react";
-import type { Photo, Settings } from "../types";
+import type { Discovery, Photo, Settings } from "../types";
 import { datetime } from "../types";
 import { DateTimePicker } from "./DateTimePicker";
 import { defaultDiscovery, DiscoveryEditor } from "./DiscoveryEditor";
@@ -17,17 +17,20 @@ import { usePendingChanges } from "./PendingChanges";
 import { Toggle as Switch } from "./Toggle";
 export function PhotoDetails({
   photo,
+  inheritedDiscovery,
   settings,
   onApply,
   onCancel,
 }: {
   photo: Photo;
+  inheritedDiscovery?: Discovery;
   settings: Settings;
   onApply: (photo: Photo) => void;
   onCancel: () => void;
 }) {
   const [draft, setDraft] = useState(photo);
   const [error, setError] = useState("");
+  const point = !draft.discovery || draft.discovery.precision === "inherit" ? inheritedDiscovery : draft.discovery;
   const tagError = draft.tags?.some(
     (tag) =>
       !tag.normalize("NFKC").trim() ||
@@ -80,7 +83,7 @@ export function PhotoDetails({
         value={draft.desc || ""}
         onChange={(e) => field("desc", e.currentTarget.value)}
       />
-      <LocationField label="图片地点" value={draft.location || ""} onChange={value => field("location", value)}
+      <LocationField label="图片地点" latitude={point?.latitude} longitude={point?.longitude} value={draft.location || ""} onChange={value => field("location", value)}
         onPlace={place => setDraft(current => ({...current, location: place.label,
           discovery: {...(current.discovery || defaultDiscovery(true)), latitude: place.latitude, longitude: place.longitude,
             precision: current.discovery?.precision === "inherit" || !current.discovery ? "private" : current.discovery.precision}}))} />

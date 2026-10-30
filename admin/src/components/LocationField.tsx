@@ -1,14 +1,21 @@
 import { Combobox, FormField } from "@robert-stackflow/oneui";
 import { useRef } from "react";
-import { searchPlaces, type MapPlace } from "../../../shared/map/amap-services";
+import {
+  locationSuggestions,
+  type MapPlace,
+} from "../../../shared/map/amap-services";
 export function LocationField({
   label = "拍摄地点",
   value,
+  latitude = null,
+  longitude = null,
   onChange,
   onPlace,
 }: {
   label?: string;
   value: string;
+  latitude?: number | null;
+  longitude?: number | null;
   onChange(value: string): void;
   onPlace(place: MapPlace): void;
 }) {
@@ -22,18 +29,25 @@ export function LocationField({
         placeholder="输入地点后回车，或选择候选"
         onCreate={(text) => text}
         loadOptions={async (query, signal) => {
-          const places = await searchPlaces(query, signal);
+          const point =
+            latitude !== null && longitude !== null
+              ? { latitude, longitude }
+              : null;
+          const places = await locationSuggestions(query, point, signal);
           if (signal.aborted) return [];
           candidates.current = new Map(
             places.map((place) => [place.id, place]),
           );
-          return !query.trim() && value
-            ? [{ value: "__moment_clear_location__", label: "不设置地点" }]
-            : places.map((place) => ({
-                value: place.id,
-                label: place.label,
-                description: place.description,
-              }));
+          return [
+            ...(!query.trim() && value
+              ? [{ value: "__moment_clear_location__", label: "不设置地点" }]
+              : []),
+            ...places.map((place) => ({
+              value: place.id,
+              label: place.label,
+              description: place.description,
+            })),
+          ];
         }}
         onChange={(value) => {
           if (value === "__moment_clear_location__") {
