@@ -6,11 +6,14 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"os"
+	"regexp"
 	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
 )
+
+var mapCallback = regexp.MustCompile(`^[A-Za-z_$][A-Za-z0-9_$]*$`)
 
 // Only the browser key is public. The JS security code stays on this service.
 func registerMaps(r *gin.Engine) {
@@ -57,7 +60,17 @@ func amapProxy(key, secret string, transport http.RoundTripper) *httputil.Revers
 			p.Out.Header.Del("Authorization")
 		},
 		Transport: transport,
-		ErrorLog:  log.New(io.Discard, "", 0),
+		ModifyResponse: func(response *http.Response) error {
+			// The SDK loads some JSONP endpoints as scripts, although AMap labels
+			// them octet-stream. Keep nosniff and correct only callback responses.
+			callback := response.Request.URL.Query().Get("callback")
+			kind := strings.ToLower(strings.Split(response.Header.Get("Content-Type"), ";")[0])
+			if response.StatusCode == http.StatusOK && mapCallback.MatchString(callback) && (kind == "application/octet-stream" || kind == "text/plain") {
+				response.Header.Set("Content-Type", "application/javascript; charset=utf-8")
+			}
+			return nil
+		},
+		ErrorLog: log.New(io.Discard, "", 0),
 		ErrorHandler: func(w http.ResponseWriter, _ *http.Request, _ error) {
 			http.Error(w, "地图服务暂时不可用", http.StatusBadGateway)
 		},

@@ -42,7 +42,7 @@ func TestMapConfigurationAndRoutes(t *testing.T) {
 }
 
 func TestMapProxyKeepsSecurityCodeServerSide(t *testing.T) {
-	for _, path := range []string{"/v4/map/styles", "/v3/config"} {
+	for _, path := range []string{"/v4/map/styles", "/v3/config", "/v3/log/init"} {
 		proxy := amapProxy("configured-key", "server-only-code", mapRoundTripper(func(r *http.Request) (*http.Response, error) {
 			want := "restapi.amap.com"
 			if path == "/v4/map/styles" {
@@ -57,13 +57,16 @@ func TestMapProxyKeepsSecurityCodeServerSide(t *testing.T) {
 			if r.Header.Get("Cookie") != "" || r.Header.Get("Authorization") != "" {
 				t.Fatal("application credentials forwarded")
 			}
-			return &http.Response{StatusCode: 200, Header: make(http.Header), Body: io.NopCloser(strings.NewReader(`{"ok":true}`))}, nil
+			return &http.Response{StatusCode: 200, Header: http.Header{"Content-Type": []string{"application/octet-stream"}}, Body: io.NopCloser(strings.NewReader(`jsonp_123({"ok":true})`)), Request: r}, nil
 		}))
-		request := httptest.NewRequest("GET", "/_AMapService"+path+"?key=untrusted&jscode=untrusted", nil)
+		request := httptest.NewRequest("GET", "/_AMapService"+path+"?key=untrusted&jscode=untrusted&callback=jsonp_123", nil)
 		request.Header.Set("Cookie", "moment_session=private")
 		request.Header.Set("Authorization", "Bearer private")
 		response := httptest.NewRecorder()
 		proxy.ServeHTTP(response, request)
+		if !strings.HasPrefix(response.Header().Get("Content-Type"), "application/javascript") {
+			t.Fatal("SDK JSONP response must have script MIME type")
+		}
 		if strings.Contains(response.Body.String(), "server-only-code") || strings.Contains(request.URL.RawQuery, "server-only-code") {
 			t.Fatal("secret escaped upstream request")
 		}
@@ -73,5 +76,18 @@ func TestMapProxyKeepsSecurityCodeServerSide(t *testing.T) {
 	proxy.ServeHTTP(w, httptest.NewRequest("GET", "/_AMapService/v3/config", nil))
 	if w.Code != 502 || strings.Contains(w.Body.String(), "secret") {
 		t.Fatal("upstream error must not expose credentials")
+	}
+}
+
+func TestMapBinaryResponsesKeepTheirContentType(t *testing.T) {
+	for _, query := range []string{"", "?callback=invalid()"} {
+		proxy := amapProxy("key", "secret", mapRoundTripper(func(r *http.Request) (*http.Response, error) {
+			return &http.Response{StatusCode: 200, Header: http.Header{"Content-Type": []string{"application/octet-stream"}}, Body: io.NopCloser(strings.NewReader("binary")), Request: r}, nil
+		}))
+		w := httptest.NewRecorder()
+		proxy.ServeHTTP(w, httptest.NewRequest("GET", "/_AMapService/v3/config"+query, nil))
+		if w.Header().Get("Content-Type") != "application/octet-stream" {
+			t.Fatal("non-JSONP content type changed")
+		}
 	}
 }
