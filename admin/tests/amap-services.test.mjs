@@ -4,6 +4,7 @@ import {
   nearbyPlaces,
   searchPlaces,
   locationSuggestions,
+  createPickerMap,
 } from "../../shared/map/amap-services.js";
 import { toAMap } from "../../shared/map/coordinates.js";
 let result,
@@ -113,4 +114,40 @@ test("opening location dropdown recommends nearby places; typed results prefer t
     ["local", "far"],
   );
   assert.deepEqual(await locationSuggestions("", null), []);
+});
+
+test("map search can center a WGS84 candidate and zoom to street level", async () => {
+  let center,
+    zoom,
+    disposed = false;
+  const saved = window.AMap.Map;
+  window.AMap.Map = class {
+    setCenter(value) {
+      center = value;
+    }
+    setZoom(value) {
+      zoom = value;
+    }
+    on() {}
+    resize() {}
+    destroy() {
+      disposed = true;
+    }
+  };
+  window.AMap.Marker = class {
+    setPosition() {}
+    setMap() {}
+  };
+  globalThis.matchMedia = () => ({ matches: false });
+  globalThis.ResizeObserver = class {
+    observe() {}
+    disconnect() {}
+  };
+  const map = await createPickerMap({}, { style: "fresh" }, null, () => {});
+  map.show(36.05, 120.348, true, 14);
+  assert.deepEqual(center, toAMap([120.348, 36.05]));
+  assert.equal(zoom, 14);
+  map.destroy();
+  assert.equal(disposed, true);
+  window.AMap.Map = saved;
 });

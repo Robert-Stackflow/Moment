@@ -164,11 +164,14 @@ export async function createPickerMap(host, config, initial, onPoint) {
     animateEnable: !matchMedia("(prefers-reduced-motion: reduce)").matches,
   });
   const marker = new AMap.Marker({ anchor: "bottom-center" });
-  function show(latitude, longitude, center = false) {
+  function show(latitude, longitude, center = false, zoom) {
     const point = toAMap([longitude, latitude]);
     marker.setPosition(point);
     marker.setMap(map);
-    if (center) map.setCenter(point);
+    if (center) {
+      map.setCenter(point);
+      if (zoom !== undefined) map.setZoom(zoom);
+    }
   }
   if (initial) show(...initial);
   map.on("click", (event) => {

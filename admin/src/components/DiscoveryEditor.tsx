@@ -1,12 +1,12 @@
 import { Button, Dialog, LoadingState, Select } from "@robert-stackflow/oneui";
 import { MapPin } from "lucide-react";
-import { lazy, Suspense, useId, useState } from "react";
+import { useId, useState } from "react";
 import type { MapPlace } from "../../../shared/map/amap-services";
 import { CoordinateField } from "./CoordinateField";
 import { FieldInfo } from "./FieldInfo";
 import type { Discovery } from "../types";
 import { selectOptions } from "../ui-data";
-const MapPicker = lazy(() => import("./MapPicker"));
+import MapPicker from "./MapPicker";
 export const defaultDiscovery = (image: boolean): Discovery => ({
   latitude: null,
   longitude: null,
@@ -117,29 +117,18 @@ export function DiscoveryEditor({
           ])}
         />
       </div>
-      <Dialog
+      <MapPicker
         open={mapOpen}
+        latitude={data.latitude}
+        longitude={data.longitude}
         onClose={() => setMapOpen(false)}
-        title="选择拍摄位置"
-        size="large"
-      >
-        <Suspense
-          fallback={<LoadingState label="加载地图" showLabel={false} />}
-        >
-          {mapOpen && (
-            <MapPicker
-              latitude={data.latitude}
-              longitude={data.longitude}
-              onApply={(latitude, longitude, place) => {
-                const next = { ...data, latitude, longitude };
-                if (place && onPlace) onPlace(place, next);
-                else onChange(next);
-                setMapOpen(false);
-              }}
-            />
-          )}
-        </Suspense>
-      </Dialog>
+        onApply={(latitude, longitude, place) => {
+          const next = { ...data, latitude, longitude };
+          if (place && onPlace) onPlace(place, next);
+          else onChange(next);
+          setMapOpen(false);
+        }}
+      />
     </div>
   );
 }

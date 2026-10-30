@@ -1,0 +1,37 @@
+{
+  "date": "2026-10-30",
+  "oneui": "0.5.0",
+  "scope": "Map picker search and layout redesign",
+  "layout": {
+    "desktop": "Search above map and scrollable nearby places side by side",
+    "mobile": "Search, map, nearby places stacked; confirmation footer remains visible"
+  },
+  "components": [
+    "OneUI Dialog with footer",
+    "Existing LocationField / Combobox in candidate-only mode",
+    "OneUI MenuItem, IconButton, Button, Alert, LoadingState"
+  ],
+  "behavior": [
+    "Search result centers map at zoom 14 in GCJ-02 while form and stored coordinates remain WGS84",
+    "Map clicks reload nearby recommendations; nearby choices move the marker",
+    "Selection stays staged until confirmed; cancellation preserves original values",
+    "Dialog remains mounted for shared close animation; map listeners and late lookups are cleaned on close"
+  ],
+  "verification": {
+    "typecheckAndAdminBuild": true,
+    "targetedUnitTests": 5,
+    "realAMapSearch": "Tiananmen Square and Badaguan",
+    "confirmedNameAndCoordinates": true,
+    "privatePrecisionPreserved": true,
+    "cancelPreservedFields": true,
+    "reopenRestoredOriginalPoint": true,
+    "desktop1280x720MapFitsAndTwoColumns": true,
+    "mobile390x844DarkStacked": true,
+    "mobileMapClickUpdatesPoint": true,
+    "mobileConfirmationFooterVisible": true,
+    "horizontalOverflow": false,
+    "temporaryDraftRemoved": true,
+    "userEditingTabModified": false
+  },
+  "deployment": "pending"
+}

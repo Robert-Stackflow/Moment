@@ -12,7 +12,12 @@ export interface MapConfig {
   style: string;
 }
 export interface PickerMap {
-  show(latitude: number, longitude: number, center?: boolean): void;
+  show(
+    latitude: number,
+    longitude: number,
+    center?: boolean,
+    zoom?: number,
+  ): void;
   zoomIn(): void;
   zoomOut(): void;
   destroy(): void;
