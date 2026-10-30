@@ -1,0 +1,102 @@
+{
+  "date": "2026-10-30",
+  "release": "20261030-171521-react",
+  "server": "43.156.71.44",
+  "directory": "/home/apps/moment",
+  "url": "https://moment.cloudchewie.com",
+  "source": {
+    "release": "20261030-171521-react",
+    "sourceCommit": "53d29c325cc29f41939173a9198b7d82731a17f0",
+    "workingTreeFiles": [],
+    "sourceArchiveSha256": "182943572618f1ea72c22ef4a90647db5ebc7ff2f81f36c9f8c392b8a22956a8",
+    "sourceFiles": 257,
+    "frontend": "React 19.3.0",
+    "oneui": "0.5.0",
+    "image": "ruida/moment:dev",
+    "target": "/home/apps/moment",
+    "server": "43.156.71.44"
+  },
+  "runtime": {
+    "image": "ruida/moment:dev",
+    "imageId": "sha256:0d602e9bb143b5318efa2acc60731238e3cca02230f7a08a241bb84c3ef11eca",
+    "health": "healthy",
+    "sourceCommit": "53d29c325cc29f41939173a9198b7d82731a17f0",
+    "release": "20261030-171521-react",
+    "ports": {
+      "9999/tcp": [
+        {
+          "HostIp": "127.0.0.1",
+          "HostPort": "3010"
+        }
+      ]
+    },
+    "memory": 805306368,
+    "memorySwap": 805306368,
+    "nanoCpus": 1000000000,
+    "pids": 256,
+    "logging": {
+      "Type": "json-file",
+      "Config": {
+        "max-file": "3",
+        "max-size": "10m"
+      }
+    }
+  },
+  "previousRelease": "20261029-191302-sharedcards",
+  "backup": "/home/apps/moment/backups/20261030-171521-react",
+  "changes": [
+    "React public gallery with original CSS and layout",
+    "React Router internal navigation without document reload",
+    "React viewer, timeline, map, category/location and private sharing lifecycle"
+  ],
+  "checks": {
+    "candidateOnDataCopy": true,
+    "accountAndContentFingerprintsPreserved": true,
+    "coreTableCounts": {
+      "blog": 45,
+      "blog_image": 57,
+      "category": 13,
+      "user": 1
+    },
+    "https": true,
+    "servedIndexMatchesContainer": true,
+    "indexSha256": "94599cb6e0a2770d2ba9e867f7c9ed8fbae96f97db87963282e86039c85ec36c",
+    "browser": {
+      "checks": [
+        {
+          "width": 1280,
+          "react": true,
+          "spa": true,
+          "map": true,
+          "timeline": true,
+          "viewerZoomEscape": true,
+          "directPhoto": true,
+          "adminLogin": true,
+          "noOverflow": true
+        },
+        {
+          "width": 390,
+          "react": true,
+          "spa": true,
+          "map": true,
+          "timeline": true,
+          "viewerZoomEscape": true,
+          "directPhoto": true,
+          "adminLogin": true,
+          "noOverflow": true
+        }
+      ],
+      "errors": [],
+      "productionWrites": 0
+    },
+    "visualComparisonRecord": "verification/public-react-migration-2026-10-30.json"
+  },
+  "cleanup": {
+    "releaseDirectoriesRetained": [
+      "20261029-191302-sharedcards",
+      "20261030-171521-react"
+    ],
+    "temporaryCandidateDataRemoved": true,
+    "originalDataAndBackupsRetained": true
+  }
+}
