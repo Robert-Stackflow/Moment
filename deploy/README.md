@@ -32,4 +32,4 @@ docker compose up -d --no-build --pull never
 
 每次部署的源码摘要、镜像、备份位置和验证结果写入 `verification/`；服务器保留可回退版本与对应备份，不运行镜像或卷的批量清理。
 
-2026-10-30 的 `20261030-map-settings` 已部署源码 `40f3c8f8517bf51b18b00433a81f1f9452dc750d`，使用正式 OneUI 0.6.18。原高德凭据已迁入数据库，活动环境变量与 `.maps.env` 已移除；实际地图页面的 SDK 和逆地理编码验证通过。健康、HTTPS、前后台资源一致性及账户、内容数据指纹通过验证，保留 `20261030-ui0618` 作为上一版本。明细见 [部署验证记录](../verification/deployment-2026-10-30-map-settings.json)。
+当前部署为 `20261030-free-location`，源码 `8599b486a7c7e658f26c43f0128a1914ecfbbefa`，使用正式 OneUI 0.6.19。帖子与单张照片的地点可直接手写保存，只有主动选择候选才更新坐标。高德凭据继续由数据库管理，活动环境变量与 `.maps.env` 均已移除。健康、HTTPS、前后台资源一致性及账户、内容数据指纹通过验证，保留 `20261030-map-settings` 作为上一版本。明细见 [部署验证记录](../verification/deployment-2026-10-30-free-location.json)。
