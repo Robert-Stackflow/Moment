@@ -497,9 +497,7 @@ h4.ui-title {
   min-width: 0;
 }
 .editor-save-dock {
-  position: sticky;
-  top: 0;
-  z-index: 15;
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -566,7 +564,6 @@ h4.ui-title {
     margin-left: 38px;
   }
   .editor-save-dock {
-    top: 0;
     padding: 12px;
     gap: 10px;
     flex-wrap: wrap;
@@ -2154,5 +2151,4 @@ h4.ui-title {
   .preferences-mobile-navigation { display: block; }
 }
 
-.photo-menu-trigger { width: 32px; height: 32px; padding: 0; flex: none; }
 .security-key-content { display: grid; gap: 16px; }

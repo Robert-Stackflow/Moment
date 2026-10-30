@@ -13,7 +13,7 @@
   },
   "dependencies": {
     "@huggingface/transformers": "4.3.0",
-    "@robert-stackflow/oneui": "0.6.17",
+    "@robert-stackflow/oneui": "0.6.18",
     "@tanstack/react-query": "^5.90.0",
     "exifr": "^7.1.3",
     "leaflet": "^1.9.4",

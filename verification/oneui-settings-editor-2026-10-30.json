@@ -1,9 +1,13 @@
 {
-  "oneui": "0.6.17",
-  "registryIntegrity": "sha512-E6Xejr68O1YIa6SiL8kXH64Za5uS0orWJe2idVLlOhdi2LY9Xu/iPSxamM8ZYEr40ZllJXiMtaaaiw6hD8BY8w==",
+  "oneui": "0.6.18",
+  "registryIntegrity": "sha512-qGk1SXeX5Y9OlrQ8UykYxoHtfZ5L7wvlWNpFmMHAAoRFuv8Ri7/rq83wKz/rej4TCwi0e0e/36weDe2Dyo1C0Q==",
   "navigation": {
     "mainEntriesPreserved": 10,
-    "groups": ["内容管理", "照片工具", "管理"],
+    "groups": [
+      "内容管理",
+      "照片工具",
+      "管理"
+    ],
     "accountAndSettings": "shared SideBar card; shared Select on narrow screens",
     "collapseExtraOverflowBefore": 39,
     "collapseExtraOverflowAfter": 0,
@@ -14,12 +18,18 @@
     "codeEditors": "full-width shared Textarea",
     "allSettingRoutesAndActiveLinks": true,
     "saveAndEntryEditing": true,
-    "credentialPreservation": "unchanged"
+    "credentialPreservation": "unchanged",
+    "colorPickerSaveVerified": true
   },
   "editor": {
-    "saveControls": "sticky top",
-    "removed": ["ordinary draft notice", "cover summary preview", "应用后，随帖子一起保存", "account recovery tip"],
-    "photoActions": "shared Menu",
+    "saveControls": "normal-flow top; no preview entry",
+    "removed": [
+      "ordinary draft notice",
+      "cover summary preview",
+      "应用后，随帖子一起保存",
+      "account recovery tip"
+    ],
+    "photoActions": "shared Menu iconOnly backed by IconButton",
     "photoEditing": "shared Drawer footer with form-associated submit button",
     "footerBottomGapPixels": 14.8,
     "categoryTitlePixels": 14,
@@ -29,11 +39,19 @@
     "productionBuild": true,
     "adminUnitTests": 8,
     "settingsAndAuthenticationRegression": true,
-    "publicBrowserMatrices": 3,
-    "editorLightDarkWidths": [1440, 390, 320],
+    "editorLightDarkWidths": [
+      1440,
+      390,
+      320
+    ],
     "editorMatrices": 6,
     "horizontalOverflows": 0,
     "browserRuntimeErrors": 0,
     "productionTestWrites": 0
+  },
+  "posts": {
+    "tableSingleFrame": true,
+    "editControl": "shared IconButton",
+    "spaNavigationVerified": true
   }
 }

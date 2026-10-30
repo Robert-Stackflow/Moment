@@ -300,6 +300,7 @@ try {
       .getByRole("button", { name: "紧凑列表" })
       .click();
     await page.getByRole("table", { name: "帖子列表" }).waitFor();
+    assert.equal(await page.locator(".desktop-table").evaluate(el => getComputedStyle(el).borderTopWidth), "0px", "table layout wrapper must not add another frame");
     for (const route of [
       "workbench",
       "organize",
@@ -411,6 +412,11 @@ try {
       await page
         .getByRole("textbox", { name: "网站名称", exact: true })
         .fill("视觉验证");
+      await page.getByRole("combobox", { name: "选择颜色 · 相册主题色", exact: true }).click();
+      const themeColor = page.getByRole("textbox", { name: "相册主题色 HEX", exact: true });
+      await themeColor.fill("#3478AB");
+      await themeColor.press("Tab");
+      await page.keyboard.press("Escape");
       await page.getByRole("button", { name: "添加入口", exact: true }).click();
       await page
         .getByRole("textbox", { name: "入口名称 1", exact: true })
@@ -474,6 +480,7 @@ try {
       await page.waitForTimeout(150);
       const settings = await api("/settings");
       assert.equal(settings.meta.entries[0].name, "主页");
+      assert.equal(settings.meta.primary_color.toLowerCase(), "#3478ab");
       await page
         .locator("main")
         .evaluate((main) => (main.scrollTop = main.scrollHeight));

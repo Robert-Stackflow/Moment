@@ -1,6 +1,7 @@
 import {
   Button,
   Card,
+  ColorField,
   Form,
   FormField,
   NumberInput,
@@ -56,7 +57,7 @@ const fields: Record<Section, Field[]> = {
     { key: "site_url", label: "网站地址" },
     { key: "site_keywords", label: "搜索关键词" },
     { key: "site_splitter", label: "标题分隔符", fallback: "|" },
-    { key: "primary_color", label: "相册主题色", description: "例如 #4059aa" },
+    { key: "primary_color", label: "相册主题色" },
     { key: "site_icon", label: "网站图标地址" },
     { key: "site_apple_icon", label: "Apple 图标地址" },
     { key: "bottom_icon", label: "底栏图标地址" },
@@ -369,6 +370,17 @@ function SettingsForm({
     const description =
       credential && configured ? "已配置，留空保留当前凭据" : field.description;
     const common = { title: field.label, description };
+    if (field.key === "primary_color")
+      return (
+        <SettingRow key={field.key} {...common} controlId={control.id}>
+          <ColorField
+            {...control}
+            label={field.label}
+            value={String(value || "#20809F")}
+            onChange={(next) => set(field.key, next)}
+          />
+        </SettingRow>
+      );
     if (field.kind === "switch")
       return (
         <SwitchSettingRow

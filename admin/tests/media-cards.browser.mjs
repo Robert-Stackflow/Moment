@@ -96,7 +96,7 @@ export async function auditMediaCards({
           path: path.join(output, "shared-post-card.png"),
         });
       const beforeEdit = await page.evaluate(() => performance.timeOrigin);
-      await card.getByRole("link", { name: /^编辑 / }).click();
+      await card.getByRole("button", { name: /^编辑 / }).click();
       await page.waitForURL(`**/posts/${postId}`);
       assert.equal(
         await page.evaluate(() => performance.timeOrigin),

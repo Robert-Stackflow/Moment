@@ -294,10 +294,6 @@ export async function auditInterface({
           .click();
         await dismiss(dialog);
         await visit(`posts/${postId}`);
-        await open(
-          page.getByRole("button", { name: "预览", exact: true }),
-          "相册内容预览",
-        );
         await page
           .getByRole("button", { name: "编辑图片 1", exact: true })
           .first()

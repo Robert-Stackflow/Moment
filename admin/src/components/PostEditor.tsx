@@ -143,7 +143,6 @@ export function PostEditor({
   const [adding, setAdding] = useState(false);
   const [urls, setUrls] = useState("");
   const [urlError, setUrlError] = useState("");
-  const [preview, setPreview] = useState(false);
   const [scheduling, setScheduling] = useState(false);
   const pendingSchedule = initialDraft?.schedule?.status === "pending";
   const [busy, setBusy] = useState(false);
@@ -210,7 +209,6 @@ export function PostEditor({
       uploading ||
       editing ||
       adding ||
-      preview ||
       pendingSchedule ||
       needsReload
     )
@@ -299,7 +297,6 @@ export function PostEditor({
       uploading ||
       editing ||
       adding ||
-      preview ||
       needsReload ||
       pendingSchedule
     )
@@ -492,14 +489,6 @@ export function PostEditor({
               gap: 8,
             }}
           >
-            <Button
-              disabled={!photos.length || busy || uploading}
-              onClick={() => setPreview(true)}
-              variant="ghost"
-            >
-              {<Eye size={16} />}
-              预览
-            </Button>
             <Button
               disabled={
                 locked ||
@@ -906,10 +895,10 @@ export function PostEditor({
                               `照片 ${String(index + 1).padStart(2, "0")}`}
                           </p>
                           <Menu
+                            iconOnly
                             label={`图片操作 ${index + 1}`}
                             trigger={<MoreHorizontal size={18} />}
                             variant="ghost"
-                            className="photo-menu-trigger"
                             items={[
                               {
                                 label: "\u7F16\u8F91\u56FE\u7247\u4FE1\u606F",
@@ -1162,78 +1151,6 @@ export function PostEditor({
               setUrlError("");
             }}
           />
-        </div>
-      </Dialog>
-      <Dialog
-        open={preview}
-        onClose={() => setPreview(false)}
-        title="相册内容预览"
-        size="large"
-      >
-        <div
-          className="ui-stack"
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            gap: 16,
-          }}
-        >
-          <h2 className="ui-title">{draft.title || "未命名帖子"}</h2>
-          <p
-            className="ui-text"
-            style={{
-              fontSize: 13,
-              color: "var(--muted)",
-            }}
-          >
-            {draft.location} {draft.time.replace("T", " ")}
-          </p>
-          <p
-            className="ui-text"
-            style={{
-              ...{ whiteSpace: "pre-wrap" },
-            }}
-          >
-            {draft.desc}
-          </p>
-          {photos
-            .filter((photo) => !photo.is_hidden)
-            .map((photo) => (
-              <div
-                key={photo._key}
-                className="ui-stack"
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: 8,
-                }}
-              >
-                <img src={photo.image_url} alt={photo.title || draft.title} />
-                <p
-                  className="ui-text"
-                  style={{
-                    fontWeight: 500,
-                  }}
-                >
-                  {photo.title || draft.title}
-                </p>
-                <p
-                  className="ui-text"
-                  style={{
-                    fontSize: 13,
-                    color: "var(--muted)",
-                  }}
-                >
-                  {photo.desc || draft.desc}
-                </p>
-              </div>
-            ))}
-          {draft.is_hidden && (
-            <Alert tone={tone("gray")}>这篇帖子仅自己可见。</Alert>
-          )}
-          {!visibleCount && (
-            <Alert tone={tone("gray")}>没有可公开展示的图片。</Alert>
-          )}
         </div>
       </Dialog>
     </>

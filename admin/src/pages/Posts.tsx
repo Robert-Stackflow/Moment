@@ -28,7 +28,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { api, json, notifyError, notifySuccess } from "../api";
 import {
   CategoryMultiSelect,
@@ -46,6 +46,7 @@ import {
   tone,
 } from "../ui-data";
 export default function Posts() {
+  const navigate = useNavigate();
   const client = useQueryClient();
   const [search, setSearch] = useState("");
   const [q] = useDebouncedValue(search, 250);
@@ -410,7 +411,7 @@ export default function Posts() {
           ))}
         </div>
       ) : (
-        <Card className={"moment-panel " + "desktop-table view-enter"}>
+        <div className="desktop-table view-enter">
           <Table
             label={"\u5E16\u5B50\u5217\u8868"}
             rows={rows}
@@ -511,19 +512,18 @@ export default function Posts() {
                 align: "right",
                 render: (post) => (
                   <>
-                    <Button
-                      href={adminHref(`/posts/${post.id}`)}
-                      aria-label={`编辑 ${post.title}`}
-                      variant="ghost"
+                    <IconButton
+                      label={`编辑 ${post.title}`}
+                      onClick={() => navigate(`/posts/${post.id}`)}
                     >
                       <Pencil size={16} />
-                    </Button>
+                    </IconButton>
                   </>
                 ),
               },
             ]}
           />
-        </Card>
+        </div>
       )}
       {posts.data && (posts.data.total || 0) > 20 ? (
         <div

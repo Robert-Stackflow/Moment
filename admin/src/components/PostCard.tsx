@@ -1,9 +1,8 @@
-import { Badge, Button, IconButton } from "@robert-stackflow/oneui";
+import { Badge, IconButton } from "@robert-stackflow/oneui";
 import { Pencil, Trash2 } from "lucide-react";
-import { Link, useLinkClickHandler } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import type { Post, Settings } from "../types";
 import { coverPosition, thumbnail } from "../types";
-import { adminHref } from "../ui-data";
 import { MediaCard, type MediaCardLinkProps } from "./MediaCard";
 
 const routerLink = ({ href, ...props }: MediaCardLinkProps) => (
@@ -28,7 +27,7 @@ export function PostCard({
   onDelete?(): void;
 }) {
   const path = `/posts/${post.id}`;
-  const edit = useLinkClickHandler<HTMLAnchorElement>(path);
+  const navigate = useNavigate();
   const cover = post.images.find((image) => !image.is_hidden) || post.images[0];
   const metadata = [
     post.location,
@@ -75,14 +74,12 @@ export function PostCard({
       actions={
         detail === "full" ? (
           <>
-            <Button
-              href={adminHref(path)}
-              aria-label={`编辑 ${post.title}`}
-              onClick={edit}
-              variant="ghost"
+            <IconButton
+              label={`编辑 ${post.title}`}
+              onClick={() => navigate(path)}
             >
               <Pencil size={16} />
-            </Button>
+            </IconButton>
             {onDelete && (
               <IconButton
                 label={`删除 ${post.title}`}

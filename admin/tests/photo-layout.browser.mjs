@@ -27,6 +27,8 @@ export async function auditPhotoLayout({
       const toolbar = page.locator(".editor-save-dock");
       const titleBox = await page.locator(".editor-title-input").boundingBox();
       const toolbarBox = await toolbar.boundingBox();
+      assert.equal(await toolbar.evaluate(el => getComputedStyle(el).position), "relative");
+      assert.equal(await toolbar.getByRole("button", { name: "预览", exact: true }).count(), 0);
       assert.ok(
         toolbarBox.y + toolbarBox.height < titleBox.y,
         "save controls precede editor fields",
